@@ -1,0 +1,133 @@
+
+\lstdefinestyle{mystyle}{
+  basicstyle=\ttfamily\footnotesize\upshape,
+  breakatwhitespace=false,
+  breaklines=true,
+  breakindent=0em,
+  captionpos=b,
+  keepspaces=true,
+  numbers=left,
+  numbersep=5pt,
+  showspaces=false,
+  showstringspaces=false,
+  showtabs=false,
+  tabsize=2,
+  frame = single,
+  numberstyle=\footnotesize,
+}
+
+\lstset{style=mystyle}
+
+\lstdefinelanguage{trs}
+{
+  numbers=left,
+  numbersep=5pt,
+  inputencoding=utf8,
+  extendedchars=true,
+  numberstyle=\footnotesize,
+  tabsize=2,
+  basicstyle={\ttfamily\scriptsize\upshape},
+  keywords=[1]{RULES, VAR, ->},
+  alsoletter={*,/,+},
+  sensitive=true,
+  keywordstyle={[1]\bfseries\color{ForestGreen}},
+  string=[b]{"},
+  stringstyle=\color{orange},
+  showstringspaces=false,
+}
+
+\lstdefinelanguage{SMT}
+{
+  numbers=left,
+  numbersep=5pt,
+  inputencoding=utf8,
+  extendedchars=true,
+  numberstyle=\footnotesize,
+  tabsize=2,
+  basicstyle={\ttfamily\scriptsize\upshape},
+  keywords=[1]{anchor,step, :step,assume, declare-fun, declare-const, declare-sort, assert},
+  keywords=[2]{:rule, :args,:premises,get-proof, check-sat, set-logic},
+  keywords=[3]{and, or, not, distinct,forall, Int, Real, abs, div, mod},
+  alsoletter={-,:,*,/},
+  sensitive=true,
+  keywordstyle={[1]\bfseries\color{ForestGreen}},
+  keywordstyle={[2]\bfseries\color{blue}},
+  keywordstyle={[3]\bfseries\color{purple}},
+  string=[b]{"},
+  stringstyle=\color{orange},
+  showstringspaces=false,
+}
+
+\lstdefinelanguage{Lambdapi}
+{
+  numbers=left,
+  numbersep=5pt,
+  inputencoding=utf8,
+  extendedchars=true,
+  numberstyle=\footnotesize,
+  tabsize=2,
+  basicstyle={\ttfamily\scriptsize\upshape},
+  keywords=[1]{abort,admit,admitted,apply,as,assert,assertnot,assume,builtin,compute,debug,fail,flag,focus,generalize,have,in,induction,inductive,infix,injective,left,let,notation,off,on,open,prefix,print,private,proofterm,protected,prover,prover_timeout,quantifier,refine,reflexivity,require,rewrite,right,rule,sequential,simplify,solve,symmetry,type,TYPE,unif_rule,verbose,why3,with},
+  keywords=[2]{El, Prf},
+  keywords=[3]{begin, symbol, end,associative,commutative,constant,opaque},
+  keywords=[4]{Set,Prop},
+  sensitive=true,
+  keywordstyle={[1]\bfseries\color{purple}},
+  keywordstyle={[2]\bfseries\color{purple}},
+  keywordstyle={[3]\bfseries\color{violet}},
+  keywordstyle={[4]\bfseries\color{blue}},
+  morecomment=[l]{//},
+  morecomment=[n]{/*}{*/},
+  commentstyle={\itshape\color{teal}},
+  string=[b]{"},
+  stringstyle=\color{orange},
+  showstringspaces=false,
+  literate=
+  {λ}{$\lambda$}1
+  {↪}{$\hookrightarrow$}2
+  {→}{$\rightarrow$}2
+  {Π}{$\Pi$}1
+  {≔}{$\coloneqq$}1
+  {⊢}{$\vdash$}1
+  {≡}{$\equiv$}1
+  {𝔹}{$\mathbb{B}$}1
+  {𝕃}{$\mathbb{L}$}1
+  {ℕ}{$\mathbb{N}$}1
+  {α}{$\alpha$}1
+  {β}{$\beta$}1
+  {η}{$\eta$}1
+  {π}{$\pi$}1
+  {⤳}{$\rightcurvedarrow$}1
+  {𝑰}{$\mathcal{I}$}1
+  {ω}{$\omega$}1
+  {∧}{$\wedge$}1
+  {≤}{$\le$}1
+  {≠}{$\neq$}1
+  {∉}{$\notin$}1
+  {×}{$\times$}1
+  {⋅}{$\cdot$}1
+  {⟇}{$\veedot$}1
+  {▩}{$\blacksquare$}1
+  {□}{$\Square$}1
+  {⊤}{$\top$}1
+  {φ₁}{$\varphi_1$}1
+  {ₙ}{$_n$}1
+  {ₖ}{$_k$}1
+  {π}{$\pi$}1
+  {¬}{$\neg$}1
+  { ̇}{$\cdot$}1
+  {∨}{$\lor$}1
+  {≐}{$\doteq$}1
+  {□}{$\square$}1
+  {ᶜ}{${^c}$}1
+  {ᵢ}{${_i}$}1
+  {₁}{${_1}$}1
+  {—}{$\sim$}1
+  {⇒}{$\Rightarrow$}2
+  {ₑ}{${_e}$}1
+  {ₗ}{${_l}$}1
+  {≥}{$\geq$}2
+  {ᵣ}{$\_r$}1
+  {⇑}{$\Uparrow$}1
+  {⇓}{$\Downarrow$}1
+}

@@ -1,0 +1,144 @@
+% **************************************************************************************************************
+% A Classic Thesis Style
+% **************************************************************************************************************
+\RequirePackage{fix-cm} % fix some latex issues see: http://texdoc.net/texmf-dist/doc/latex/base/fixltx2e.pdf
+\documentclass[ twoside,openright,titlepage,numbers=noenddot,headinclude,%1headlines,% letterpaper a4paper
+                footinclude=false,cleardoublepage=empty,abstractoff, % <--- obsolete, remove (todo)
+                BCOR=5mm,paper=a4,fontsize=11pt,%11pt,a4paper,%
+                ngerman,american,%
+                ]{scrreprt}
+
+% \usepackage[english, french]{babel}
+
+
+\input{classicthesis-config}
+
+%*******************************************************
+% Page number always in the footer.
+% Chapter name or section name in the header.
+%*******************************************************
+% https://tex.stackexchange.com/questions/70610/how-to-customize-the-page-header-and-the-page-number-of-classicthesis
+\clearscrheadfoot
+\ohead{\rightmark}  % comment this line and uncomment the next
+                    % to switch to `chapter name` in the heading
+%\ohead{\leftmark}  % comment out to 
+
+\cfoot[\pagemark]{\pagemark}
+    \cfoot[\pagemark{}]% for pagestyle `scrplain`
+     {\pagemark{}}% for pagestyle `scrheading`
+
+\renewcommand{\sectionmark}[1]{\markright{\spacedlowsmallcaps{#1}}}
+% Remove section number from heading
+
+
+%*******************************************************
+% My libraries
+%*******************************************************
+\usepackage{amssymb, amsthm}
+\usepackage{cancel} % bar to erase in proof tree
+\usepackage{tikz}
+\usepackage{fdsymbol}
+\usepackage{wasysym}
+\usepackage{stmaryrd} % rrbracket
+\usepackage{multirow} % multicolumn in table
+\usepackage{annotate-equations}
+\usepackage{ebproof}
+\usepackage[capitalize,nameinlink,noabbrev]{cleveref}
+\usepackage{lineno}
+\usepackage{caption} % code env for long listing
+\usepackage{tikz-cd}
+\usepackage{quiver}
+\usetikzlibrary{cd, positioning}
+\usepackage{mathtools}
+\usepackage{pgfplots}
+
+
+%*******************************************************
+% My config
+%*******************************************************
+\input{commands}
+\input{lst-cfg}
+
+
+
+%*******************************************************
+% Bibliographies
+%*******************************************************
+\addbibresource{Bibliography.bib}
+\addbibresource[label=ownpubs]{AMiede_Publications.bib}
+
+
+% ******************************************************
+% Main
+%*******************************************************
+\begin{document}
+\frenchspacing
+\raggedbottom
+\selectlanguage{american}
+
+\pagenumbering{roman}
+\pagestyle{plain}
+
+
+%*******************************************************
+% Frontmatter
+%*******************************************************
+\include{FrontBackmatter/DirtyTitlepage}
+\include{FrontBackmatter/Titlepage}
+\include{FrontBackmatter/Titleback}
+\cleardoublepage\include{FrontBackmatter/Dedication}
+%\cleardoublepage\include{FrontBackmatter/Foreword}
+\cleardoublepage\include{FrontBackmatter/Abstract}
+\cleardoublepage\include{FrontBackmatter/Publications}
+\cleardoublepage\include{FrontBackmatter/Acknowledgments}
+\pagestyle{scrheadings}
+\cleardoublepage\include{FrontBackmatter/Contents}
+
+
+
+%*******************************************************
+% Mainmatter
+%*******************************************************
+\cleardoublepage\pagenumbering{arabic}
+
+\cleardoublepage
+
+\part{Some Kind of Manual}
+
+\include{Chapters/Chapter01}
+\cleardoublepage
+\ctparttext{You can put some informational part preamble text here. 
+Illo principalmente su nos. Non message \emph{occidental} angloromanic
+da. Debitas effortio simplificate sia se, auxiliar summarios da que,
+se avantiate publicationes via. Pan in terra summarios, capital
+interlingua se que. Al via multo esser specimen, campo responder que
+da. Le usate medical addresses pro, europa origine sanctificate nos se.}
+
+\part{The Showcase}
+
+\include{Chapters/Chapter02}
+%\addtocontents{toc}{\protect\clearpage} % <--- just debug stuff, ignore
+\include{Chapters/Chapter03}
+%\include{multiToC} % <--- just debug stuff, ignore for your documents
+
+
+
+% ******************************************************
+% Backmatter
+%*******************************************************
+\appendix
+%\renewcommand{\thechapter}{\alph{chapter}}
+\cleardoublepage
+\part{Appendix}
+\include{Chapters/Chapter0A}
+%*******************************************************
+% Other Stuff in the Back
+%*******************************************************
+\cleardoublepage\include{FrontBackmatter/Bibliography}
+\cleardoublepage\include{FrontBackmatter/Declaration}
+\cleardoublepage\include{FrontBackmatter/Colophon}
+% ******************************************************
+
+
+\end{document}
+% ********************************************************************

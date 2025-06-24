@@ -1,0 +1,163 @@
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}[section]
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{proposition}{Proposition}
+\newtheorem{corollary}{Corollary}[theorem]
+\newtheorem{lemma}{Lemma}
+\newtheorem*{notation}{Notation}
+\newtheorem{example}{Example}
+
+\theoremstyle{remark}
+\newtheorem{remark}{Remark}
+
+%******************************************************************
+% Lambdapi syntax unicode
+%******************************************************************
+
+
+\DeclareUnicodeCharacter{03C0}{\texttt{Prf}}
+\DeclareUnicodeCharacter{27F9}{$\Rightarrow$}
+\DeclareUnicodeCharacter{2254}{$\coloneqq$}
+\DeclareUnicodeCharacter{2091}{$_e$}
+\DeclareUnicodeCharacter{22A5}{$\bot$}
+\DeclareUnicodeCharacter{25A9}{$\blacksquare$}
+\DeclareUnicodeCharacter{0307}{$^{\bullet}$}
+\DeclareUnicodeCharacter{27C7}{$\veedot$}
+\DeclareUnicodeCharacter{2228}{$\lor$}
+\DeclareUnicodeCharacter{1D9C}{$^c$}
+\DeclareUnicodeCharacter{1D62}{$_i$}
+\DeclareUnicodeCharacter{2081}{$_1$}
+\DeclareUnicodeCharacter{2097}{$_l$}
+\DeclareUnicodeCharacter{1D63}{$_r$}
+\DeclareUnicodeCharacter{21AA}{$\hookrightarrow$}
+\DeclareUnicodeCharacter{03C4}{\textcolor{blue}{\texttt{El}}}
+\DeclareUnicodeCharacter{2115}{$\mathbb{N}$}
+\DeclareUnicodeCharacter{03A0}{$\Pi$}
+\DeclareUnicodeCharacter{2227}{$\land$}
+\DeclareUnicodeCharacter{21D2}{$\Rightarrow$}
+\DeclareUnicodeCharacter{2200}{$\forall$}
+\DeclareUnicodeCharacter{2933}{$\leadsto$}
+\DeclareUnicodeCharacter{2203}{$\exists$}
+\DeclareUnicodeCharacter{03F5}{$\epsilon$}
+\DeclareUnicodeCharacter{21D4}{$\Leftrightarrow$}
+\DeclareUnicodeCharacter{22A4}{$\top$}
+\DeclareUnicodeCharacter{2250}{$\doteq$}
+\DeclareUnicodeCharacter{25A1}{$\square$}
+\DeclareUnicodeCharacter{2082}{$_2$}
+\definecolor{SmtBlue}{HTML}{00007f}
+\definecolor{SmtGreen}{HTML}{3b7f31}
+\definecolor{SmtStepId}{HTML}{3b7f31}
+\definecolor{indexClr}{HTML}{ffcc00}
+
+\newcommand{\grNT}[1]{\textcolor{SmtGreen}{\langle\texttt{#1}\rangle}}
+\newcommand{\grT}[1]{\textcolor{SmtBlue}{\texttt{#1}}}
+\newcommand{\grRule}{=}
+\newcommand{\grOr}{|}
+\newcommand{\concat}{~+\!\!\!+~}
+
+\newcommand{\dashdfrac}[2]{%
+  {\sbox0{$\genfrac{}{}{0pt}{0}{#1}{#2}$}%
+   \vphantom{\copy0}%
+   \ooalign{%
+     \hidewidth
+     $\vcenter{\moveright\nulldelimiterspace
+       \hbox to\wd0{%
+         \xleaders\hbox{\kern.5pt\vrule height 0.7pt width 1.5pt\kern.5pt}\hfill
+         \kern-1.5pt
+       }%
+     }$
+     \hidewidth\cr
+   \box0\cr}}%
+}
+
+% Display Appendix instead of Section when using cref
+\AtBeginEnvironment{appendices}{\crefalias{section}{appendix}}
+
+%******************************************************************
+% Lambdapi command for text
+%******************************************************************
+
+\newcommand\textAlethe[1]{\texttt{#1}}
+\newcommand\C[1]{\mathcal{C}(#1)}
+\newcommand\D[1]{\mathcal{D}(#1)}
+\newcommand\F[1]{\mathcal{F}(#1)}
+\newcommand\E[1]{\mathcal{E}(#1)}
+\newcommand\Sort[1]{\mathcal{S}(#1)}
+\newcommand\equivL{\equiv_{\beta\Sigma}}
+\newcommand\pid{\textcolor{purple}{\texttt{\upshape{Prf}}^\bullet}}
+\newcommand\pic{\textcolor{purple}{\texttt{\upshape{Prf}}^c}}
+
+\newcommand\nil{\blacksquare}
+
+\newcommand\lpm{\lambda\Pi/\mathop{\equiv}}
+\newcommand\pre{\Sigma_{pre}}
+\newcommand\prf{\textcolor{purple}{\texttt{\upshape{Prf}}}}
+\newcommand\prop{\textcolor{blue}{\texttt{\upshape{Prop}}}}
+\newcommand\el{\textcolor{purple}{\texttt{\upshape{El}}}}
+\newcommand\set{\textcolor{blue}{\texttt{\upshape{Set}}}}
+\newcommand\type{\textcolor{orange}{\texttt{\upshape{TYPE}}}}
+\newcommand\kind{\textcolor{YellowOrange}{\texttt{KIND}}}
+\let\ra\rightarrow
+\let\lra\longrightarrow
+\let\re\hookrightarrow
+\newcommand\pp{ \ensuremath{ {+}\!{+} } }
+\newcommand\cpl[1]{\mathbin{{ }^{#1}{\longleftarrow}}}
+\newcommand\cpr[1]{\longrightarrow^{#1}}
+\newcommand\cprf[5]{(#1 \cpl{(#2)} #3 \cpr{(#4)} #5)}
+\newcommand\stepac[1]{\lra_{(#1)}^{AC}}
+% arrows
+\newcommand\RAC{\longrightarrow_{\mathcal{R}}^{AC}}
+\newcommand\RsAC{\longrightarrow_{\mathcal{R} \slash AC}}
+\newcommand\R{\longrightarrow_{\mathcal{R}}}
+\newcommand\RRAC{\twoheadrightarrow^{AC}}
+\newcommand\Var[2]{\mathcal{V}(#1, #2)}
+\newcommand\Den[1]{ \tau(#1)}
+\newcommand\deno[1]{ \llbracket #1 \Downarrow\rrbracket_\sigma }
+\newcommand\Deno[1]{ \llbracket #1 \Downarrow\rrbracket }
+\newcommand\reify[1]{ \llbracket #1 \Uparrow\rrbracket }
+
+%******************************************************************
+% Alias
+%******************************************************************
+
+\let\eps\epsilon
+\let\cal\mathcal
+\let\bb\mathbb
+\let\cons\veedot
+
+\newcommand\kw[1]{\ensuremath{\texttt{\upshape{#1}}}}
+\newcommand\bool[0]{\kw{bool}}
+\newcommand\true[0]{\kw{true}}
+\newcommand\false[0]{\kw{false}}
+\newcommand\eqb[0]{\kw{eqb}}
+\newcommand\andb[0]{\kw{andb}}
+\newcommand\eq[0]{\kw{eq}}
+
+\newcommand\Q{\ensuremath{\mathbb{Q}}}
+\newcommand\Ring{\ensuremath{\mathbb{R}}}
+\newcommand\Z{\ensuremath{\mathbb{Z}}}
+\newcommand\N{\ensuremath{\mathbb{N}}}
+\newcommand\B{\ensuremath{\mathbb{B}}}
+\newcommand\PP{\ensuremath{\mathcal{P}}}
+
+\newcommand\hypst{\ensuremath{\Gamma: \texttt{list}~\PP}}
+\newcommand\hyps{\ensuremath{\Gamma}}
+\newcommand\mapty{\ensuremath{\sigma: \texttt{list}~\prop}}
+
+%******************************************************************
+% Critical pairs
+%******************************************************************
+
+\newcommand\cp[6][0.3\linewidth]{
+\begin{minipage}[c]{#1}
+% \centering
+\begin{tikzpicture}[scale=.9, node distance=2em]
+\node[scale=.9] (root) { \scriptsize $\overline{#2}$ };
+\node[scale=.9] (left) at ($(root.south) + (-2,-1)$) {\scriptsize $#3$};
+\node[scale=.9] (right) at ($(root.south) + (2,-1)$) {\scriptsize $#4$};
+\draw[->] (root) edge node[above, pos=0.9]{(#5)} (left.north) ;
+\draw[->] (root) edge node[above, pos=0.9]{(#6)}  (right.north) ;
+\end{tikzpicture}
+\end{minipage}
+}
