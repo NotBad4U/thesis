@@ -1,0 +1,122 @@
+%********************************************************************
+% Appendix
+%*******************************************************
+% If problems with the headers: get headings in appendix etc. right
+%\markboth{\spacedlowsmallcaps{Appendix}}{\spacedlowsmallcaps{Appendix}}
+\chapter{Appendix Test}
+
+\subsection{The Alethe Syntax}
+
+\begin{figure}[htb]%[H]
+    \[
+      \begin{array}{r c l}
+     \grNT{proof}           &\grRule & \grNT{proof\_command}^{*} \\
+     \grNT{proof\_command}  &\grRule & \textAlethe{(assume}\; \grNT{symbol}\; \grNT{proof\_term}\,\textAlethe{)} \\
+                            &\grOr   & \textAlethe{(step}\; \grNT{symbol}\; \grNT{clause}
+                                            \; \textAlethe{:rule}\; \grNT{symbol} \\
+                            &        & \quad \grNT{premises\_annotation}^{?} \\
+                            &        & \quad \grNT{context\_annotation}^{?}\;\grNT{attribute}^{*}\,\textAlethe{)} \\
+                            & \grOr  & \textAlethe{(anchor :step}\; \grNT{symbol}\;
+                                                \\
+                            &        & \quad \grNT{args\_annotation}^{?}\;\grNT{attribute}^{*}\,\textAlethe{)} \\
+                            & \grOr  & \textAlethe{(define-fun}\; \grNT{function\_def}\,\textAlethe{)} \\
+     \grNT{clause}          &\grRule & \textAlethe{(cl}\; \grNT{proof\_term}^{*}\,\textAlethe{)} \\
+     \grNT{proof\_term}     &\grRule & \grNT{term}\text{ extended with } \\
+                            &        & \textAlethe{(choice (}\, \grNT{sorted\_var}\,\textAlethe{)}\; \grNT{proof\_term}\,\textAlethe{)}  \\
+     \grNT{premises\_annotation} &\grRule & \textAlethe{:premises (}\; \grNT{symbol}^{+}\textAlethe{)} \\
+     \grNT{args\_annotation}     &\grRule & \textAlethe{:args}\,\textAlethe{(}\,\grNT{step\_arg}^{+}\,\textAlethe{)}  \\
+     \grNT{step\_arg}            &\grRule & \grNT{symbol} \grOr
+                                              \textAlethe{(}\; \grNT{symbol}\; \grNT{proof\_term}\,\textAlethe{)} \\
+     \grNT{context\_annotation}  &\grRule & \textAlethe{:args}\,\textAlethe{(}\,\grNT{context\_assignment}^{+}\,\textAlethe{)}  \\
+     \grNT{context\_assignment}  &\grRule & \textAlethe{(}    \,\grNT{sorted\_var}\,\textAlethe{)}  \\
+                                 & \grOr  & \textAlethe{(:=}\, \grNT{symbol}\;\grNT{proof\_term}\,\textAlethe{)} \\
+      \end{array}
+      \]
+      \caption{Alethe grammar}
+      \label{fig:grammar}
+\end{figure}
+
+\subsection{Confluence of the rewriting rules of integers and positive binary number}
+\label{app:confluence-int-pos}
+
+The rules presented below represent the relations $\ra_\bb{Z}$ and $\ra_\bb{P}$ encoded in the TRS\footnote{\url{http://www.lri.fr/~marche/tpdb/format.html}} format accepted by the \cite{CSI} tool.
+These rules can be used to rerun the tool in order to verify the confluence property.
+
+
+\begin{lstlisting}[language=trs, caption=Rewriting rule of $\bb{Z}$ and $\bb{P}$ in the TRS format]
+(VAR
+  a: Z
+  b: Z
+  x : P
+  q : P
+  y : P
+)
+(RULES
+  ~(Z0) -> Z0
+  ~(Zpos(p)) -> Zneg(p)
+  ~(Zneg(p)) -> Zpos(p)
+  ~(~(a)) -> a
+
+  double(Z0) -> Z0
+  double(Zpos(p)) -> Zpos(O(p))
+  double(Zneg(p)) -> Zneg(O(p))
+  
+  succ_double(Z0) -> Zpos(H)
+  succ_double(Zpos(p)) -> Zpos(I(p))
+  succ_double(Zneg(p)) -> Zneg(pos_pred_double(p))
+  
+  pred_double(Z0) -> Zneg(H)
+  pred_double(Zpos(p)) -> Zpos(pos_pred_double(p))
+  pred_double(Zneg(p)) -> Zneg(I(p))
+
+  sub(I(p), I(q)) -> double(sub(p, q))
+  sub(I(p), O(q)) -> succ_double(sub(p, q))
+  sub(I(p), H) -> Zpos(O(p))
+  sub(O(p), I(q)) -> pred_double(sub(p, q))
+  sub(O(p), O(q)) -> double(sub(p, q))
+  sub(O(p), H) -> Zpos(pos_pred_double(p))
+  sub(H, I(q)) -> Zneg(O(q))
+  sub(H, O(q)) -> Zneg(pos_pred_double(q))
+  sub(H, H) -> Z0
+
+  +(Z0,a) -> a
+  +(a,Z0) -> a
+  +(Zpos(x), Zpos(y)) -> Zpos(add(x, y))
+  +(Zpos(x), Zneg(y)) -> sub(x, y)
+  +(Zneg(x), Zpos(y)) -> sub(y, x)
+  +(Zneg(x), Zneg(y)) -> Zneg(add(x, y))
+  
+  mult(Z0, a) -> Z0
+  mult(a, Z0) -> Z0
+  mult(Zpos(x), Zpos(y)) -> Zpos(mul(x, y))
+  mult(Zpos(x), Zneg(y)) -> Zneg(mul(x, y))
+  mult(Zneg(x), Zpos(y)) -> Zneg(mul(x, y))
+  mult(Zneg(x), Zneg(y)) -> Zpos(mul(x, y))
+
+
+  succ(I(x)) -> O(succ(x))
+  succ(O(x)) -> I(x)
+  succ(H) -> O(H)
+  add(I(x), I(q)) -> O(addcarry(x, q))
+  add(I(x), O(q)) -> I(add(x, q))
+  add(O(x), I(q)) -> I(add(x, q))
+  add(O(x), O(q)) -> O(add(x, q))
+  add(x, H) -> succ(x)
+  add(H, y) -> succ(y)
+
+  addcarry(I(x), I(q)) -> I(addcarry(x, q))
+  addcarry(I(x), O(q)) -> O(addcarry(x, q))
+  addcarry(O(x), I(q)) -> O(addcarry(x, q))
+  addcarry(O(x), O(q)) -> I(add(x, q))
+  addcarry(x, H) -> add(x, O(H))
+  addcarry(H, y) -> add(O(H), y)
+  
+  pos_pred_double(I(x)) -> I(O(x))
+  pos_pred_double(O(x)) -> I(pos_pred_double(x))
+  pos_pred_double(H) -> H
+  
+  mul(I(x), y) -> add(x, O(mul(x,y)))
+  mul(O(x), y) -> O(mul(x, y))
+  mul(H, y) -> y
+)
+\end{lstlisting}

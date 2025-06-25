@@ -1,81 +1,502 @@
-% This file was created with JabRef 2.8.1.
-% Encoding: Cp1252
-
-@BOOK{bentley:1999,
-  title = {{P}rogramming {P}earls},
-  publisher = {Addison--Wesley},
-  year = {1999},
-  author = {Jon Bentley},
-  address = {Boston, MA, USA},
-  edition = {2nd}
+@INPROCEEDINGS{carcara,
+author = {Andreotti, Bruno and Lachnitt, Hanna and Barbosa, Haniel},
+title = {Carcara: An Efficient Proof Checker and Elaborator for {SMT} Proofs in the {Alethe} Format},
+year = {2023},
+isbn = {978-3-031-30822-2},
+publisher = {Springer-Verlag},
+url = {https://doi.org/10.1007/978-3-031-30823-9_19},
+doi = {10.1007/978-3-031-30823-9_19},
+booktitle = {Tools and Algorithms for the Construction and Analysis of Systems: 29th International Conference, TACAS 2023},
+pages = {367–386},
+numpages = {20},
+location = {Paris, France},
+address="Cham",
+}
+@INPROCEEDINGS{rare,
+  author={Nötzli, Andres and Barbosa, Haniel and Niemetz, Aina and Preiner, Mathias and Reynolds, Andrew and Barrett, Clark and Tinelli, Cesare},
+  booktitle={FMCAD 2022}, 
+  title={Reconstructing Fine-Grained Proofs of Rewrites Using a Domain-Specific Language}, 
+  pages={65-74},
+ year={2022},
+  doi={10.34727/2022/isbn.978-3-85448-053-2_12}
 }
 
-@BOOK{bringhurst:2002,
-  title = {{T}he {E}lements of {T}ypographic {S}tyle},
-  publisher = {Hartley \& Marks Publishers},
+@inproceedings{alethe,
+  title = {{Alethe: Towards a Generic {SMT} Proof Format (extended abstract)}},
+  author = {Schurr, Hans-J{\"o}rg and Fleury, Mathias and Barbosa, Haniel and Fontaine, Pascal},
+  pages = {49-54},
+  booktitle = {PxTP 2021},
+
+}
+
+@article{utheory,
+  TITLE = {{A modular construction of type theories}},
+  AUTHOR = {Frédéric Blanqui and Gilles Dowek and Emilie Grienenberger and Gabriel Hondet and François Thiré},
+  DOI = {10.46298/lmcs-19(1:12)2023},
+  JOURNAL = {{Logical Methods in Computer Science}},
+  VOLUME = {{Volume 19, Issue 1}},
+  YEAR = {2023},
+}
+
+@InCollection{allocator,
+  author = 	 {Stephan Merz},
+  title = 	 {The Specification Language {TLA}\textsuperscript{+}},
+  booktitle = 	 {Logics of Specification Languages},
+  pages = 	 {401--451},
+  publisher = {Springer},
+  year = 	 2008,
+  editor = 	 {Dines Bjørner and Martin C. Henson},
+  series = 	 {Monographs in Theoretical Computer Science},
+  address = 	 {Berlin-Heidelberg}
+}
+
+@misc{ewd840,
+  author =   {Stephan Merz},
+  title =    {Termination detection in a ring},
+  howpublished = {\url{https://github.com/tlaplus/Examples/tree/master/specifications/ewd840}}
+}
+
+@inproceedings{smttlaps,
+  author       = {Stephan Merz and 
+                  Hern{\'{a}}n Vanzetto},
+  title        = {Automatic Verification of {TLA}\textsuperscript{+} Proof Obligations with {SMT} Solvers},
+  booktitle    = {18th Intl. Conf. Logic for Programming, Artificial Intelligence, and Reasoning},
+  series       = {LNCS},
+  volume       = {7180},
+  pages        = {289--303},
+  publisher    = {Springer},
+  year         = {2012},
+  address =   {M{\'{e}}rida, Venezuela},
+}
+
+@InProceedings{tla-proofs,
+  author =       {Denis Cousineau and Damien Doligez and Leslie Lamport and Stephan Merz and Daniel Ricketts and Hern{\'a}n Vanzetto},
+  title = {{TLA}\textsuperscript{+} Proofs},
+  booktitle = {18th Intl. Symp. Formal Methods (FM 2012)},
+  editor = {Dimitra Giannakopoulou and Dominique M{\'e}ry},
+  year =      2012,
+  volume =    {7436},
+  series =    {LNCS},
+  publisher = {Springer},
+  pages = {`47-154},
+  address = {Paris, France},
+}
+
+@inproceedings{smtcoq,
+  TITLE = {{A Modular Integration of SAT/SMT Solvers to Coq through Proof Witnesses}},
+  AUTHOR = {Armand, Micha{\"e}l and Faure, Germain and Gr{\'e}goire, Benjamin and Keller, Chantal and Thery, Laurent and Werner, Benjamin},
+  BOOKTITLE = {First Intl. Conf. Certified Programs and Proofs (CPP 2011)},
+  year = {2011},
+  EDITOR = {Jouannaud and Jean-Pierre and Shao and Zhong},
+address = {Lenting, Taiwan},
+  PUBLISHER = {Springer},
+  SERIES = {LNCS},
+  VOLUME = {7086},
+pages = {135-150},
+  DOI = {10.1007/978-3-642-25379-9\_12},
+}
+
+@misc{alethespec,
+	title = {The {Alethe} {Proof} {Format} {An} {Evolving} {Specification} and {Reference}},
+	shorttitle = {The {Alethe} {Proof} {Format}},
+	note = {\url{https://verit.gitlabpages.uliege.be/alethe/specification.pdf}},
+	author = {Barbosa, Haniel and Fleury, Mathias and Fontaine, Pascal and Schurr, Hans-Jörg},
+	month = mar,
+	year = {2024},
+}
+
+@article{lf,
+  title={A framework for defining logics},
+  author={Robert Harper and Furio Honsell and Gordon D. Plotkin},
+  journal={J. ACM},
+  year={1993},
+  volume={40},
+  pages={143-184},
+  url={https://api.semanticscholar.org/CorpusID:13375103}
+}
+
+@InProceedings{lambdapi,
+author="Cousineau, Denis
+and Dowek, Gilles",
+title="Embedding Pure Type Systems in the {Lambda-Pi-Calculus Modulo}",
+booktitle="Typed Lambda Calculi and Applications",
+year="2007",
+publisher="Springer",
+address="Berlin, Heidelberg",
+pages="102--117",
+}
+
+@inproceedings{dowek:hal-01101829,
+  TITLE = {{Deduction modulo theory}},
+  AUTHOR = {Dowek, Gilles},
+  URL = {https://inria.hal.science/hal-01101829},
+  BOOKTITLE = {{All about proofs. Proofs for all.}},
+  ADDRESS = {Wien, Austria},
+  YEAR = {2014},
+  MONTH = Jul,
+  PDF = {https://inria.hal.science/hal-01101829/file/wien.pdf},
+  HAL_ID = {hal-01101829},
+  HAL_VERSION = {v1},
+}
+
+@unpublished{intuitype,
+	author = {Per Martin{-}L\"{o}f},
+	title = {Intuitionistic Type Theory},
+	year = {1980}
+}
+
+@misc{dowek:classical,
+      title={On the definition of the classical connectives and quantifiers}, 
+      author={Gilles Dowek},
+      year={2016},
+      eprint={1601.01782},
+}
+
+ @article{DBLP:journals/scp/MerzV18,
+  author       = {Stephan Merz and
+                  Hern{\'{a}}n Vanzetto},
+  title        = {Encoding {TLA}\textsuperscript{+} into unsorted and many-sorted first-order
+                  logic},
+  journal      = {Sci. Comput. Program.},
+  volume       = {158},
+  pages        = {3--20},
+  year         = {2018},
+  url          = {https://doi.org/10.1016/j.scico.2017.09.004},
+  doi          = {10.1016/J.SCICO.2017.09.004},
+}
+
+@inproceedings{ABZrosalie,
+  author       = {Rosalie Defourn{\'{e}}},
+  title        = {Encoding {TLA}\textsuperscript{+} Proof Obligations Safely for {SMT}},
+  booktitle    = {9th Intl. Conf. Rigorous State-Based Methods (ABZ 2023)},
+  address      = {Nancy, France},
+  series       = {LNCS},
+  volume       = {14010},
+  pages        = {88--106},
+  publisher    = {Springer},
+  year         = {2023},
+}
+
+
+@inproceedings{coqhammer2,
+  author =	{Czajka, Lukasz},
+  title =	{{A Shallow Embedding of Pure Type Systems into First-Order Logic}},
+  booktitle =	{22nd International Conference on Types for Proofs and Programs (TYPES 2016)},
+  pages =	{9:1--9:39},
+  series =	{Leibniz International Proceedings in Informatics (LIPIcs)},
+  ISBN =	{978-3-95977-065-1},
+  ISSN =	{1868-8969},
+  year =	{2018},
+  volume =	{97},
+  annote =	{Keywords: pure type systems, first-order logic, hammers, proof automation, dependent type theory}
+}
+
+
+@article{coqhammer1,
+author={Czajka, {\L}ukasz
+and Kaliszyk, Cezary},
+title={Hammer for {Coq}: Automation for Dependent Type Theory},
+journal={Journal of Automated Reasoning},
+year={2018},
+month={Jun},
+day={01},
+volume={61},
+number={1},
+pages={423-453},
+}
+
+@inproceedings{isabelle1,
+author="Schurr, Hans-J{\"o}rg
+and Fleury, Mathias
+and Desharnais, Martin",
+editor="Platzer, Andr{\'e}
+and Sutcliffe, Geoff",
+title="Reliable Reconstruction of Fine-grained Proofs in a Proof Assistant",
+booktitle="Automated Deduction -- CADE 28",
+year="2021",
+publisher="Springer International Publishing",
+address="Cham",
+pages="450--467",
+}
+
+@article{isabelle2,
+author={Barbosa, Haniel
+and Blanchette, Jasmin Christian
+and Fleury, Mathias
+and Fontaine, Pascal},
+title={Scalable Fine-Grained Proofs for Formula Processing},
+journal={Journal of Automated Reasoning},
+year={2020},
+month={Mar},
+day={01},
+volume={64},
+number={3},
+pages={485-510},
+}
+
+@inproceedings{Sledgehammer,
+author="Blanchette, Jasmin Christian
+and B{\"o}hme, Sascha
+and Paulson, Lawrence C.",
+editor={Nikolaj S. Bj{\o}rner and Viorica Sofronie-Stokkermans},
+title="Extending {Sledgehammer} with {SMT} Solvers",
+booktitle="23rd Intl. Conf. Automated Deduction (CADE-23)",
+address="Wroclaw, Poland",
+year="2011",
+publisher="Springer",
+series="LNCS",
+volume="6803",
+pages="116-130",
+}
+
+@techreport{smtlib,
+  author =	 {Clark Barrett and Pascal Fontaine and Cesare Tinelli},
+  title =	 {{The SMT-LIB Standard: Version 2.6}},
+  institution =	 {Department of Computer Science, The University of Iowa},
+  year =	 {2017--2024},
+  note =	 {Available at {\tt www.SMT-LIB.org}},
+  URL = {https://smt-lib.org/papers/smt-lib-reference-v2.6-r2024-09-20.pdf}
+}
+
+@InProceedings{z3recon,
+author="B{\"o}hme, Sascha and Weber, Tjark",
+editor = "Matt Kaufmann and Lawrence C. Paulson",
+title="Fast {LCF}-Style Proof Reconstruction for {Z3}",
+booktitle="First Intl. Conf. Interactive Theorem Proving (ITP 2010)",
+year="2010",
+publisher="Springer",
+series = "LNCS",
+volume = "6172",
+pages = "179-194",
+address="Berlin, Heidelberg",
+}
+
+@inproceedings{micromega,
+author="Besson, Fr{\'e}d{\'e}ric",
+title="Fast Reflexive Arithmetic Tactics the Linear Case and Beyond",
+booktitle="Intl. Workshop Types for Proofs and Programs (TYPES 2006)",
+year="2006",
+publisher="Springer",
+editor = "Thorsten Altenkirch and Conor McBride",
+series = "LNCS",
+pages = "48-62",
+address="Berlin, Heidelberg",
+}
+
+@inproceedings{zenonmodulo,
+  title = {{Zenon Modulo: When Achilles Outruns the Tortoise using Deduction Modulo}},
+  author = {Delahaye, David and Doligez, Damien and Gilbert, Fr{\'e}d{\'e}ric and Halmagrand, Pierre and Hermant, Olivier},
+  booktitle = {{LPAR - Logic for Programming Artificial Intelligence and Reasoning - 2013}},
+  publisher = {{Springer}},
+  series = {LNCS},
+  volume = {8312},
+  pages = {274-290},
   year = {2013},
-  author = {Robert Bringhurst},
-  series = {Version 4.0: 20th Anniversary Edition},
-  address = {Point Roberts, WA, USA}
+  doi = {10.1007/978-3-642-45221-5\_20},
+  address="Berlin, Heidelberg",
 }
 
-@BOOK{cormen:2001,
-  title = {{I}ntroduction to {A}lgorithms},
-  publisher = {The MIT Press},
-  year = {2009},
-  author = {Cormen, Thomas H. and Leiserson, Charles E. and Rivest, Ronald L.
-	and Clifford Stein},
-  address = {Cambridge, MA, USA},
-  edition = {3rd}
+@InProceedings{blanqui:LIPIcs.FSCD.2020.13,
+  author =	{Blanqui, Fr\'{e}d\'{e}ric},
+  title =	{{Type Safety of Rewrite Rules in Dependent Types}},
+  booktitle =	{5th International Conference on Formal Structures for Computation and Deduction (FSCD 2020)},
+  pages =	{13:1--13:14},
+  series =	{Leibniz International Proceedings in Informatics (LIPIcs)},
+  year =	{2020},
+  volume =	{167},
 }
 
-@BOOK{dueck:trio,
-  title = {{D}ueck's {T}rilogie: {O}mnisophie -- {S}upramanie -- {T}opothesie},
-  publisher = {Springer, Berlin, Germany},
-  year = {2005},
-  author = {Gunter Dueck},
-  note = {\url{http://www.omnisophie.com}}
+@InProceedings{blanqui:LPAR,
+  author =	{Blanqui, Fr\'{e}d\'{e}ric},
+  title =	{{Translating HOL-Light proofs to Coq}},
+  booktitle = {25rd Intl. Conf. Logic for Programming, Artificial Intelligence and Reasoning (LPAR-25)},
+  year =	{2024},
+address = "Mauritius",
+publisher = "EPiC Series in Computing",
+pages = "18 pages",
 }
 
-@ARTICLE{knuth:1976,
-  author = {Knuth, Donald E.},
-  title = {{B}ig {O}micron and {B}ig {O}mega and {B}ig {T}heta},
-  journal = {SIGACT News},
-  year = {1976},
-  volume = {8},
-  pages = {18--24},
-  number = {2},
-  address = {New York, NY, USA},
-  publisher = {ACM Press}
+@inproceedings{CSI,
+  author       = {Harald Zankl and Bertram Felgenhauer and Aart Middeldorp},
+  editor       = {Nikolaj S. Bj{\o}rner and Viorica Sofronie{-}Stokkermans},
+  title        = {{CSI} - {A} Confluence Tool},
+  booktitle    = {23rd Intl. Conf. Automated Deduction (CADE-23)},
+  address      = {Wroclaw, Poland},
+  series       = {LNCS},
+  volume       = {6803},
+  pages        = {499--505},
+  publisher    = {Springer},
+  year         = {2011},
 }
 
-@ARTICLE{knuth:1974,
-  author = {Knuth, Donald E.},
-  title = {{C}omputer {P}rogramming as an {A}rt},
-  journal = {Communications of the ACM},
-  year = {1974},
-  volume = {17},
-  pages = {667--673},
-  number = {12},
-  address = {New York, NY, USA},
-  publisher = {ACM Press}
+@article{bugsmt,
+author = {Brummayer, Robert and Biere, Armin},
+title = {Fuzzing and delta-debugging {SMT} solvers},
+year = {2009},
+booktitle = {Proceedings of the 7th International Workshop on Satisfiability Modulo Theories},
+series = {SMT '09}
 }
 
-@BOOK{sommerville:1992,
-  title = {{S}oftware {E}ngineering},
+@article{acmsmt,
+author = {Barbosa, Haniel and Barrett, Clark and Cook, Byron and Dutertre, Bruno and Kremer, Gereon and Lachnitt, Hanna and Niemetz, Aina and N\"{o}tzli, Andres and Ozdemir, Alex and Preiner, Mathias and Reynolds, Andrew and Tinelli, Cesare and Zohar, Yoni},
+title = {Generating and Exploiting Automated Reasoning Proof Certificates},
+year = {2023},
+issue_date = {October 2023},
+publisher = {Association for Computing Machinery},
+volume = {66},
+number = {10},
+abstract = {Moving toward a full suite of proof-producing automated reasoning tools with SMT solvers that can produce full, independently checkable proofs for real-world problems.},
+}
+
+@inproceedings{barbosa2022flexible,
+  title={Flexible proof production in an industrial-strength {SMT} solver},
+  author={Barbosa, Haniel and Reynolds, Andrew and Kremer, Gereon and Lachnitt, Hanna and Niemetz, Aina and N{\"o}tzli, Andres and Ozdemir, Alex and Preiner, Mathias and Viswanathan, Arjun and Viteri, Scott and others},
+  booktitle={International Joint Conference on Automated Reasoning},
+  pages={15--35},
+  year={2022},
+  organization={Springer International Publishing Cham}
+}
+
+@InProceedings{hondet_et_al:LIPIcs.FSCD.2020.35,
+  author =	{Hondet, Gabriel and Blanqui, Fr\'{e}d\'{e}ric},
+  title =	{{The New Rewriting Engine of Dedukti}},
+  booktitle =	{5th International Conference on Formal Structures for Computation and Deduction (FSCD 2020)},
+  pages =	{35:1--35:16},
+  series =	{Leibniz International Proceedings in Informatics (LIPIcs)},
+  year =	{2020},
+  volume =	{167},
+  publisher =	{Schloss Dagstuhl -- Leibniz-Zentrum f{\"u}r Informatik},
+  address = {Paris, France},
+}
+
+@book{lamport:specifying,
+  author    = {Leslie Lamport},
+  title     = {Specifying Systems},
   publisher = {Addison-Wesley},
-  year = {2015},
-  author = {Ian Sommerville},
-  address = {Boston, MA, USA},
-  edition = {10th}
+  year      = 2002,
+  address   = {Boston, Mass.}
 }
 
-@BOOK{taleb:2012,
-  title = {{A}ntifragile: {T}hings {T}hat {G}ain from {D}isorder ({I}ncerto
-	{B}ook 3)},
-  publisher = {Random House},
-  year = {2012},
-  author = {Nassim Nicholas Taleb},
-  address = {New York, NY, USA}
+@INPROCEEDINGS{reflected_origin,
+  author={Allen, S.F. and Constable, R.L. and Howe, D.J. and Aitken, W.E.},
+  booktitle={Fifth Annual IEEE Symp. Logic in Computer Science (LICS 1990)}, 
+  title={The semantics of reflected proof}, 
+  year={1990},
+  pages={95-105},
 }
 
+@inproceedings{ColtellacciMD24,
+  author       = {Alessio Coltellacci and
+                  Stephan Merz and
+                  Gilles Dowek},
+  title        = {Reconstruction of {SMT} Proofs with {Lambdapi}},
+  booktitle    = {Proc. 22nd Intl. Wsh. Satisfiability Modulo
+                  Theories co-located with the 36th Intl. Conf. Computer
+                  Aided Verification ({CAV} 2024)},
+  address      = {Montreal, Canada},
+  series       = {{CEUR} Workshop Proceedings},
+  volume       = {3725},
+  pages        = {13--23},
+  publisher    = {CEUR-WS.org},
+  year         = {2024},
+}
+
+@InProceedings{univAC,
+  author =	{Blanqui, Fr\'{e}d\'{e}ric},
+  title =	{{Encoding Type Universes Without Using Matching Modulo Associativity and Commutativity}},
+  booktitle =	{7th International Conference on Formal Structures for Computation and Deduction (FSCD 2022)},
+  pages =	{24:1--24:14},
+  series =	{Leibniz International Proceedings in Informatics (LIPIcs)},
+  year =	{2022},
+  volume =	{228},
+  editor =	{Felty, Amy P.},
+}
+
+@InProceedings{ACorigin,
+author="Blanqui, Fr{\'e}d{\'e}ric
+and Hardin, Th{\'e}r{\`e}se
+and Weis, Pierre",
+editor="De Nicola, Rocco",
+title="On the Implementation of Construction Functions for Non-free Concrete Data Types",
+booktitle="Programming Languages and Systems",
+year="2007",
+publisher="Springer Berlin Heidelberg",
+pages="95--109",
+address="Berlin, Heidelberg",
+}
+
+@book{farkas,
+  title={Fundamentals of convex analysis},
+  author={Hiriart-Urruty, Jean-Baptiste and Lemar{\'e}chal, Claude},
+  year={2004},
+  publisher={Springer Science \& Business Media}
+}
+
+@inproceedings{ring-Boutin,
+  author       = {Samuel Boutin},
+  editor       = {Mart{\'{\i}}n Abadi and
+                  Takayasu Ito},
+  title        = {Using reflection to build efficient and certified decision procedures.},
+  booktitle    = {Theoretical Aspects of Computer Software, Third International Symposium,
+                  {TACS} '97, Sendai, Japan, September 23-26, 1997, Proceedings},
+  series       = {Lecture Notes in Computer Science},
+  publisher    = {Springer},
+  year         = {1997},
+  address="Berlin, Heidelberg",
+}
+
+@inproceedings{RingRight,
+  author       = {Benjamin Gr{\'{e}}goire and Assia Mahboubi},
+  title        = {Proving Equalities in a Commutative Ring Done Right in {Coq}},
+  booktitle    = {18th Intl. Conf. Theorem Proving in Higher Order Logics (TPHOLs 2005)},
+  address      = {Oxford, UK},
+  series       = {LNCS},
+  volume       = {3603},
+  publisher    = {Springer},
+  year         = {2005},
+}
+
+
+@misc{canonical-trs,
+  title={A Catalogue of Canonical Term Rewriting Systems},
+  author={Jean-Marie Hullot},  
+  year={ 1980 },
+  publisher={ Defense Technical Information Center },
+  url = { https://apps.dtic.mil/sti/tr/pdf/ADA087641.pdf }
+}
+
+@inproceedings{bouton:verit,
+  author       = {Thomas Bouton and
+                  Diego Caminha Barbosa De Oliveira and
+                  David D{\'{e}}harbe and
+                  Pascal Fontaine},
+  editor       = {Renate A. Schmidt},
+  title        = {{veriT}: An Open, Trustable and Efficient {SMT}-Solver},
+  booktitle    = {22nd Intl. Conf. Automated Deduction (CADE-22)},
+  address      = {Montreal, Canada},
+  series       = {Lecture Notes in Computer Science},
+  volume       = {5663},
+  pages        = {151--156},
+  publisher    = {Springer},
+  year         = {2009},
+}
+
+@book{Baader_Nipkow_1998,
+  place = {Cambridge},
+  title = {Term Rewriting and All That},
+  publisher = {Cambridge University Press},
+  author = {Baader, Franz and Nipkow, Tobias},
+  year = {1998},
+  address = {Aachen, Germany},
+}
+
+@inproceedings{LPAR2024:Translating_HOL_Light_proofs,
+  author    = {Frédéric Blanqui},
+  title     = {Translating HOL-Light proofs to Coq},
+  booktitle = {Proceedings of 25th Conference on Logic for Programming, Artificial Intelligence and Reasoning},
+  series    = {EPiC Series in Computing},
+  volume    = {100},
+  publisher = {EasyChair},
+  pages     = {1-18},
+  year      = {2024}
+}

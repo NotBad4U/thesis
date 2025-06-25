@@ -98,9 +98,6 @@
 \newcommand\set{\textcolor{blue}{\texttt{\upshape{Set}}}}
 \newcommand\type{\textcolor{orange}{\texttt{\upshape{TYPE}}}}
 \newcommand\kind{\textcolor{YellowOrange}{\texttt{KIND}}}
-\let\ra\rightarrow
-\let\lra\longrightarrow
-\let\re\hookrightarrow
 \newcommand\pp{ \ensuremath{ {+}\!{+} } }
 \newcommand\cpl[1]{\mathbin{{ }^{#1}{\longleftarrow}}}
 \newcommand\cpr[1]{\longrightarrow^{#1}}
@@ -116,11 +113,21 @@
 \newcommand\deno[1]{ \llbracket #1 \Downarrow\rrbracket_\sigma }
 \newcommand\Deno[1]{ \llbracket #1 \Downarrow\rrbracket }
 \newcommand\reify[1]{ \llbracket #1 \Uparrow\rrbracket }
+\newcommand\ZPos{\mathop{\tt{ZPos}}}
+\newcommand\ZNeg{\mathop{\tt{ZNeg}}}
 
 %******************************************************************
 % Alias
 %******************************************************************
-
+\let\cal\mathcal
+\let\bb\mathbb
+\let\nil\blacksquare
+\let\eps\epsilon
+\let\ra\rightarrow
+\let\lra\longrightarrow
+\let\re\hookrightarrow
+\let\ctxsep\triangleright
+\let\tt\texttt
 \let\eps\epsilon
 \let\cal\mathcal
 \let\bb\mathbb
@@ -144,6 +151,27 @@
 \newcommand\hypst{\ensuremath{\Gamma: \texttt{list}~\PP}}
 \newcommand\hyps{\ensuremath{\Gamma}}
 \newcommand\mapty{\ensuremath{\sigma: \texttt{list}~\prop}}
+
+
+
+%******************************************************************
+% Reification commands
+%******************************************************************
+
+\newcommand\cst[1]{\ensuremath{(\kw{cst}~#1)}}
+\newcommand\opp[1]{\ensuremath{\kw{opp}~#1}}
+\newcommand\mul[2]{\ensuremath{\kw{mul}~#1~#2}}
+\newcommand\var[2]{\ensuremath{(\kw{var}~#1~#2)}}
+\newcommand\add[2]{\ensuremath{#1 \oplus #2}} 
+
+\newcommand\MRAC{\longrightarrow_{\mathcal{R}}^{AC*}}
+
+\newcommand\rwModAC{\longrightarrow_{\Sigma/AC}}
+\newcommand\ACcanon{\longrightarrow^{AC}_\Sigma}
+
+\newcommand\den[1]{\ensuremath{\Downarrow #1}}
+% \newcommand\reify[1]{\ensuremath{\kw{reify}~#1}}
+% \newcommand\den[1]{\ensuremath{\kw{den}~#1}}
 
 %******************************************************************
 % Critical pairs

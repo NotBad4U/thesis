@@ -4,8 +4,8 @@
 \RequirePackage{fix-cm} % fix some latex issues see: http://texdoc.net/texmf-dist/doc/latex/base/fixltx2e.pdf
 \documentclass[ twoside,openright,titlepage,numbers=noenddot,headinclude,%1headlines,% letterpaper a4paper
                 footinclude=false,cleardoublepage=empty,abstractoff, % <--- obsolete, remove (todo)
-                BCOR=5mm,paper=a4,fontsize=11pt,%11pt,a4paper,%
-                ngerman,american,%
+                BCOR=5mm,paper=a4,fontsize=12pt,%11pt,a4paper,%
+                american,%
                 ]{scrreprt}
 
 % \usepackage[english, french]{babel}
@@ -51,6 +51,10 @@
 \usetikzlibrary{cd, positioning}
 \usepackage{mathtools}
 \usepackage{pgfplots}
+\usepackage{imakeidx}
+
+\pgfplotsset{compat=1.8}
+\usepgfplotslibrary{statistics}
 
 
 %*******************************************************
@@ -60,12 +64,18 @@
 \input{lst-cfg}
 
 
-
 %*******************************************************
 % Bibliographies
 %*******************************************************
 \addbibresource{Bibliography.bib}
-\addbibresource[label=ownpubs]{AMiede_Publications.bib}
+\addbibresource[label=ownpubs]{mypub.bib}
+
+
+%*******************************************************
+% Index table
+%*******************************************************
+\makeindex[columns=1, title=Alphabetical Index, intoc]
+
 
 
 % ******************************************************
@@ -103,23 +113,21 @@
 
 \cleardoublepage
 
-\part{Some Kind of Manual}
+\part{Context}
 
-\include{Chapters/Chapter01}
-\cleardoublepage
-\ctparttext{You can put some informational part preamble text here. 
-Illo principalmente su nos. Non message \emph{occidental} angloromanic
-da. Debitas effortio simplificate sia se, auxiliar summarios da que,
-se avantiate publicationes via. Pan in terra summarios, capital
-interlingua se que. Al via multo esser specimen, campo responder que
-da. Le usate medical addresses pro, europa origine sanctificate nos se.}
+\include{Chapters/introduction}
+
+\include{Chapters/relatedWorks}
+
+\include{Chapters/lambdapi}
+
+\include{Chapters/alethe}
 
 \part{The Showcase}
 
-\include{Chapters/Chapter02}
-%\addtocontents{toc}{\protect\clearpage} % <--- just debug stuff, ignore
-\include{Chapters/Chapter03}
-%\include{multiToC} % <--- just debug stuff, ignore for your documents
+\include{Chapters/reconstruction}
+
+\include{Chapters/evaluation}
 
 
 
@@ -130,13 +138,17 @@ da. Le usate medical addresses pro, europa origine sanctificate nos se.}
 %\renewcommand{\thechapter}{\alph{chapter}}
 \cleardoublepage
 \part{Appendix}
-\include{Chapters/Chapter0A}
+\include{Chapters/appendix}
+
+
+\printindex
+
 %*******************************************************
 % Other Stuff in the Back
 %*******************************************************
 \cleardoublepage\include{FrontBackmatter/Bibliography}
 \cleardoublepage\include{FrontBackmatter/Declaration}
-\cleardoublepage\include{FrontBackmatter/Colophon}
+% \cleardoublepage\include{FrontBackmatter/Colophon}
 % ******************************************************
 
 

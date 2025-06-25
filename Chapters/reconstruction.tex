@@ -1,0 +1,1239 @@
+%*****************************************
+\chapter{Reconstructing SMT Proofs Formally}\label{ch:reconstruction}
+%*****************************************
+
+\section{Encoding the logic of SMT in Lambdapi}
+\label{sect:recon}
+
+We now describe our embedding of the logic of SMT and Alethe in Lambdapi.
+% and how we extended Carcara with a new module that can export elaborated Alethe proofs to Lambdapi. 
+Our work applies to input problems expressed in the logics \texttt{UFLIA}, \texttt{UFNIA} or their sub-logics.
+
+
+\subsection{A Prelude Encoding for Alethe}
+\label{sect:embedding}
+
+\begin{definition}[Prelude Encoding]
+\label{def:defuniv}
+The signature $\Sigma$ of our encoding contains the following definitions and rewrite rules provided by the standard library of Lambdapi that we use to encode Alethe proofs:
+\begin{align*}
+&\index{\set}: \type & &\index{\prop}: \type \\
+&\index{\el}: \set \rightarrow \type  & &\index{\prf} : \prop \rightarrow \type \\
+&\mathop{\leadsto}: \set \rightarrow \set \rightarrow \set & &o: \set \\
+&\el\,(x \leadsto y) \hookrightarrow \el\,x \rightarrow \el\,y & &\el\,o  \hookrightarrow \prop
+\end{align*}
+\end{definition}
+
+ The constants \set{} and \prop{} (lines 1 and 6) are type universes ``à la Tarski'' \cite[\S Universes]{intuitype} in $\lpm$.
+ The type \set{} represents the universe of \textit{small types}, i.e.\ a subclass of types for which we can define equality.
+ SMT sorts are represented in $\lpm$ as elements of type \set{}. Since elements of type \set{} are not types themselves, we also introduce a decoding function $\el: \set \rightarrow \type$ that interprets SMT sorts as $\lpm$ types.
+ Thus, we represent the terms of sort \texttt{Bool} of SMT by elements of type $\el{}\,o$. The constructor $\leadsto$ is used to encode SMT functions and predicates.
+
+The type \prop{} represents the universe of propositions in $\lpm$. Like \set{}, elements of type \prop{} are not types themselves but are mapped to types by the decoding function $\prf{}: \prop \rightarrow \type$. By analogy with the Curry-de-Brujin-Howard isomorphism, it embeds propositions into types, mapping each proposition $A$ to the type $\prf{}~A$ of its proofs.
+
+\subsection{Classical connectives, quantifiers and facts}
+
+Since SMT solvers are based on classical logic, we use the constructive connectives and quantifiers from the Lambdapi standard library and define the classical ones from them using the double-negation translation \cite{dowek:classical} as a definition.
+%
+\begin{align*}
+& \mathop{\pic} p \coloneqq \mathop{\prf{}} (\neg \neg p) \\
+& \mathop{=}:  \Pi {[a: \set]}, \el\, a \rightarrow \el\,a \rightarrow \prop \\
+& p \lor^c q \coloneqq  \neg \neg p \lor \neg \neg q \\
+& \forall^c \coloneqq \Pi {[a: \set]},  \Pi p: (\el\, a \ra \prop),  \forall \, x. \neg \neg  p\,x \\
+& \epsilon: \Pi {[a: \set]}, (\el\,a \ra \prop) \ra \el\,a \\
+& \epsilon_i: \Pi {[a: \set]}, \Pi (x : \el\,a), \Pi (P : \el\,a \ra \prop) \ra \pic P\,x \ra \pic P\,(\epsilon\,P) \\
+& \epsilon_{d}: \Pi {[a: \set]}, \Pi (P\,Q : \el\,a \ra \prop) \ra \Pi x : \el\,a, \pic (P\,x = Q\,x) \ra (\epsilon \, P = \epsilon \, Q)
+\end{align*}
+
+Therefore, a step in an Alethe proof trace is represented as a proposition $\pic~p$, defined as the intuitionistic proof \prf{} of the doubly negated predicate.
+Equality over small types is parameterized over types
+$\el\,a$ for the type parameter $[a : \set{}]$ (the square brackets indicate that this parameter need not be given explicitly).
+We also define classical connectives, quantifiers, and the choice operator $\epsilon$ (\cite[\S 2.1]{alethespec}) as illustrated above.
+The intended interpretation for the $\epsilon$ operator is that $\epsilon\,x,\, P~x$ denotes some $x$ satisfying the predicate $P$, if there is one.
+The characteristic proof rules for the $\epsilon$ operator are represented by
+the constants $\epsilon_i$ for proving a predicate $P\,(\epsilon\,P)$ by exhibiting a witness $x$ such that $P\,x$ is provable, and $\epsilon_d$ that asserts that the epsilon operator assigns the same witness to equivalent predicates $P$ and $Q$.
+
+We prove the law of excluded middle and add the proposition of Boolean extensionality stating that classical equivalence coincides with equality over Booleans.
+SMT logic enjoys the property of propositional completeness (also referred to as propositional degeneracy) asserting that $\forall^c A,~(A = \top) \lor^c (A = \bot)$. Moreover, propositionally equivalent formulas are equal. We thus obtain the theorems
+%
+\begin{align*}
+\texttt{classic}:\ & \Pi [p: \prop], \pic (p \lor^c \neg p) \\
+\texttt{prop\_ext}:\ & \Pi [p\,q: \prop], \pic (p \Leftrightarrow^c q ) \rightarrow \pic (p = q)
+\end{align*}
+
+
+\subsection{Functions used in the translation}
+
+We now describe how we encode input problems expressed in a given
+SMT-LIB signature \cite[\S 5.2.1]{smtlib}. In order to avoid a notational clash with the Lambdapi signature $\Sigma$, we denote the set of SMT-LIB sorts as $\Theta^\mathcal{S}$, the set of function symbols $\Theta^\cal{F}$, and the set of variables $\Theta^\cal{X}$.
+Alethe does not support the sorts \texttt{Array} and \texttt{String}. Moreover, we do not yet provide support for \texttt{Bitvector} and \texttt{Real}. Our translation is based on the following functions:
+\begin{itemize}
+\item $\cal{D}$ translates declarations of sorts and functions in $\Theta^\cal{S}$ and $\Theta^\mathcal{F}$ into constants,
+\item $\cal{S}$ maps sorts to $\Sigma$ types,
+\item $\cal{E}$ translates SMT expression to $\lpm$ terms,
+\item $\cal{C}$ translates a list of commands  $c_1 \dots c_n$ of the form $i.~\Gamma \triangleright~\varphi~(\mathcal{R}~P)[A]$ to typing judgments $\Gamma \vdash_\Sigma i := M: N$.
+\end{itemize}
+
+The remainder of this section introduces functions $\cal{D}$, $\cal{S}$, and $\cal{E}$. The function $\cal{C}$ is the core of the proof reconstruction algorithm and will be introduced in \cref{sect:translate-step}.
+
+\smallskip
+
+\begin{definition}[Function $\mathcal{D}$ translating SMT sort and function symbol declarations]
+For each sort symbol $s$ with arity $n$ in $\Theta^\cal{S}$ we create a constant $s: \set \ra \dots \ra \set$.
+For each function symbol $f~\sigma^+$ in $\Theta^\cal{F}$ we create a constant $f: \cal{S}(\sigma^+)$.
+\end{definition}
+
+\smallskip
+
+In other words, all SMT sorts used in the Alethe proof trace will be defined as constants that inhabit the type \set{} in the signature context $\Sigma$.
+For every function declared in the SMT prelude, we define a constant whose arity follows the sort declared in the SMT prelude. The translation of sorts is formally defined as follows.
+
+\smallskip
+
+\begin{definition}[Function $\mathcal{S}$ translating sorts of expression] 
+  The definition of $\mathcal{S}$(s) is as follows.
+  \begin{itemize}
+    \item Case $s = \textbf{Bool}$, then $\Sort{s} = \el\,o$,
+    \item Case $s = \textbf{Int}$, then $\Sort{s} = \el~\texttt{int}$,
+    \item Case $s = \sigma_1\,\sigma_2 \dots \sigma_n$ then $\Sort{s} = \el{} (\mathcal{S}(\sigma_1) \leadsto \dots \leadsto \mathcal{S}(\sigma_n))$,
+    \item otherwise $\Sort{s} = \el\, \mathcal{D}(s)$.
+    % where the symbol $s$ on the right-hand side denotes the Lambdapi sort introduced for the SMT sort $s$.
+  \end{itemize}
+\end{definition}
+
+\smallskip
+
+\begin{example}{Translation of the prelude in \cref{lst:smtexampleinput}.}
+\begin{lstlisting}[language=Lambdapi]
+symbol U : Set;
+symbol a : El U;
+symbol b : El U;
+symbol p : El (U ⤳ o);
+\end{lstlisting}
+\end{example}
+
+\smallskip
+
+\begin{definition}[Function $\mathcal{E}$ translating SMT expressions]
+The definition of $\E{e}$ is as follows.
+\begin{itemize}
+\setlength{\parskip}{0pt}
+\item Case e $= (p~t_1~t_2\dots~t_n)$ and $p$ a logical operator, then $\E{e} = \E{t_1}~p^c~\dots~p^c~\E{t_n}$.
+\item Case e $= (g~t_1\dots~t_n)$ with $g \in \Theta^\cal{F}$, then $\E{e} = (\mathcal{D}(g)~\E{t_1}~\dots~\E{t_n})$.
+\item Case e $= (\approx~t_1~t_2)$ then $\E{e} = (\E{t_1} = \E{t_2})$.
+\item Case e $= (Q~x_1 : \sigma_1  \dots x_n : \sigma_n ~t)$ where $Q\in \{\kw{forall}, \kw{exists}\}$, then $\E{e} = Q^c x_1: \cal{S}(\sigma_1), \dots, Q^c x_n: \cal{S}(\sigma_n), \E{t}$. 
+\item Case e $= (\kw{choice}~x : \sigma ~t)$ then $\E{e} = \epsilon~x: \cal{S}(\sigma),\, \E{t}$.
+\item Case $e = (x: \sigma )$ with $x \in \Theta^\mathcal{X}$ a sorted variable, then $\E{e} = x: \cal{S}(\sigma)$.
+\item Case $e = (\kw{ite}~c~t~e)$, then $\E{e} = \kw{ite}~\E{c}~\E{t}~\E{e}$.
+\item Case $e = (\kw{xor}~a~b)$, then $\E{e} = \kw{xor}~\E{a}~\E{b}$.
+\item Case $e = (\kw{distinct}~t_1 \dots t_n)$, then $\E{e} = \kw{distinct}~(\E{t_1} \colon\colon ...\, \colon\colon ~\E{b} \colon\colon \square)$.
+\end{itemize}
+\end{definition}
+
+The last three cases in the above definition refer to operators \kw{ite}, \kw{xor} and \kw{distinct} that we defined in the Lambdapi prelude and that represent the homonyomous SMT operators.
+The operator \kw{distinct} takes inputs of type $\kw{Vec}: \set \ra \N \ra \type$, that is, lists of size $n$. It has two constructors $\square : \kw{Vec}~a~0$ that represents the empty vector and $(\colon\colon): \Pi a : \set, \Pi\,n : \N, \el\, a \ra \kw{Vec}~a~n \ra \kw{Vec}~a~(n+1)$ that adds an element to the beginning of a vector.
+We chose this data type because the \kw{distinct\_elim} rule in Alethe \cite[(Rule 93)]{alethespec} behaves differently depending on the size and the sort of terms.
+
+\subsection{Encoding clauses}
+
+Alethe distinguishes between clauses that appear in steps, such as \colorbox{green!30}{(cl~$l_1 \dots l_n$)} in \cref{eq:step}, and ordinary disjunction \cite[\S 4]{alethespec}. The syntax for clauses uses the \textcolor{purple}{\texttt{cl}} operator, while disjunction is represented as the standard SMT-LIB \textcolor{purple}{\texttt{or}}.
+Alethe provides the \kw{or} rule for converting disjunctions into clauses:
+\[
+\begin{matrix*}[l]
+  i. & \triangleright & \varphi_1 \lor \dots \lor \varphi_n  & (\dots) \\
+  j. & \triangleright & (\texttt{\textcolor{purple}{cl}}~\varphi_1 \dots \varphi_n)  & (\kw{or}~i)[] \\
+\end{matrix*}
+\]
+
+In particular, note that the ``literals'' appearing in clauses may actually be arbitrary formulas in Alethe. We define the type $\kw{Clause}$ that encodes an Alethe clause as a list of propositions. The constructor $\veedot$ prepends an element to a list, and $\nil$ is the empty list.
+The append operator $\pp$ concatenates two lists. Logically, clauses are interpreted as disjunctions via the function $\cal{F}$ defined by rewriting rules. For convenience, we also introduce the predicate $\pic$ asserting that a clause is provable.
+
+\begin{figure}
+  \begin{align*}
+  &\texttt{Clause}: \type & &\cal{F}: \texttt{Clause} \ra \prop \\
+  &\nil: \texttt{Clause} & & \cal{F}~\nil \re \bot \\
+  &\veedot: \prop \ra \texttt{Clause}  \ra \texttt{Clause} & & \cal{F}~x \veedot y \re x \lor^c (\cal{F}~y) \\
+  & \pp: \texttt{Clause} \ra \texttt{Clause} \ra  \texttt{Clause} & &\pid (c : \texttt{Clause}) \coloneqq \pic (\cal{F}~c)  \\
+  & \nil \mathop{\pp} x \re x & & \\
+  & (x \veedot y) \mathop{\pp} z \re x \veedot (y \mathop{\pp} z) & &
+  \end{align*}
+  \caption{The \texttt{Clause} type and operations on clauses.}
+\end{figure}
+
+We can now prove the equivalence between clause and disjunction.
+
+\smallskip
+
+\begin{lemma}[Clause elimination]\label{lemma:clause-elim}
+For any $p : \prop$ and $q,r : \texttt{Clause}$, If $\pid (p \veedot q)$ and $(\pid (p \veedot \nil) \ra  \pid r)$ and $(\pid q \ra  \pid r)$
+then $\pid r$.
+\end{lemma}
+\begin{proof}
+Since the hypothesis $\pid (p \veedot q)$ is equivalent to $\pic (p \lor^c \cal{F}\,q)$, we apply the classic disjunction elimination rule.
+Then we can conclude $\pic p \ra \pic (\cal{F}\,r)$ wih the hypothesis $\pid (p \veedot \nil) \ra  \pid r$, and we can conclude $\pic (\cal{F}\,q) \ra \pic (\cal{F}\,r)$
+with the hypothesis $\pid q \ra  \pid r$.
+\end{proof}
+
+\smallskip
+
+\begin{lemma}[Concatenation is disjunction]\label{lemma:clause-equiv-disj}
+For any two clauses $a\,b$, the equivalence $\pic (\cal{F}(a~\pp~b)) \Leftrightarrow^c \pic (\cal{F}\,a \lor^c \cal{F}\,b)$ holds.
+\end{lemma}
+\begin{proof} By induction on $a$.
+  \begin{itemize}
+  \item For the base case $a = \nil$ we must show that $\pic\, (\cal{F} (\nil\, \pp \, b)) \Leftrightarrow^c \pic\, (\cal{F}\,\nil \lor^c \cal{F}\,b) $. The implication ``$\Rightarrow$'' is trivial because $\nil\,\pp\,b$ rewrites to $b$. The implication ``$\Leftarrow$'' is proved using the standard elimination rule $\lor^c_e$ for disjunction, which requires proving $\pic\,(\cal{F}\,\nil) \ra^c \pic\,(\cal{F}\,(\nil\,\pp\,b))$ as well as $\pic\,(\cal{F}\,b) \ra^c \pic\,(\cal{F}\,(\nil\,\pp\,b))$. Both proofs are immediate since $\cal{F}\,\nil$ rewrites to $\bot$ and $\nil\,\pp\,b$ rewrites to $b$.
+  \item For the case $a = h \veedot tl$ we may use the induction hypothesis $\pic\,(\cal{F}\, (tl\, \pp\, b)) \Leftrightarrow^c \pic\,(\cal{F}\,tl \lor^c \cal{F}\, b)$. The conclusion is then easy to prove based on the rewriting rules for the operators $\cal{F}$ and $\pp$, together with associativity of $\lor^c$.
+  \end{itemize}
+\end{proof}
+
+\section{Encoding of Linear Integer Arithmetic in Lambdapi}
+\label{sec:encoding}
+
+%\subsection{Encoding Integers in Lambdapi}
+
+
+\begin{figure}[t]
+\centering
+\begin{align*}\label{eq:eq1}
+&\bb{P}: \type & &\bb{Z}: \type   & &\tt{Comp}: \type & &\bb{B}: \type \\
+&|~\tt{H} : \bb{P} & &|~\tt{Z0}: \bb{Z} & &|~\tt{Eq}: \tt{Comp} & &|~\tt{true}: \bb{B} \\
+&|~\tt{O}: \bb{P} \ra \bb{P} & &|~\tt{ZPos}: \bb{P} \ra \bb{Z} & &|~\tt{Lt}: \tt{Comp} & &|~\tt{false}: \bb{B} \\
+&|~\tt{I}: \bb{P} \ra \bb{P} & &|~\tt{ZNeg}: \bb{P} \ra \bb{Z} & &|~\tt{Gt}: \tt{Comp} & &\\
+&\tt{pos}: \set & &\tt{int}: \set & &\tt{comp}: \set & &\tt{bool}: \set \\
+&\el~\tt{pos} \re \bb{P} & &\el~\tt{int} \re \bb{Z} & &\el~\tt{comp} \re \tt{Comp} & &\el~\tt{bool} \re \bb{B}
+\end{align*}
+\caption{Type definitions for binary positive number, integers, comparison and Booleans.}
+\label{fig:sorts-constructors}
+\end{figure}
+
+The definition we use of integers in Lambdapi in \cref{fig:sorts-constructors} follows a common encoding found in many other theories, including the one adopted in the Rocq standard library \cite{Rocq-refman}.
+First, the type $\bb{P}$  is an inductive type representing strictly positive integers in binary form.
+Starting from 1 (represented by the constructor \tt{H}), one can add a new least significant digit via the constructor \tt{O} (digit 0) or the constructor \tt{I} (digit 1). 
+The type $\bb{Z}$ represents integers in binary form.
+An integer is either zero (with constructor \tt{Z0}) or a strictly positive number \tt{Zpos} (coded as a $\bb{P}$) or a strictly negative number \tt{Zneg}.
+We make use of Lambdapi's \lstinline[language=Lambdapi,basicstyle=\ttfamily\footnotesize]|builtin| mechanism to enable decimal notation for numeric values, for instance, writing $2$ for $\ZPos (\mathop{\tt{O}} \tt{H})$.
+to convert natural representations of values into elements of $\bb{Z}$.
+%
+We also introduce enumeration types \tt{Comp} and $\bb{B}$ representing comparison operators and Booleans. 
+%
+To enable quantification over elements of these types, we introduce constants such as $\tt{int}: \set$ that represent codes for these types along with a rule for rewriting codes to their corresponding types, for example $\el~\tt{int} \re \bb{Z}$.
+Figure~\ref{fig:arith-ops} introduces operations on these types, including addition $(+)$ and comparison $(\doteq)$ over $\bb{Z}$. The functions \texttt{add} and \texttt{sub} implement addition and subtraction for binary positive numbers, respectively, cf. \cref{app:lambdapi-func-def}.
+We also define the operations of multiplication ($\mathbin{*}$) and subtraction ($\mathbin{-}$) over $\bb{Z}$. 
+% A detailed description of their implementation is provided in \cref{app:lambdapi-func-def}.
+The function $\texttt{cmp}: \bb{P} \to \bb{P} \to \texttt{Comp}$ performs a comparison between two binary positive numbers. 
+These operators are defined by rewriting rules that we will refer to as $\ra_\bb{Z}$ and $\ra_\bb{P}$ (for operations on $\bb{Z}$ and $\bb{P}$) in the following sections.
+The confluence of these rewriting rules has been proven using CSI \cite{CSI}, cf. \cref{app:confluence-int-pos}. 
+% A detailed proof of confluence can be found in \cref{app:confluence-int-pos}.
+We leverage these rewriting rules to perform the constant folding required by the \texttt{evaluate} rule, enabling the final proof step to be discharged by reflexivity.
+
+\begin{figure}
+\centering
+\begin{minipage}[t]{0.48\textwidth}
+\begin{align*}
+&+: \bb{Z} \ra \bb{Z} \ra \bb{Z} \\
+& \tt{Z0} + y \re y \\
+& x + \tt{Z0} \re x \\
+& (\tt{Zpos x}) + (\tt{Zpos y}) \re (\tt{Zpos}~(\tt{add}~x~y))  \\
+& (\tt{Zpos x}) + (\tt{Zneg y}) \re (\tt{sub}~x~y)  \\
+& (\tt{Zneg x}) + (\tt{Zpos y}) \re (\tt{sub}~y~x)  \\
+& (\tt{Zneg x}) + (\tt{Zneg y}) \re \tt{Zneg}~(\tt{add}~x~y)
+\end{align*}
+\hfill
+\end{minipage}
+\begin{minipage}[t]{0.48\textwidth}
+\begin{align*}
+&\doteq : \bb{Z} \ra \bb{Z} \ra \tt{Comp} \\
+& \tt{Z0} \doteq \tt{Z0} \re \tt{Eq} \\
+& \tt{Z0} \doteq \tt{Zpos}~\_ \re \tt{Lt} \\
+& \tt{Z0} \doteq \tt{Zneg}~\_ \re \tt{Gt} \\
+& \tt{Zpos}~\_ \doteq \tt{Z0} \re \tt{Gt} \\
+& \tt{Zpos}~p \doteq \tt{Zpos}~q \re \tt{cmp}~p~q \\
+& \tt{Zpos}~\_ \doteq \tt{Zneg}~\_ \re \tt{Gt} \\
+& \tt{Zneg}~\_ \doteq \tt{Z0} \re \tt{Lt} \\
+& \tt{Zneg}~\_ \doteq \tt{Zpos}~\_ \re \tt{Lt} \\
+& \tt{Zneg}~p \doteq \tt{Zneg}~q \re \tt{cmp}~q~p
+\end{align*}
+\end{minipage}
+\noindent
+\[
+\begin{array}{l@{\hspace{4em}}l@{\hspace{4em}}l}
+\begin{aligned}
+  &\tt{isEq} : \tt{Comp} \ra \bb{B} \\
+  &\tt{isEq}~\tt{Eq} \re \tt{true} \\
+  &\tt{isEq}~\tt{Lt} \re \tt{false} \\
+  &\tt{isEq}~\tt{Gt} \re \tt{false} 
+\end{aligned}
+&
+\begin{aligned}
+  &\tt{isLt} : \tt{Comp} \ra \bb{B} \\
+  &\tt{isLt}~\tt{Eq} \re \tt{false} \\
+  &\tt{isLt}~\tt{Lt} \re \tt{true} \\
+  &\tt{isLt}~\tt{Gt} \re \tt{false} \\
+\end{aligned}
+&
+\begin{aligned}
+  &\tt{isGt} : \tt{Comp} \ra \bb{B} \\
+  &\tt{isGt}~\tt{Eq} \re \tt{false} \\
+  &\tt{isGt}~\tt{Lt} \re \tt{false} \\
+  &\tt{isGt}~\tt{Gt} \re \tt{true} 
+\end{aligned}
+\end{array}
+\]
+\noindent
+\begin{align*}
+&\leq: \bb{Z} \ra \bb{Z} \ra \prop  \coloneq \lambda x,\lambda y, \neg (\tt{istrue}(\tt{isGt}(x \doteq y))) & &\tt{istrue} : \bb{B} \ra \prop \\
+&<: \bb{Z} \ra \bb{Z} \ra \prop  \coloneq \lambda x,\lambda y, (\tt{istrue}(\tt{isLt}(x \doteq y))) & &\tt{istrue}~\tt{true} \re \top \\
+&\geq: \bb{Z} \ra \bb{Z} \ra \prop  \coloneq \lambda x,\lambda y, \neg (x < y) & &\tt{istrue}~\tt{false} \re \bot \\
+&>: \bb{Z} \ra \bb{Z} \ra \prop  \coloneq \lambda x,\lambda y, \neg (x \leq y) & &
+\end{align*}
+\caption{Definitions for operators over $\bb{Z}$.}
+\label{fig:arith-ops}
+\end{figure}
+
+Finally, we define inequality operators for $\bb{Z}$ as binary predicates by reducing them to the decidable comparison $\doteq$. They reduce to $\top$, $\bot$ (or negated) by applying rules of $\ra_\bb{Z}$ and $\ra_\bb{P}$.
+For example, $1 < 2 \hookrightarrow \tt{istrue}(\tt{isLt}(1 \doteq 2)) \hookrightarrow \tt{istrue}(\tt{isLt}(\tt{Lt})) \hookrightarrow \tt{istrue}(\tt{true}) \hookrightarrow \top$, with $1 = \mathop{\tt{Zpos}} \tt{H}$ and $2 = \mathop{\tt{Zpos}} (\mathop{\tt{O}} \tt{H})$.
+
+We use this encoding of integer operations for extending the embedding of Alethe proofs in Lambdapi described in \cite{ColtellacciMD24}. In particular, the SMT sort $\textbf{Int}$ is mapped to $\el~\texttt{int}$, and the arithmetic operations of SMT to their counterparts in the Lambdapi encoding. The remainder of the paper describes how we simulate in Lambdapi the algorithm presented in \cref{sssect:la-in-alethe} for checking applications of the rule \tt{la\_generic}.
+
+
+\section{Translating Alethe steps}
+\label{sect:translate-step}
+
+We will now present how we translate steps in an Alethe trace. An Alethe proof trace is a list $c_1 \dots c_m$ of steps where every step may only refer to previous steps in its justification.
+We define the function $\cal{C}$ that translates an Alethe step of the form $i.~\Gamma~\triangleright~l_1 \dots l_n\,(R\,P)[A]$ into a constant $i: \pid (\E{l_1}\cons\dots\cons\E{l_n}\cons \nil) \coloneq M$ where $M$ is a proof term of appropriate type.
+The function $\cal{C}$ is defined by cases on the rule $R$. In the case of an \texttt{assume} command, we do not provide a proof term $M$ so $i$ is considered as an axiom. Because a step can only refer to previous steps, each step $i$ can be translated separately. Its proof term may refer to constants representing steps that precede $i$ in the trace and that must therefore have been introduced when Lambdapi checks the definition of constant~$i$.
+In the following sections, we present how different categories of rules are translated by $\cal{C}$. We will sometimes omit writing $\pid$ and $\pic$ in order to simplify the notation.
+
+\subsection{Tautologous rules and simple deduction}
+\label{ssec:elem-rules}
+
+Many Alethe rules introduce tautologies or derive their conclusion from a single premise.
+%
+These rules are primarily used for clausification and to simplify Boolean connectives during
+preprocessing.
+%
+\cref{fig:fun-c} illustrate the definition of $\cal{C}$ for the rules \kw{assume}, \kw{equiv\_pos2} and \kw{cong} from the running example of \cref{lst:smtexampleinput}.
+The definitions use the following lemmas proved in our Lambdapi encoding:
+\begin{itemize}
+\item $\kw{cong}_1 :
+    \begin{array}[t]{@{}l@{}}
+        \Pi (a\,b : \set),\ \Pi f : \el\,a \ra \el\,b,\
+        \Pi x\,x',\ \pic (x = x') \ra \pic (f\,x = f\,x'),
+    \end{array}$
+\item $\kw{equiv\_pos2} : \Pi (\varphi_1~\varphi_2: \prop),\ \pid (\neg (\varphi_1 = \varphi_2) \veedot \neg \varphi_1 \veedot \varphi_2 \veedot \nil )$,
+\item $\pid_l : \Pi [a : \set],\ \pid (a \cons \nil) \ra \pic a$.
+\end{itemize}
+
+\begin{figure}
+  \begin{tabular}{@{}l|l@{}}
+  \hline
+  \multicolumn{2}{|l|}{R = \kw{assume}} \\ \hline
+  \\
+  $i.~\Gamma~\triangleright~ \varphi \quad (R)[]$  & $i : \pid (\E{\varphi} \veedot \nil)$  \\
+  \\
+  \hline
+  \multicolumn{2}{|l|}{R = \kw{equiv\_pos2}} \\ \hline
+  \\
+  $i.~\Gamma~\triangleright~ \neg (a \approx b), \neg a, b  \quad (R)[]$  &
+  $i : \begin{array}[t]{@{}l@{}}
+          \pid (\neg (\E{a} = \E{b}) \veedot \neg \E{a} \veedot \E{a}  \veedot \nil) \\
+          \coloneq \kw{apply}~\kw{equiv\_pos2}
+       \end{array}$ \\
+  \hline
+
+  \multicolumn{2}{|l|}{R = \kw{cong}} \\ \hline
+  \\
+  $i_1 ~\quad \Gamma ~ \triangleright ~ t_1 \approx u_1 \quad (\dots) $   \\
+  $i_2 ~\quad \Gamma ~ \triangleright ~ t_2 \approx u_2 \quad (\dots) $  \\
+  \qquad \vdots  & \\
+  $i_n. \quad \Gamma ~ \triangleright ~ t_n \approx u_n \quad (\dots)$  &  \\
+  $j. ~\quad \Gamma ~ \triangleright~
+      \begin{array}[t]{@{}l@{}}
+          (f~t_1 \dots t_n) \approx (f~u_1 \dots u_n)\\
+          (R~i_1~i_2 ~..~ i_n)[]
+      \end{array}$ &
+  $j : \begin{array}[t]{@{}l@{}}
+        \pid (\E{f~t_1 \dots t_n} = \E{f~u_1 \dots u_n} \veedot \nil) \\
+        \coloneq \kw{apply}~(\kw{cong}_n~f~\pid_l(i_1) \dots \pid_l(i_n)))
+       \end{array}$
+  \end{tabular}
+  \caption{Translations for three representative Alethe commands.}
+  \label{fig:fun-c}
+\end{figure}
+
+\begin{example}
+  \cref{lst:smtexamplelambdapi} illustrates the result of our main function $\mathcal{C}$ applied to the first steps in the running example of \cref{lst:smtexampleinput}.
+  In the code below, all the \texttt{assume} commands (corresponding to the \texttt{assert}s of the input problem) are transformed into constants by~$\mathcal{C}$. A symbol without a definition is considered as an axiom.
+  Each step is encoded as an \lstinline[language=Lambdapi]{opaque symbol} that represents a lemma. Splitting the proof into multiple lemmas is beneficial for larger proofs because it reduces Lambdapi's checking time for the proof.
+\end{example}
+
+% \begin{minipage}{0.95\linewidth}
+\begin{lstlisting}[mathescape=true, caption={Trace from \cref{lst:smtexampleinput} encoded in Lambdapi.}, label={lst:smtexamplelambdapi}, language=Lambdapi]
+symbol p2 ≔ (p b); 
+symbol p4 ≔ ((p a) = (p b));
+symbol p5 ≔ (p a);
+symbol a0 : Prf$\textcolor{purple}{\smash{^\bullet}}$ (p5 ⟇ ▩);
+symbol a1 : Prf$\textcolor{purple}{\smash{^\bullet}}$ ((a = b) ⟇ ▩);
+symbol a2 : Prf$\textcolor{purple}{\smash{^\bullet}}$ ((¬ ((p b))) ⟇ ▩);
+opaque symbol t0 : Prf$\textcolor{purple}{\smash{^\bullet}}$ ((¬ ((p5 = p2))) ⟇ (¬ (p5)) ⟇ p2 ⟇ ▩) ≔
+  begin apply equiv_pos2; end;
+opaque symbol t1 : Prf$\textcolor{purple}{\smash{^\bullet}}$ (p4 ⟇ ▩) ≔
+  begin apply $\smash{\lor^c_{i1}}$; apply cong$_1$ p ($\smash{\dot{\pi}_l}$ a1); end;
+
+opaque symbol t2 : Prf$\textcolor{purple}{\smash{^\bullet}}$ (p_4 ⟇ ▩) ≔ 
+begin
+  have t0_t1 : Prf$\textcolor{purple}{\smash{^\bullet}}$ ((¬ (p_1)) ⟇ p_4 ⟇ ▩) 
+  { apply resolution t0 t1 };
+  have t0_t1_a0 : Prf$\textcolor{purple}{\smash{^\bullet}}$ (p_4 ⟇ ▩)
+  { apply resolution t0_t1 a0 };
+  refine t0_t1_a0;
+end;
+
+opaque symbol t3 : Prf$\textcolor{purple}{\smash{^\bullet}}$ ▩ ≔ 
+begin
+  have a2_t2 : Prf$\textcolor{purple}{\smash{^\bullet}}$ ▩ { apply resolution a2 t2 };
+  refine a2_t2;
+end;
+\end{lstlisting}
+% \end{minipage}
+
+
+\subsection{Resolution rule}
+\label{ssec:resolution}
+
+Binary resolution on ground clauses can be expressed as the following proof rule, which we have proved in Lambdapi.
+
+\smallskip
+
+\begin{lemma}[Resolution]\label{lemma:resolution}
+Given $a,b: \texttt{Clause}$, and a pivot $x: \prop$, $\pid (x \veedot a)$ and $\pid (\neg x \veedot b)$ imply $\pid (a \pp b)$.
+\end{lemma}
+
+\smallskip
+
+However, Alethe's \kw{resolution} rule, shown in \cref{fig:resolution-rule}, represents hyper-resolution applied to a set of ground first-order clauses $i_1 \dots i_n$,
+where the resulting clause $l_{s_1}^{r_1} \dots l_{s_m}^{r_m}$ is obtained by a chain of predicate resolution steps that remove complementary literals from the input clauses, with double negations being removed implicitly.
+For example, the formulas $\neg \neg \neg P$ and $\neg \neg P$ can serve as pivots during resolution.
+The first formula is interpreted as $\neg P$ and the second as just $P$ to perform resolution steps.
+Alethe allows resolution steps without providing the pivots; however, Carcara's elaborated proof incorporates the pivots as arguments in the resolution rule, eliminating the need for an additional intermediate step to search for the pivots in our translation to Lambdapi.
+In addition, pivots may appear anywhere in a clause rather than just as the head literal. Hence, Alethe \kw{resolution} involves reasoning modulo associativity and commutativity (AC) on clauses.
+
+In our previous work \cite{ColtellacciMD24}, we simulated Alethe's \kw{resolution} rule as compositions of multiple binary resolution steps, combined with additional proof steps for justifying reasoning modulo AC used to move pivots to the heads of clauses.
+However, the practical application of this approach suffered from inefficiency and did not allow us to reconstruct proofs of some benchmarks in SMT-LIB that involved hundreds of clauses in a single resolution.
+In the following section, we present a new approach where we prove clause permutation through proof by reflection, enabling more efficient pivot movement.
+
+%Moreover, its application requires additional proof steps to move pivots to the head of a clause, sometimes resulting in proofs of hundreds of thousands of lines. We will describe an alternative approach in the following section.
+%To overcome this problem, we now implement resolution by \emph{computational reflection} that we describe in the next section.
+
+\begin{figure}
+  \centering
+  \begin{tabular}{l c r}
+  $i_1.~\triangleright$  & \qquad $l_1^1,\, \dots,\, l_{k^1}^1$ \qquad & (\dots)  \\
+  $i_n.~\triangleright$  & \qquad $l_1^n,\, \dots,\, l_{k^n}^n$ \qquad & (\dots) \\
+    & \vdots  &  \\
+  $j.~~\triangleright$  & \qquad $l_{s_1}^{r_1},\, \dots,\, l_{s_m}^{r_m}$ \qquad & $(\kw{resolution}~i_1 \dots i_n)[]$
+  \end{tabular}
+  \caption{Resolution rule}
+  \label{fig:resolution-rule}
+\end{figure}
+
+
+\subsection{Computing hyper-resolvents}
+\label{sec:refl-reso}
+
+Whereas the technique described in \cref{ssec:resolution} can be used to reconstruct resolution proofs in Alethe proof traces, it suffers from poor scalability.
+Specifically, the permutation proof generated for pivot movement due to reasoning modulo AC may become excessively lengthy. We will now describe an alternative technique based on computational reflection that allows us to prove the permutation of clauses efficiently.
+Proof by computational reflection is a technique introduced in \cite{reflected_origin} that benefits from the internal reduction system of the proof assistant in order to reduce the size of the proof term computed and consequently speed up its checking. In Lambdapi, we can take advantage of the fact that rewriting rules are part of the internal reduction system ($\equiv_{\beta\cal{R}}$), which makes proof by reflection convenient to set up and implement.
+Relying on the rewriting facilities of Lambdapi, we implemented a decision procedure that checks equality between clauses by rewriting modulo AC-canonization.
+
+The core idea is to put clauses with pivots in different positions into a canonical form, allowing them to be compared.
+If two clauses are determined to be equal, the current clause can be substituted with one where the pivot is placed at the head position, allowing for the subsequent application of \cref{lemma:resolution}.
+To handle associative and commutative symbols, Lambdapi provides the modifiers \texttt{associative} and \texttt{commutative},
+ensuring that terms are systematically placed into a canonical form given a builtin ordering relation, following the technique described in \cite{ACorigin} and \cite[\S 5]{univAC}.
+
+Additionally, as discussed in \cref{sect:elabration-resolution}, the solver can introduce implicit $\tt{contraction}$ steps between binary resolution steps.
+We leverage the elaboration process in Carcara to avoid implementing a proof by reflection for $\tt{contraction}$, which would require structures not present in the standard library of Lambdapi to reason about collections modulo duplicate terms, such as finite sets.
+
+% FIXME
+% \begin{figure}[t]
+%   \centering
+%   \begin{tikzcd}[column sep=tiny]
+%     {\tt{P}(a) \sqcup \tt{P}(b) \sqcup \dots \sqcup \epsilon} & {\cal{C}} && {\cal{C}} & {\tt{P}(a) \sqcup \tt{P}(b) \sqcup \dots \sqcup \epsilon} \\
+%     \\
+%     {b \cons \dots \cons a \cons \dots  \cons \nil} & \kw{Clause} && \kw{Clause} & {a \cons b \cons \dots  \cons \nil}
+%     \arrow["eq", dotted, from=1-2, no head, to=1-4]
+%     % \arrow["{{\reify{\_}}}", tail reversed, no head, from=1-4, to=3-4]
+%     % \arrow["{{\reify{\_}}}"', from=3-2, to=1-2]
+%     % \arrow["{=}"{marking, allow upside down}, draw=none, from=3-2, to=3-4]
+%   \end{tikzcd}
+%   \caption{Checking resolution steps via reification in the algebra $\mathcal{C}$.}
+%   \label{fig:reflective-process}
+% \end{figure}
+
+\cref{fig:reflective-process} gives an overview of the realization of this technique in Lambdapi.
+It relies on \emph{reifying} clauses into terms of an algebra $\mathcal{C}$, using the operator $\reify{\_}$ defined in \cref{fig:reify-def}.
+The \emph{target theory} $\mathcal{C}$ has a constructor $\eps: \cal{C}$ representing $\nil$ and a constructor $\sqcup: \cal{C} \ra \cal{C} \ra \cal{C}$ declared \texttt{associative commutative}, which is the analogue of $\cons$.
+Propositions are injected into the algebra by the operator $\cal{P}: \prop \ra \cal{C}$. Thus, a \emph{reified} clause term will be put directly in a canonical form.
+In \cref{fig:reflective-process}, the canonical form is based on lexicographic ordering, whereas in Lambdapi, a fixed built-in ordering relation is used.
+
+
+\begin{figure}[b]
+\begin{align*}
+& \reify{\_}: \texttt{Clause} \ra \cal{C} \\
+&\reify{(x \cons y)} \re \reify{x} \sqcup \reify{y} \\
+&\reify{ \blacksquare } \re \epsilon \\
+&\reify{ x } \re \cal{P}(x)
+\end{align*}
+\caption{Rewrite system for the reification function}
+\label{fig:reify-def}
+\end{figure}
+
+It then remains to decide the equality of two terms in $\mathcal{C}$, and this is accomplished using the operator $=_\cal{C}$ introduced in \cref{def:eqC}.
+Its definition relies on Boolean conjunction \kw{andb}, which is predefined in Lambdapi's standard library, as well as on the operator \kw{eq} that checks equality of two terms of type $\prop$. The rewriting strategy of Lambdapi applies rules bottom-up in expressions.
+Therefore, when evaluating an expression such as $\reify{\varphi_1} =_{\mathcal{C}} \reify{\varphi_2}$, the rewrite rules of \cref{fig:reify-def} that apply to the reified clauses are applied before those defining the operator $=_{\mathcal{C}}$.
+
+\smallskip
+
+\begin{definition}[$=_\cal{C}$]
+  The operators $=_\cal{C} : \cal{C} \ra \cal{C} \ra \kw{bool}$ and $\kw{eq} : \prop \ra \prop \ra \kw{bool}$ are defined by the following rewrite rules.
+
+  \smallskip
+
+%  \begin{minipage}[t]{0.70\linewidth}
+  \(\begin{array}[t]{r@{\ \ }c@{\ \ }l}
+  x_1 \sqcup y_1 =_\cal{C} x_2 \sqcup y_2 & \re & (x_1  =_\cal{C} x_2) ~\kw{andb}~ (y_1  =_\cal{C} y_2) \\
+  \_ \sqcup \_ =_\cal{C} \epsilon & \re & \false \\
+  \_ \sqcup \_ =_\cal{C} \cal{P}(\_) & \re & \false \\
+  \cal{P}(x) =_\cal{C} \cal{P}(y) & \re & (\kw{eq}~x~y) \\
+  \cal{P}(\_) =_\cal{C} \_ \sqcup \_ & \re & \false \\
+  \cal{P}(\_) =_\cal{C} \epsilon & \re & \false \\
+  \epsilon =_\cal{C} \epsilon & \re & \true \\
+  \epsilon =_\cal{C} \cal{P}(\_) & \re & \false \\
+  \epsilon =_\cal{C} \_ \sqcup \_ & \re & \false
+  \end{array}\) \qquad
+%  \end{minipage}
+%  \begin{minipage}[t]{0.25\linewidth}
+  \(\begin{array}[t]{@{}l}
+  \eq~x~x~ \re \true \\
+  \eq~x~y~ \re \false \\
+  \end{array}\)
+%  \end{minipage}
+  \label{def:eqC}
+\end{definition}
+
+\smallskip
+
+The operator \kw{eq} is declared as \kw{sequential} so that the second rewrite rule will be applied only if the first one fails.
+Its definition ensures that $\kw{eq}~x~y$ holds if and only if the two propositions $x$ and $y$ are identical. We define below
+the operator $\tt{istrue}$ that casts Booleans into $\prop$.
+
+\smallskip
+
+\begin{align*}
+& \tt{istrue} : \el{}\,\tt{bool} \ra \prop \\
+& \tt{istrue}~\tt{true} \re \top \\
+& \tt{istrue}~\tt{false} \re \bot
+\end{align*}
+
+\smallskip
+
+\begin{lemma}[P-injective]\label{lem:p-inj}
+For any $x, y: \prop$, if $\kw{istrue}(\cal{P}(x) =_{\mathcal{C}} \cal{P}(y))$ then $x = y$.
+\begin{proof}
+From the definition of $=_{\mathcal{C}}$ that uses a non-linear sequential rewriting rule,
+it follows directly that if $\cal{P}(x) =_{\mathcal{C}} \cal{P}(y)$ is true then $x$ and $y$ have to be the same.
+% Otherwise, they are not equal and then we have a contradiction.
+\end{proof}
+\end{lemma}
+
+\smallskip
+
+\begin{theorem}[Correctness]\label{lem:eq-C}
+For $c_1, c_2 : \tt{Clause}$, if $\tt{istrue} (\reify{c_1} =_{\mathcal{C}} \reify{c_2})$ then $\cal{F}\,c_1 = \cal{F}\,c_2$.
+\end{theorem}
+\begin{proof}
+By induction on $c_1$ and $c_2$.
+\begin{itemize}
+  \item First suppose $c_1 = \blacksquare$ and $c_2 = \blacksquare$. We must show that $\tt{istrue} (\epsilon =_{\mathcal{C}} \epsilon)$ implies $\cal{F}\, \blacksquare = \cal{F}\, \blacksquare$ which follows directly by reflexivity.
+  \item Next, suppose $c_1 = \blacksquare$ and $c_2 = x \veedot xs$. Then it follows from the the rewriting rules of $=_{\mathcal{C}}$ that we have a contradiction since we supposed that $\tt{istrue}(\epsilon =_{\mathcal{C}} \cal{P}(x) \sqcup \reify{xs})$.
+  \item The case where $c_1 = x \veedot xs$ and $c_2 = \blacksquare$ is symmetrical.
+  \item Lastly, suppose $c_1 = x \veedot xs$ and $c_2 = y \veedot ys$, and
+%  By induction hypothesis we have that
+%  $\forall^c (b : \cal{C}), \tt{istrue} (\reify{xs} =_{\mathcal{C}} \reify{b}) \text{ implies that } \cal{F}\, xs = \cal{F}\, b$, and
+  assume that $\tt{istrue}(\reify{c_1} =_{\mathcal{C}} \reify{c_2})$. 
+  %We must show that $\cal{F}\, (x \veedot xs) = \cal{F}\,(y \veedot ys)$.
+  Let $d_1 = \reify{(x \veedot xs)}$ and $d_2 = \reify{(y \veedot ys)}$, then $d_1$ must be of the form 
+  $\cal{P}(u) \sqcup \reify{u'}$ and $d_2$ must be of the form $\cal{P}(v) \sqcup \reify{v'}$ where 
+  the clauses $u'$ and $v'$ are shorter than $xs$ and $ys$, respectively, and such that 
+  $\cal{F}\,(u \veedot u') = \cal{F}\,(c_1)$ and similarly
+  $\cal{F}\,(v \veedot v') = \cal{F}\,(c_2)$.
+  Moreover, from the assumption $\tt{istrue}(d_1 =_{\mathcal{C}} d_2)$ and \cref{lem:p-inj} it follows that 
+  $u = v$, and by induction hypothesis we obtain that $\cal{F}\,u' = \cal{F}\,v'$. Taking everything
+  together, we finally obtain that $\cal{F}\,c_1 = \cal{F}\,c_2$.
+%  By congruence we must show that $x = y$ and $\cal{F}\, xs = \cal{F}\, ys$. The latter follows directly from the induction hypothesis.
+%  To prove the former, we know by hypothesis $\tt{istrue}(\reify{x} =_{\mathcal{C}} \reify{y})$ and $\tt{istrue}(\reify{xs} =_{\mathcal{C}} \reify{ys})$. Thus by the hypothesis that  $\tt{istrue}(\reify{x} =_{\mathcal{C}} \reify{y})$ which is by $=_{\mathcal{C}}$ definition $\tt{istrue}(\cal{P}\,x =_{\mathcal{C}} \cal{P}\,y$ and \cref{lem:p-inj} we can directly conclude that $x = y$.
+\end{itemize}
+\end{proof}
+
+
+% \smallskip
+
+% We can establish a stronger lemma for the completeness direction, where we prove that if two clauses are equal, then they are equal by reflection.
+% We first establish some lemmas in preparation of the completeness proof.
+% \commentSM{Isn't that result entirely trivial, given that $=_{\mathcal{C}}$ is reflexive? And is it relevant for what follows?}
+
+% \smallskip
+  
+
+% \begin{lemma}\label{lem:nil-dif-cons}
+% For any $x : \prop$ and $xs: \tt{Clause}$, we have $(x \veedot xs) \neq \nil$.
+% \begin{proof}
+% We recall that $\neq$ is defined as $(p = q) \ra \bot$. Let us assume that $(x \veedot xs) = \nil$, we need to prove $\bot$.
+% We trivially have $\tt{istrue}(is\blacksquare~\nil)$, and by substitution therefore obtain
+% $\tt{istrue}(is\blacksquare~(x \veedot y))$, which implies $\bot$.
+% %By using the induction on equality $ind\_{eq}^c$ with the predicate $\forall c, \tt{istrue}(is\blacksquare~c)$,
+% %it is trivial that $\tt{istrue}(is\blacksquare~\blacksquare)$, thus we have $\tt{istrue}(is\blacksquare~(x \veedot y))$ which prove $\bot$.
+% \end{proof}
+% \end{lemma}
+
+% \begin{align*}
+%   & \tt{cl\_head} : \tt{Clause} \ra \prop & &\tt{cl\_tail} : \tt{Clause} \ra \tt{Clause}  \\
+%   & \tt{cl\_head}~\blacksquare \re \bot & &\tt{cl\_tail}~\blacksquare \re \blacksquare \\
+%   & \tt{cl\_head}~(x \veedot xs) \re x & &\tt{cl\_tail}~(x \veedot xs) \re xs
+%   \end{align*}
+
+%   \begin{lemma}\label{lem:cons-is-inj}
+%   For any $x, y : \prop$ and $xs, ys : \tt{Clause}$, if $(x \veedot xs) = (y \veedot ys)$, then $x = y$ and $xs = ys$.
+%   \begin{proof}
+%   We prove the result by congruence. Given the hypothesis $(x \veedot xs) = (y \veedot ys)$, we apply the congruence rule, first, using $\tt{cl\_head}$ to conclude that $x = y$, and then applying $\tt{cl\_tail}$ to deduce that $xs = ys$.
+%   \end{proof}
+%   \end{lemma}
+    
+
+% \smallskip
+
+% \begin{theorem}[Completeness]\label{lem:eq-C}
+% For $c_1, c_2 : \tt{Clause}$, if $c_1 = c_2$ then $\tt{istrue}(\reify{c_1} =_{\mathcal{C}} \reify{c_2})$.
+% \end{theorem}
+% \begin{proof}
+% By induction on $c_1$ and $c_2$.
+% \begin{itemize}
+%   \item For the base case when $c_1 = \blacksquare$ and $c_2 = \blacksquare$. We must show $\tt{istrue} (\epsilon =_{\mathcal{C}} \epsilon)$ which follows directly by the definitions of $=_{\mathcal{C}}$ and $\tt{istrue}$.
+%   \item Next, suppose $c_1 = \blacksquare$ and $c_2 = x \veedot xs$. We know that we have a contradiction by using the \cref{lem:nil-dif-cons}.
+%   \item Similarly, we also derive a contradiction in the cases when $c_1 = x \veedot xs$ and $c_2$ is an empty clause.
+%   \item Lastly, suppose $c_1 = x \veedot xs$ and $c_2 = y \veedot ys$. By induction hypothesis we have $\forall^c (b : \tt{Clause}), xs = b \text{ implies that } \tt{istrue} (\reify{xs} =_{\mathcal{C}} \reify{b})$,
+%   .We also assume that $x \veedot xs = y \veedot ys$. We need to show that $\tt{istrue}(\reify{x \veedot xs} = \reify{y \veedot ys})$.
+%   Using \cref{lem:cons-is-inj},  from the assumption $x \veedot xs = y \veedot ys$,  we conclude that $x = y$ and $xs = ys$. Therefore, the result follows directly.
+% \end{itemize}
+% \end{proof}
+
+\begin{example}
+The code in \cref{lst:new-reso} demonstrates how \cref{lem:eq-C} is used to move the pivot within a clause.
+It introduces a proof of clause permutation using a cut at line 8, where \cref{lem:eq-C} is used to show, by computation, that the clause of step $t1$ is a permutation of another clause with the pivot at the head.
+Line 10, the $\tt{trivial}$ is the constructor for the proposition $\top$, and it concludes the proof if the $=_{\cal{C}}$ of \cref{lem:eq-C} returns $\tt{true}$. % AC: Should we mention again that this is because (istrue true) -> True?
+Additionally, we utilize the lemma $\tt{subst\_equiv\_clause}$, which states that for any clauses $c_1$ and $c_2$, if $\cal{F}(c_1) = \cal{F}(c_2)$ and there exists a proof of $c_1$, then we can derive a proof of $c_2$.
+Thus, we combine in the $\tt{resolution}$ (line 12) this lemma with the permutation proof of $t1$ and the clause of $t2$ to derive the clause asserted by $t3$.
+
+\begin{lstlisting}[mathescape=true, caption={Reflective resolutions}, label={lst:new-reso}, language=Lambdapi]
+opaque symbol t1 : Prf$\textcolor{purple}{\smash{^\bullet}}$ (a ⟇ b ⟇ p ⟇ ▩) ≔  begin ... end;
+
+opaque symbol t2 : Prf$\textcolor{purple}{\smash{^\bullet}}$ ((¬ (p)) ⟇ c ⟇ d ⟇ ▩) ≔  begin ... end;
+
+opaque symbol t3 : Prf$\textcolor{purple}{\smash{^\bullet}}$ (a ⟇ b ⟇ c ⟇ d ⟇ ▩) ≔ 
+begin
+have t1_t2 : Prf$\textcolor{purple}{\smash{^\bullet}}$ (a  ⟇ b  ⟇ c  ⟇ d ⟇ ▩) {
+have t1_perm : Prf$\textcolor{purple}{\smash{^c}}$ (($\cal{F}$ (a ⟇ b ⟇ p ⟇ ▩)) = ($\cal{F}$ (p ⟇ a ⟇ b ⟇ ▩))) {
+  apply cl_perm_correct (a  ⟇ b  ⟇ p ⟇ ▩) (p  ⟇ a  ⟇ b ⟇ ▩);
+  apply trivial;
+};
+apply resolution (subst_equiv_clause t1_perm t1) t2;
+};
+refine t1_t2;
+end;
+\end{lstlisting}
+
+\end{example}
+
+\subsection{Simplification rules}
+
+The Alethe format provides rules to represent the usual operator-level simplifications made by the solver. For example, the rule \texttt{or\_simplify} in \cref{eqn:or-simp} simplifies disjunction by applying equivalence-preserving transformations until a fixed point is reached. The general form of the rule is:
+
+\begin{equation}\label{eqn:or-simp}
+i. \quad \Gamma~\triangleright \quad l_1 \lor \dots \lor l_n ~ \approx \psi \quad \texttt{or\_simplify}
+\end{equation}
+where $\psi$ is the transformed term. The possible transformations are:
+\begin{enumerate}
+\item[(1)] $\bot \lor \dots \lor \bot \Rightarrow \bot$
+\item[(2)] $l_1 \lor \dots \lor l_n \Rightarrow l_1' \lor \dots \lor l_m'$ where the right-hand side has some $\bot$ literals removed.
+\item[(3)]  $l_1 \lor \dots \lor l_n \Rightarrow l_1' \lor \dots \lor l_m'$ where the right-hand side has some repeated literals removed.
+\item[(4)] $l_1 \lor \dots \lor \top \lor \dots \lor l_n \Rightarrow \top$
+\item[(5)] $l_1 \lor \dots \lor l_i \lor \dots \lor l_j \lor \dots \lor  l_n \Rightarrow \top$ where $l_i = \neg^{2p} x$, $l_j = \neg^{2q+1} x$.
+\end{enumerate}
+
+Given that the solver does not explicitly indicate which transformations have been applied and in which order, rules such as \texttt{or\_simplify} are challenging to certify.
+We used the TRS confluence checker CSI \cite{CSI} to analyze the confluence the possible transformations applied by each rule and discovered that somes rules are not confluent. For example, the term $\bot = \bot$ can be simplified into both $\top$ and $\neg \bot$ with the rule \kw{equiv\_simplify}.
+
+To address this problem, we use the domain-specific language RARE \cite{rare} provided by cvc5 for defining rewrite rules.  It allows users to extend Alethe by additional rules for transforming coarse-grained simplification steps into finer-grained ones. RARE elaborates proofs for specific rewrite steps on demand based on built-in rewrite rules of cvc5. The RARE rule used and its arguments are made explicit in the \lstinline[language=SMT]{:args} parameter of the rule \kw{rare\_rewrite} in the proof trace.
+%cvc5 elaborates the proof by rendering each coarse step into fined grain with atomic rewrite.
+Although RARE is currently only supported by cvc5, its use has allowed us to increase the success rate of proof reconstruction.
+
+The example of \cref{lst:or_simp_example} illustrates how RARE transforms an Alethe proof trace into a more fine-grained proof.
+The original step \texttt{t1} uses the rule \texttt{or\_simplify} by applying twice the transformation (2).
+However, cvc5 can output instead a proof trace using RARE that indicates the rule \kw{bool-or-false} and makes the arguments explicit.
+Note that the RARE format represents an empty list as \kw{rare-list} without argument.
+
+
+
+\begin{lstlisting}[language=SMT]
+(step t1 (cl (= (or false x y false z) (x y z)))
+      :rule or_simplify)
+\end{lstlisting}
+
+\begin{center}
+$\lightning$
+\end{center}
+
+\begin{lstlisting}[language=SMT,caption={\texttt{or\_simplify} elaborated by RARE}, label={lst:or_simp_example}]
+(step t1 (cl (= (or false x y false z) (or x y false z)))
+      :rule rare_rewrite :args ("bool-or-false" rare-list
+                                   (rare-list (x y false z))))
+(step t2 (cl (= (or x false y z) (or x y z)))
+      :rule rare_rewrite :args ("bool-or-false" (rare-list x)
+                                   (rare-list (y z))))
+\end{lstlisting}
+
+In the case that cvc5 still outputs a proof trace using the original simplification rules, we reconstruct the proof by using a meta-tactic of Lambdapi, i.e.\ a tactic that takes other tactics as arguments. % - "higher-order tactic".
+Each transformation of the simplification rules is implemented by a lemma, and then tried on the goal context. In order to do that, we extended Lambdapi by adding the tactic $\kw{try}~T$ that attempts to apply the tactic $T$. If the application of $T$ fails, the error is caught and the goal is left unchanged.
+For instance, we define the case $R = \kw{not\_simplify}$ for the function $\cal{C}$ in \cref{table:not-simplify}.
+
+\begin{figure}
+  \begin{tabular}{l|l}
+  \hline
+  \multicolumn{2}{|l|}{R = \kw{not\_simplify}} \\ \hline
+  \\
+  $i. \quad \Gamma~\triangleright \quad \neg \psi \approx \varphi \quad (\kw{not\_simplify})$ & $\C{i} = \pid (\neg \E{\psi} = \E{\varphi} \cons \nil) \coloneq $ \\
+  $(1) \neg \neg \varphi \Rightarrow \varphi$ &  $\kw{try}~\kw{rewrite}~\kw{not\_simplify1};$ \\
+  $(2) \neg \bot \Rightarrow \top$  &  $\kw{try}~\kw{rewrite}~\kw{not\_simplify2};$ \\
+  $(3) \neg \top \Rightarrow \bot$  & $\kw{try}~\kw{rewrite}~\kw{not\_simplify3};$
+  \end{tabular}
+  \caption{Translating the command \kw{not\_simplify}.}
+  \label{table:not-simplify}
+\end{figure}
+
+Nevertheless, Lambdapi does not include a mechanism to repeat the application of a tactic $T$  until a fixed point is reached.
+Therefore, we can not completely support Alethe's simplification rule. For the present, a fixed number of rewrite attempts are tried.
+
+
+\subsection{Alethe subproofs}
+\label{app:subproof}
+
+Alethe uses subproofs to prove lemmas and to create and manipulate the context $\Gamma$. To prove lemmas, a subproof can introduce local assumptions.
+From an assumption $\varphi$ and a formula $\psi$ proved from $\varphi$, the subproof rule deduces the clause $\neg \varphi, \psi$ that discharges the local assumption $\varphi$.
+A subproof step cannot use a premise from a subproof nested within the current subproof. Subproofs are also used to manipulate the context.
+Alethe contexts are a general mechanism to write substitutions and to change them by attaching new elements.
+We recall that a context is a possibly empty list $x_1 \dots x_n$ where each element is either a variable or a variable-term tuple denoted $x \mapsto t$.
+
+As shown in the example of \cref{lst:subproof}, the \lstinline[language=SMT]{anchor} command indicates that a subproof will be introduced and it is concluded by a concluding rule such as \texttt{subproof},
+\texttt{bind} or \texttt{sko\_forall}. Anchors are provided with two annotations. The annotation \lstinline[language=SMT]{:step} provides the name of the step that concludes the subproof whereas the annotation \lstinline[language=SMT]{:args} provides the context as sorted variables and assignments. The example shows a proof that uses a subproof with a context to rename a bound variable.
+The subproof starts at the \lstinline[language=SMT]{anchor} command at line 1 and ends at line 5 with the \emph{bind} rule that concludes the $\alpha$-conversion proof of $z2$ to $vr4$. The sub-steps $t9.t1$ and $t9.t2$ are carried out in the context $\Gamma = \{ z2 \mapsto vr4 \}$, hence, all occurrences of $z2$ in the clauses are substituted by $vr4$, allowing in particular step \texttt{t9.t1} to succeed using rule \texttt{refl}.
+
+% \begin{minipage}{\linewidth}
+\begin{lstlisting}[language=SMT,mathescape=true, caption={Alethe subproof example.}, label={lst:subproof}]
+(anchor :step t9 :args ((vr4 U) (:= (z2 U) vr4)))
+(step t9.t1 (cl (= z2 vr4)) :rule refl)
+(step t9.t2 (cl (= (p z2) (p vr4))) :rule cong :premises (t9.t1))
+(step t9 (cl (= (forall ((z2 U)) (p z2))
+                (forall ((vr4 U)) (p vr4)))) :rule bind)
+\end{lstlisting}
+% \end{minipage}
+
+We define in \cref{table:subproof-c} the definitions of the function $\mathcal{C}$ for the \kw{subproof} and \kw{bind} commands. The translation of \kw{bind} and \kw{subproof} relies on the following lemmas that have been proved in Lambdapi.
+
+\begin{figure}
+\begin{tabular}{lr|l}
+\hline
+\multicolumn{2}{|l|}{R = \kw{subproof}} \\ \hline
+$i_1.\ \Gamma \triangleright \varphi_1$ & $(\kw{assume})$ &  \\
+$\vdots$ & & \\
+$i_n.\ \Gamma \triangleright \varphi_n $ & $ (\kw{assume})$ &  \\
+$\vdots$ & & \\
+$i_j.\ \Gamma \triangleright \psi $ & $ (\dots)$ & with $u \in 1\dots n$ \\
+$k.\ \Gamma \triangleright \neg \varphi_1, \dots, \neg \varphi_n, \psi $ & $ (\kw{subproof})$ & $\C{k} = \pid ( \neg \E{\varphi_1} \cons \dots \cons \neg \E{\varphi_n}$ \\
+& & $ \cons \E{\psi} ) \cons \nil \coloneq \kw{apply}~\kw{subproof}_n$ \\
+\hline
+\multicolumn{2}{|l|}{R = \kw{bind}} \\ \hline
+$j.\ \Gamma~\overline{y},\overline{x} \mapsto \overline{y}  \triangleright \varphi \approx \psi $ & $(\dots)$ & with $\overline{a} = a_1 \dots a_n$ and $Q \in \{\forall, \exists\}$\\
+$k.\ \Gamma \triangleright (Q~\overline{x}, \varphi) \approx (Q~\overline{y}, \psi) $ & $ (\kw{bind})$ & $\C{k} = \pid \E{Q~\overline{x}, \varphi \approx Q~\overline{y}, \psi} \cons \nil \coloneq$ \\
+& & \kw{apply}~$\lor^c_{i1}$; \kw{apply bindQ};  \\
+& & \kw{assume}~$x_j$; \kw{apply}~ $(\pid{}_l~j)$;\\
+\end{tabular}
+\caption{Translating \kw{subproof} and \kw{bind} commands.}
+\label{table:subproof-c}
+\end{figure}
+\smallskip
+
+\begin{lemma}[$\kw{subproof}_1$]\label{lem:subproof}
+For $\varphi, \psi : \prop{}$, if $\pic{} \varphi$ implies $\pic{} \psi$ then $\pid (\neg \varphi \cons \psi)$.
+\end{lemma}
+
+\smallskip
+
+\begin{lemma}[bind$\forall$]\label{lem:bind-forall}
+Given an arbitrary $a : \kw{Clause}$ and predicates $p, q : \el{}\,a \ra \prop$, if $\Pi x : \el{}\,a,~ \pic (p~x = q~x)$ then $\pic ((\forall^c x, p~x) = (\forall^c y, q~y))$.
+\end{lemma}
+
+\smallskip
+
+\begin{lemma}[bind$\exists$]\label{lem:bind-exists}
+  Given an arbitrary $a : \kw{Clause}$ and predicates $p, q : \el{}\,a \ra \prop$, if $\Pi x : \el{}\,a,~ \pic (p~x = q~x)$ then $\pic ((\exists^c x, p~x) = (\exists^c y, q~y))$.
+\end{lemma}
+
+
+\subsection{Skolemization}
+
+The skolemization rules \kw{sko\_forall} and \kw{sko\_exists} replace the bound variables with \kw{choice} terms instead of fresh symbols. Note that some functions can introduce fresh symbols in the proof trace with the command \lstinline[language=SMT]{(define-fun)}.
+Nevertheless, Carcara eliminates those commands by unfolding the definition during the elaboration process.
+Moreover, cvc5 preprocesses the input formula by converting existential quantifiers into negated universal quantifiers, thus, the proof traces we are working with only use the \kw{sko\_forall} rule.
+
+We now prove a lemma that underlies the translation of the Alethe rule \kw{sko\_forall}.
+We first prove that the universal quantifier can be interpreted by the epsilon operator in our encoding.
+
+\smallskip
+
+\begin{lemma}[Reduction of $\forall^c$ to choice]\label{lemma:eps-forall}
+For every $a : \set$ and predicate $p: \el~a \ra \prop$, $(\forall^c x, p~x) \Leftrightarrow^c p~(\epsilon\,x, \neg (p~x))$
+\end{lemma}
+\begin{proof}
+\begin{itemize}
+\item[] \textbf{``$\Rightarrow$'':} We have to prove that $\forall^c x, p~x$ implies $p(\epsilon\,x, \neg (p~x))$, which follows immediately from the hypothesis.
+\item[] \textbf{``$\Leftarrow$'':} We prove the contrapositive assertion. Assuming $\neg \forall^c x, p~x$, we obtain $\exists^c x, \neg p~x$. Combining the elimination rule for $\exists^c$ and the introduction rule $\epsilon_i$, we conclude $\neg p(\epsilon\,x, \neg (p~x))$.
+\end{itemize}
+\end{proof}
+
+We now prove the Skolemization lemma for the universal quantifier that we use to reconstruct steps using the rule \kw{sko\_forall}.
+
+\smallskip
+
+\begin{lemma}[skolemize forall]\label{lem:sko-forall}
+For any $a : \set$, predicate $p : \el{}\,a \ra \prop$ and $q : \prop$, if for every $x: \el{}\,a$, $\pic (x = (\epsilon~y, \neg (p~y)))$ implies $\pic (p~x = q)$,  we have that $\pic ((\forall^c x, p~x) = q)$.
+\end{lemma}
+\begin{proof} We apply rule \kw{prop\_ext} and then prove both directions,
+\begin{itemize}
+\item[] \textbf{``$\Rightarrow$'':} We have to prove that $\forall^c x, p~x$ implies $q$. By \cref{lemma:eps-forall}, the former is equivalent to $p~(\epsilon~\neg (p~x))$, and together with the assumption of the lemma, we obtain $q$.
+\item[] \textbf{``$\Leftarrow$'':} Conversely, we have to prove that $q$ implies $\forall^c x, p~x$. For $x$ defined as $(\epsilon~y, \neg (p~y))$, we have $p~x = q$ by assumption and thus obtain $p~(\epsilon~y, \neg (p~y))$. By \cref{lemma:eps-forall}, the latter is equivalent to $\forall^c x, p~x$.
+\end{itemize}
+\end{proof}
+
+\cref{fig:sko-forall} describes the translation of the \kw{sko\_forall} command. We use the notation $(T)^n$ to express that the tactic $T$ will be repeated $n$ times where $n$ is the number of bound variables on the left, and $x_i, H_i$ are fresh new variables in the context.
+The $H_i$ hypotheses stand for the equalities $\pic (x_i = (\epsilon\,y, \neg (p~y)))$ in \cref{lem:sko-forall}.
+
+\begin{figure}
+\begin{tabular}{l|l}
+\hline
+\multicolumn{2}{|l|}{R = \kw{sko\_forall}} \\ \hline
+  \begin{tabular}[t]{@{}l}
+    $i.$  \begin{tabular}[t]{@{}l}
+      $\Gamma, x_1 \mapsto \epsilon\,x_1. \neg \varphi \dots x_n \mapsto \epsilon\, x_n. \neg \varphi$\\
+      $\triangleright \varphi \approx \psi~(\dots)$
+    \end{tabular}\\
+    $k.$ $\Gamma \quad \forall x_1, \dots x_n.~ \varphi \approx \psi$ \qquad $(R)$
+  \end{tabular} &
+  \begin{tabular}[t]{@{}l}
+    $i: \pid (\E{\varphi} = \E{\psi} \cons \nil ) \dots $\\
+    $k: \pid (\forall^c x_1,\dots~x_n, \E{\varphi} = \E{\psi} \cons \nil) \coloneq$\\
+    begin
+    \ \ \begin{tabular}[t]{@{}l}
+          apply $\lor^c_{i1}$;\\ %
+          (\,\begin{tabular}[t]{@{}l}
+            apply \kw{sko\_forall}; assume $x_i$ $H_i$;\\
+            rewrite $H_i$;\,)$^n$
+          \end{tabular} \\
+          reflexivity;
+        \end{tabular}\\
+    end
+  \end{tabular}
+\end{tabular}
+\caption{Translating the \kw{sko\_forall} command.}
+\label{fig:sko-forall}
+\end{figure}
+
+\subsection{Builtin theory}
+\label{ssec:refl-builtin-theory}
+
+SMT solvers can produce proof traces with steps generated by an internal theory (e.g. \kw{evaluate} and \kw{TRUST\_THEORY\_REWRITE} for cvc5). The solver will then use the special rule \kw{hole}, a placeholder for proof steps that cannot be expressed with Alethe rules.
+The Carcara checker simply admits the conclusion of these rules, but here we try to reconstruct such steps using a simple internal or an external solver.
+
+The clauses derived using \kw{evaluate} are propositional and numerical constant equalities proved internally by cvc5, using constant propagation.
+
+In the case of propositions, we reconstruct the proof through an embedded proof procedure for propositional constant folding. Similarly to the approach for hyper-resolution illustrated in \cref{fig:reflective-process}, we approach this problem by reflection.
+Regarding equalities of numerical constants, we reduce the computation with the rewriting rules defined in the Lambdapi standard library.\footnote{\url{https://github.com/Deducteam/lambdapi-stdlib}}
+
+cvc5 uses the rule builtin rule \kw{TRUST\_THEORY\_REWRITE} to describe a step done by the internal theory rewriter. Since such steps may rewrite quantified propositions, they may be too complex for a constant folding solver. Instead, we reconstruct them by invoking the first-order automated theorem prover Zenon Modulo \cite{zenonmodulo}.
+This prover can output proof certificates in Lambdapi and Dedukti format that we can merge back into our reconstruction. Although Zenon modulo could in principle be used more extensively during the certification of Alethe proof traces, in order to control the complexity of proof reconstruction we restrict the usage of an external solver to the \kw{TRUST\_THEORY\_REWRITE} command.
+
+\smallskip
+
+\begin{lstlisting}[language=SMT]
+(step ti (cl (= (not true) false))
+      :rule hole :args ("evaluate"))
+(step tj (cl (= (>= 0.0 -1.0) true))
+      :rule hole :args ("evaluate"))
+\end{lstlisting}
+
+\begin{figure}
+\[ \begin{matrix*}[l]
+\cal{P}: \set & \textbf{pTrue}: \cal{P} & \textbf{pAnd}: \cal{P} \rightarrow \cal{P} \rightarrow \cal{P}  & \textbf{pOr}: \cal{P} \rightarrow \cal{P} \rightarrow \cal{P} \\
+\textbf{pFalse}: \cal{P}\quad & \textbf{pAtomic}: \mathbb{N} \rightarrow \cal{P}\quad & \textbf{pNegAtomic}: \mathbb{N} \rightarrow \cal{P}\quad & \textbf{pImpl}: \cal{P} \rightarrow \cal{P} \rightarrow \cal{P}
+\end{matrix*}\]
+\caption{An inductive type for propositional logic.}
+\label{fig:prop}
+\end{figure}
+
+We briefly describe the propositional constant folding solver; a complete description can be found in \cref{app:tauto-description}.
+Similarly to \cref{sec:refl-reso}, we start by defining the target theory that represents formulas of propositional logic in negation normal form. We declare the inductive type $\cal{P}$ with seven constructors given in \cref{fig:prop}.
+The constructors \texttt{pNegAtomic} and \texttt{pAtomic} encode uninterpreted expressions, including variables.
+The index $\mathbb{N}$ will used as an index into a context map $\sigma$ holding the corresponding expressions of type $\prop$.
+Our automation will not look into the context mapping $\sigma$, but will be able to determine if two \texttt{pAtomic} (and \texttt{pNegAtomic}) terms reference the same location and are therefore equal.
+Note that while our reification of the goal will try to reuse indices in $\sigma$ when values are repeated, we will not be able to prove that two different indices into $\sigma$ represent different values.
+We define an interpretation $\reify{\_}_\sigma$ and a reification $\deno{\_}$ function between $\prop$ and the target theory $\cal{P}$ that refer to the context map $\sigma$.
+We define the function \texttt{provable} that implements our partial decision procedure that checks if a proposition is decidably equal to \kw{true}.
+
+\smallskip
+
+\begin{theorem}[Correctness of \kw{provable}]\label{theorem:provable-sound}
+For any $g: \PP$ and context $\hypst$, if $\pic (\kw{provable}~g~\hyps = \kw{true})$
+then given a mapping $\sigma$, if the context $\pic (\deno{\kw{All}~\hyps})$ represents true propositions then $\pic (\deno{g})$ is true.
+\end{theorem}
+\begin{proof}
+  cf.\ \cref{app:tauto-description}
+\end{proof}
+
+% \begin{figure}
+% \centering
+% \begin{tikzcd}[column sep=tiny,row sep=scriptsize]
+% {\kw{provable}~\reify{goal}_\sigma =_\cal{P} \true} & {\cal{P}} \\
+% \\
+% goal : \prop & \prop
+% \arrow["{{\deno{\_}}}"', curve={height=12pt}, tail reversed, no head, from=3-2, to=1-2]
+% \arrow["{\reify{\_}_\sigma}", curve={height=-18pt}, from=3-2, to=1-2]
+% \end{tikzcd}
+% \caption{Constant folding solver.}
+% \label{fig:tautology-solver}
+% \end{figure}
+
+\begin{example}
+As an illustration of the process described in \cref{fig:tautology-solver}, let us consider a proof goal $\cal{G} \coloneq (p \land^c \top) \lor^c \bot \Leftrightarrow^c p$ and a context map $\sigma \coloneq \{ 0 \mapsto p \}$.
+Reification of $\cal{G}$ yields $\reify{\cal{G}}_\sigma = \kw{pOr}~(\kw{pAnd}~\kw{(pAtomic 0)}~\kw{})~\kw{pFalse} \Leftrightarrow^c \kw{(pAtomic 0)}$. Then by using \cref{theorem:provable-sound},
+we obtain that $\pic (\kw{provable}~\reify{\cal{G}}_\sigma = \texttt{true})$ implies the desired assertion $\pic ((p \land^c \top) \lor^c \bot \Leftrightarrow^c p)$.
+\end{example}
+
+
+\section{Reconstruction of linear arithmetic for LIA logic}
+\label{sec:lia-reconstruction}
+
+Proof by reflection \cite{reflection-origin-coq} is a technique for writing certified procedures for automated reasoning. It reduces the validity of a logical statement to a symbolic computation.
+Let $P: Z \ra \prop$ be a predicate over a data type Z and $f: Z \ra \tt{bool}$ be a function such that the following theorem holds:
+
+\begin{equation*}
+\tt{f\_correct} : \forall z: Z, (f~z = \tt{true}) \ra (P~z)
+\end{equation*}
+
+If $\mathop{f} z$ reduces to \tt{true}, then the proof term  $\tt{f\_correct}~z~(\tt{refl}~\tt{bool}~\tt{true})$ with $\tt{refl}: \Pi A: \set,\, \Pi x: \el\,A,\, \pic (x = x)$, constitutes a proof of predicate $(P~z)$. In step 6 of checking an application of rule \tt{la\_generic},
+the primary challenge lies in reasoning modulo associativity and commutativity when manipulating expressions over $\bb{Z}$.
+The key idea is to provide a normalization function that transforms a $\bb{Z}$ expression into a canonical form.
+% such that it can be reduced to a constant because variables will cancel each other, as is the case with the constant $f$ in \cref{ex:la_generic_example_red}.
+
+
+\subsection{Representation}
+\label{ssec:representation}
+
+The procedure is based on an algebraic group structure, denoted as  $\bb{G}$ defined in \cref{fig:grp}, which represents linear polynomials.
+The base type for its elements is $\bb{G}: \type$. The unary operator $\tt{cst}$ injects constants from $\bb{Z}$ into $\bb{G}$.
+The term $\tt{var}~c~x$ is intended for representing expressions $c \times x$ that appear as constituents of linear inequalities, where $c$ is an integer coefficient and $x$ a $\bb{Z}$ term, in particular a variable.
+The constructor $\tt{mul}$  represents the multiplication of an element of $\bb{G}$ by a constant. The constructor $\tt{opp}$ corresponds to unary minus.
+Lastly, the constructor $\add{}{}$ represents the addition between two elements of $\bb{G}$.
+
+Lambdapi provides modifiers %\lstinline[language=Lambdapi,basicstyle=\ttfamily\footnotesize\upshape]{associative commutative} 
+for supporting associative and commutative operations,
+ensuring that terms are systematically transformed into a canonical form w.r.t.\ a builtin ordering relation \cite{univAC,ACorigin}. We declare the operator $\add{}{}$ as \lstinline[language=Lambdapi,basicstyle=\ttfamily\footnotesize\upshape]{associative commutative},
+ensuring that expressions involving sums of elements of $\bb{G}$ are systematically canonicalized. 
+%In particular, terms of the form $\tt{var}~c~x$ for equal variables will be placed next to each other, facilitating simplification.
+
+\begin{figure}[t]
+\begin{align*}
+& \bb{G}: \type & & \reify{} : \bb{Z} \ra \bb{G} & & \den{}: \bb{G} \ra \bb{Z} \\
+&|~\add{}{}: \bb{G} \ra \bb{G} \ra \bb{G} & & \reify{\tt{Z0}} \re \cst{\tt{Z0}} & & \den{\cst{c}} \re c \\
+&|~\tt{var}: \bb{Z} \ra \bb{Z} \ra \bb{G} & & \mathop{\reify{\ZPos}} c \re \cst{(\ZPos c)} & & \den{\opp{x}} \mathrel{\re}  \mathop{\sim (\den{x})} \\
+&|~\tt{mul}: \bb{Z} \ra \bb{G} \ra \bb{G} & & \mathop{\reify{\ZNeg}} c \re \cst{(\ZNeg c)} & & \den{\mul{c}{x}} \re  c \times (\den{x}) \\
+&|~\tt{opp}: \bb{G} \ra \bb{G} & & \reify{(x + y)} \re \add{(\reify{x})}{(\reify{y})} & & \den{\add{x}{y}} \re (\den{x}) + (\den{y}) \\
+&|~\tt{cst}: \bb{Z} \ra \bb{G} & & \reify{(\sim x)} \re \opp{\reify{x}} & & \den{\var{c}{x}} \re  c \times x \\
+&\tt{grp}: \set & & \mathop{\reify{((\mathop{\ZPos} c) * x})} \re \mul{c}{(\reify{x})}  & & \\
+&\el~\tt{grp} \re \bb{G} & & \mathop{\reify{((\mathop{\ZNeg} c) * x)}} \re \mul{c}{(\reify{x})} & & \\
+& & & \mathop{\reify{(x * (\mathop{\ZPos} c))}} \re \mul{c}{(\reify{x})}  & & \\
+& & & \mathop{\reify{(x * (\mathop{\ZNeg} c))}} \re \mul{c}{(\reify{x})} & & \\
+& & & \mathop{\reify{x}} \re \var{1}{x} & &
+\end{align*}
+\caption{Definition of $\bb{G}$  Algebra and its reification ($\reify{}$) and denotation ($\den{}$) functions.}
+\label{fig:grp}
+\end{figure}
+
+\subsection{Associative Commutative Normalization}
+\label{ssec:normalization}
+
+\begin{figure}[t]
+\begin{align}
+&\add{\var{c_1}{x}}{\var{c_2}{x}} \re \var{(c_1 + c_2)}{x} \\
+&\add{\var{c_1}{x}}{(\add{\var{c_2}{x}}{y})} \re \add{\var{(c_1 + c_2)}{x}}{y} \\
+&\add{\cst{c_1}}{\cst{c_2}} \re \cst{c_1 + c_2} \\
+&\add{\cst{c_1}}{(\add{\cst{c_2}}{y})} \re \add{\cst{c_1 + c_2}}{y} \\
+&\add{\cst{0}}{x} \re x \\
+&\add{x}{\cst{0}} \re x \\
+&\opp{\var{c}{x}} \re \var{(-c)}{x} \\
+&\opp{\cst{c}} \re \cst{(-c)} \\
+&\opp{(\opp{x})} \re x \\
+&\opp{(\add{x}{y})} \re \add{(\opp{x})}{(\opp{y})} \\
+&\opp{(\mul{k}{x})} \re \mul{(-k)}{x} \\
+&\mul{k}{\var{c}{x}} \re \var{(k * c)}{x} \\
+&\mul{k}{(\opp{x})} \re \mul{(-k)}{x} \\
+&\mul{k}{(\add{x}{y})} \re \add{(\mul{k}{x})}{(\mul{k}{y})} \\
+&\mul{k}{\cst{c}} \re \cst{(k * c)} \\
+&\mul{c_1}{(\mul{c_2}{x})} \re \mul{(c_1 * c_2)}{x}
+\end{align}
+\caption{Rewrite system on canonical forms.}
+\label{fig:grp-rw}
+\end{figure}
+
+%% sm: not sure if this is important. If you think it is, it should go to the section where AC and canonicalization are introduced.
+%For \lstinline[language=Lambdapi,basicstyle=\ttfamily\footnotesize\upshape]{associative commutative} symbols, Lambdapi does not use matching modulo AC \cite{matching-mod-AC,kirchner_rsp} as this problem is NP-complete \cite{ac-modulo-np-complete}.
+The transformation to canonical form implemented in Lambdapi ensures that sum expressions of the form $\var{c_1}{x_1} \oplus \cst{k_1} \oplus \var{c_2}{x_2} \oplus \dots \oplus \cst{k_m} \oplus \dots \oplus \var{c_n}{x_n}$ will be normalized such that any pair of terms $\var{p}{x}$ and $\var{q}{x}$ involving the same variable $x$ are placed next to each other,
+and all $\cst{k_i}$ will be placed at the left before the first variable $\var{c_j}{x_j}$.
+We will use the rewriting rules shown in \cref{fig:grp-rw} for reducing $\bb{G}$ expressions. Notably, the resulting normal forms do not contain the constructors $\tt{mul}$ and $\tt{opp}$, as the associated rewrite rules eliminate them in favor of $\tt{var}, \tt{add}$ and $\tt{cst}$.
+
+\begin{definition}%[AC-canonical form]
+The $\leq$ builtin total order on $\bb{G}$-terms is defined as follows:
+Terms are ordered such that $\tt{cst}(c_1) \leq \tt{cst}(c_2) < \var{p}{x}$ for any constants $c_1, c_2$ and any variable term $\var{p}{x}$, with $c_1 \leq c_2$.
+For variable terms, $\var{p}{x} \leq \var{q}{y}$ if either $x < y$, or $x = y$ and $p \leq q$.
+Let $\twoheadrightarrow^{AC}$ be the relation mapping every term t to its unique AC-canonical form denoted $[t]$.
+\end{definition}
+
+Two terms $t$ and $u$ are AC-equivalent (written $t \simeq_{AC} u$) iff their AC-canonical forms are equal.
+
+\begin{definition}%[Rewriting modulo AC-canonization]
+The relation $\ACcanon$ is defined as $\re_\Sigma\,\twoheadrightarrow^{AC}$, where $\Sigma$ contains the rewrite rules of \cref{fig:arith-ops,fig:grp-rw}. 
+\end{definition}
+
+An $\ACcanon$ step is a standard $\re_\Sigma$ step with syntactic matching followed by AC-canonicalization. We now prove that the relation $\ACcanon$ terminates and is confluent.
+
+\begin{lemma} 
+	The relation $\mathop{\rwModAC} \mathrel{=} \mathop{\simeq_{AC} \, \re_\Sigma \, \simeq_{AC}}$ of matching modulo AC, which contains $\ACcanon$, terminates.
+\end{lemma}
+\begin{proof} 
+AProVE \cite{aprove} automatically proves the termination of $\rwModAC$. 
+\end{proof}
+
+
+\begin{lemma} 
+	$\ACcanon$ is locally confluent on AC-canonical terms.
+\end{lemma}
+\begin{proof}
+We show that every critical pair is joinable using $\ACcanon$ and confluence of $\ra_\bb{Z}$ and $\ra_\bb{P}$ from \cref{lemma:confluenceZP}.
+We use the notation $\MRAC$ to denote a multistep rewriting with AC-canonical form.
+
+% t ≔ opp (add (var $k $x) (var $c $x))
+% t ↪[] add (opp (var $k $x)) (opp (var $c $x)) ↪* var (— $k + — $c) $x
+%   with opp (add $x' $y') ↪ add (opp $0') (opp $1')
+% t ↪[1] opp (var ($0 + $2) $1) ↪* var (— ($0 + $2)) $1
+%   with add (var $k $x) (var $c $x) ↪ var ($0 + $2) $1
+\begin{center}
+\cp
+{
+  \opp{(\underline{\var{c_1}{x} \oplus \var{c_2}{x}})}
+}
+{
+  \opp{\var{c_1}{x}} \oplus \opp{\var{c_2}{x}}
+}
+{
+  \opp{\var{(c_1 + c_2)}{x}}
+}
+{11}{2}
+\end{center}
+
+But $\opp{\var{c_1}{x}} \oplus \opp{\var{c_2}{x}} \MRAC \var{(\sim c_1 + \sim c_2)}{x}$
+and $\opp{\var{(c_1 + c_2)}{x}} \MRAC \var{\sim (c_1 + c_2)}{x}$ converge by the confluence of $\ra_\bb{Z}$.
+
+% t ≔ opp (add (var $k $x) (add (var $l $x) $y))
+% t ↪[] add (opp (var $k $x)) (opp (add (var $l $x) $y)) ↪* add (var (— $k + — $l) $x) (opp $y)
+%   with opp (add $x' $y') ↪ add (opp $0') (opp $1')
+% t ↪[1] opp (add (var ($0 + $2) $1) $3) ↪* add (var (— ($0 + $2)) $1) (opp $3)
+%   with add (var $k $x) (add (var $l $x) $y) ↪ add (var ($0 + $2) $1) $3
+\cp
+{
+  \opp{\underline{(\var{c_1}{x} \oplus (\var{c_2}{x} \oplus y))}}
+}
+{
+  \opp{\var{c_1}{x}} \oplus \opp{(\var{c_2}{x} \oplus y)}
+}
+{
+  \opp{\var{(c_1 + c_2)}{x} \oplus y)}
+}
+{11}{3}
+
+We note that $\opp{\var{c_1}{x}} \oplus \opp{(\var{c_2}{x} \oplus y)} \MRAC \add{\var{(\sim c_1 + \sim c_2)}{x}}{(\opp{y})}$
+and $\opp{\var{(c_1 + c_2)}{x} \oplus y} \MRAC \add{\var{(\sim (c_1 + c_2))}{x}}{(\opp{y})}$
+both reduce to the same term, as guaranteed by the confluence of $\ra_\bb{Z}$.
+
+% t ≔ opp (add (cst $k) (cst $l))
+% t ↪[] add (opp (cst $k)) (opp (cst $l)) ↪* cst (— $k + — $l)
+%   with opp (add $x' $y') ↪ add (opp $0') (opp $1')
+% t ↪[1] opp (cst ($0 + $1)) ↪* cst (— ($0 + $1))
+%   with add (cst $k) (cst $l) ↪ cst ($0 + $1)
+\cp{
+  \opp{(\underline{\cst{c_1} \oplus \cst{c_2}})}
+}
+{
+  \opp{\cst{c_1}} \oplus \opp{\cst{c_2}}
+}
+{
+  \opp{\cst{(c_1 + c_2)}}
+}
+{11}{4}
+
+We observe that $\opp{\cst{c_1}} \oplus \opp{\cst{c_2}} \MRAC \cst{(\sim c_1) + (\sim c_2)}$
+and $\opp{\cst{(c_1 + c_2)}} \MRAC \cst{\sim (c_1 + c_2)}$ reduce to the same result due to the confluence of $\ra_\bb{Z}$.
+
+
+% t ≔ opp (add (cst $k) (add (cst $l) $y))
+% t ↪[] add (opp (cst $k)) (opp (add (cst $l) $y)) ↪* add (cst (— $k + — $l)) (opp $y)
+%   with opp (add $x' $y') ↪ add (opp $0') (opp $1')
+% t ↪[1] opp (add (cst ($0 + $1)) $2) ↪* add (cst (— ($0 + $1))) (opp $2)
+%   with add (cst $k) (add (cst $l) $y) ↪ add (cst ($0 + $1)) $2
+\cp
+{
+  \opp{(\underline{\cst{c_1} \oplus (\cst{c_2} \oplus y)})}
+}
+{
+  \opp{\cst{c_1}} \oplus \opp{(\cst{c_2} \oplus y)}
+}
+{
+  \opp{(\cst{c_1 + c_2} \oplus y)}
+}
+{11}{5}
+
+The expressions $\opp{\cst{c_1}} \oplus \opp{(\cst{c_2} \oplus y)} \MRAC \cst{(\sim c_1) + (\sim c_2)} \oplus \opp{y}$
+and $ \opp{(\cst{c_1 + c_2} \oplus y)} \MRAC \add{ \cst{\sim (c_1 + c_2)} }{\opp{y}}$
+both reduce to a common term, which follows from the confluence property of $\ra_\bb{Z}$.
+
+% t ≔ add (var $k' $x) (add (var $k $x) (add (var $l $x) $y))
+% t ↪[] add (var ($0' + $k) $x) (add (var $l $x) $y) ↪* add (var (($0' + $k) + $l) $x) $y
+%   with add (var $k' $x') (add (var $l' $x') $y') ↪ add (var ($0' + $2') $1') $3'
+% t ↪[1] add (var $k' $x) (add (var ($0 + $2) $1) $3) ↪* add (var ($k' + ($0 + $2)) $x) $3
+%   with add (var $k $x) (add (var $l $x) $y) ↪ add (var ($0 + $2) $1) $3
+
+\cp
+{
+  \var{c_1}{x} \oplus \underline{(\var{c_2}{x} \oplus (\var{c_3}{x} \oplus y))}
+}
+{
+  \var{(c_1 + c_2)}{x} \oplus ((\var{c_3}{x} \oplus y))
+}
+{
+  \var{c_1}{x} \oplus (\var{(c_2 + c_3)}{x} \oplus y))
+}{3}{3}
+
+The terms $\var{(c_1 + c_2)}{x} \oplus ((\var{c_3}{x} \oplus y)) \MRAC \add{\var{(c_1 + (c_2 + c_3))}{x}}{y}$
+and $\var{c_1}{x} \oplus (\var{(c_2 + c_3)}{x} \oplus y)) \MRAC \add{\var{((c_1 + c_2) + c_3)}{x}}{y}$
+both reduce to the same result due to the confluence of $\ra_\bb{Z}$.
+
+% t ≔ add (cst $k') (add (cst $k) (add (cst $l) $y))
+% t ↪[] add (cst ($0' + $k)) (add (cst $l) $y) ↪* add (cst (($0' + $k) + $l)) $y
+%   with add (cst $k') (add (cst $l') $y') ↪ add (cst ($0' + $1')) $2'
+% t ↪[1] add (cst $k') (add (cst ($0 + $1)) $2) ↪* add (cst ($k' + ($0 + $1))) $2
+%   with add (cst $k) (add (cst $l) $y) ↪ add (cst ($0 + $1)) $2
+
+\cp
+{\cst{c_1} \oplus \underline{(\cst{c_2} \oplus (\cst{c_3} \oplus y))}}
+{\cst{(c_1 + c_2)} \oplus (\cst{c_3} \oplus y) }
+{\cst{c_1} \oplus (\cst{(c_2 + c_3)} \oplus y) }
+{5}{5}
+
+We observe that $\cst{c_1 + c_2} \oplus (\cst{c_3} \oplus y) \MRAC \add{\cst{((c_1 + c_2) + c_3)}}{y}$
+and $\cst{c_1} \oplus (\cst{(c_2 + c_3)} \oplus y) \MRAC \add{\cst{(c_1 + (c_2 + c_3)}}{y}$
+both reduce to the same expression due to the confluence property of $\ra_\bb{Z}$.
+
+% t ≔ mul $k' (mul $k (mul $l $z))
+% t ↪[] mul ($0' * $k) (mul $l $z) ↪* mul (($0' * $k) * $l) $z
+%   with mul $k' (mul $l' $z') ↪ mul ($0' * $1') $2'
+% t ↪[1] mul $k' (mul ($0 * $1) $2) ↪* mul ($k' * ($0 * $1)) $2
+%   with mul $k (mul $l $z) ↪ mul ($0 * $1) $2
+\cp
+{ \mul{c_1}{\underline{(\mul{c_2}{(\mul{c_3}{z})})}} } 
+{ \mul{(c_1)}{ (\mul{(c_2 * c_3)}{z}) } }
+{ \mul{(c_1 * c_2)}{(\mul{c_3}{z}})} 
+{16}{16}
+
+Finally, we have $\mul{(c_1)}{(\mul{(c_2 * l)}{z})} \MRAC \mul{((c_1 * c_2) * c_3)}{z})$
+and $\mul{(c_1 * c_2)}{(\mul{c_3}{z}}) \MRAC \mul{(c_1 * (c_2 * c_3))}{z})$ that converge by the confluence of $\ra_\bb{Z}$.
+
+\end{proof}
+
+We compare two $\bb{Z}$-terms $t_1$ and $t_2$ wrt $\ACcanon$ by reifying them into their corresponding $\bb{G}$-terms, denoted $[g_1]$ and $[g_2]$, using the reification function $\reify{}$,
+and normalizing them using $\twoheadrightarrow^{AC}$. Following the reduction rules specified in \cref{fig:grp-rw}, we can then compare their corresponding $\bb{Z}$-terms by applying the denotation function $\den{}$.
+To validate this procedure, it is necessary to establish the correctness of the following diagram, formally expressed by \cref{thm:normalization}.
+
+\begin{figure}
+\centering
+% % https://q.uiver.app/#q=WzAsOCxbMSwyLCJcXGJ1bGxldCJdLFsxLDAsIlxcYnVsbGV0Il0sWzMsMiwiXFxidWxsZXQiXSxbMywwLCJcXGJ1bGxldCJdLFswLDIsInRfMSA9X1xcbWF0aGJie1p9IHRfMiJdLFswLDAsIlxcRG93bmFycm93KFxcVXBhcnJvdyh0XzEpKSA9X1xcbWF0aGJie1p9IFxcRG93bmFycm93KFxcVXBhcnJvdyh0XzIpKSJdLFs0LDAsIlxcRG93bmFycm93KFtnXzFdKSA9X1xcbWF0aGJie1p9IFxcRG93bmFycm93KFtnXzJdKSJdLFs0LDIsImdfMSA9X1xcbWF0aGJie1p9IGdfMiJdLFswLDEsIlxcRG93bmFycm93KFxcVXBhcnJvdyhcXF8pKSJdLFswLDIsIlxcaWZmIiwxLHsic3R5bGUiOnsiYm9keSI6eyJuYW1lIjoiZG90dGVkIn0sImhlYWQiOnsibmFtZSI6Im5vbmUifX19XSxbMSwzLCJbXFxfXSIsMCx7InN0eWxlIjp7ImJvZHkiOnsibmFtZSI6ImRhc2hlZCJ9fX1dLFszLDIsIlxcRG93bmFycm93KFxcXykiXSxbMSwyLCIiLDAseyJzdHlsZSI6eyJuYW1lIjoiY29ybmVyIn19XV0=
+\(\begin{tikzcd}[ampersand replacement=\&]
+	{\Uparrow(t_1) =_\bb{G} (\Uparrow(t_2)} \& \bb{G} \&\& \bb{G} \& {[g_1] =_\bb{G} [g_2]} \\
+	\\
+	{t_1 =_\bb{Z} t_2} \& \bb{Z} \&\& \bb{Z} \& {\den{g_1} =_\bb{Z} \den{g_2}}
+	\arrow["{[\_]}", dashed, from=1-2, to=1-4]
+	\arrow["\lrcorner"{anchor=center, pos=0.125}, draw=none, from=1-2, to=3-4]
+	\arrow["{\Downarrow(\_)}", from=1-4, to=3-4]
+	\arrow["{\Uparrow(\_)}", from=3-2, to=1-2]
+	\arrow["\iff"{description}, dotted, no head, from=3-2, to=3-4]
+\end{tikzcd}\)
+\end{figure}
+
+\begin{theorem}[Correctness of normalization]\label{thm:normalization}
+For all $\bb{G}$-terms $t$, we have $(\den{[t]}) = (\den{t})$ where $[t]$ is the AC-canonical form of $t$ with respect to $\longrightarrow^{AC}_\Sigma$.
+\end{theorem}
+\begin{proof}
+  The proof proceeds by induction on $t$, and the key case is the one where $t = t_1 \oplus t_2$.
+% This is a meta-level proof, proceeding by structural induction on $t$.
+% Assume that the normalization function $[\_]$ is implemented using a merge sort algorithm over the multiset of subterms $\bb{G}$, with respect to the associative-commutative operator $\oplus$.
+% We focus on the inductive case where $t = t_1 \oplus t_2$.
+We have to show that $\mathop{\den{[t_1 \oplus t_2]}} = \mathop{(\den{t_1}) + (\den{t_2})}$.
+By the induction hypothesis, we have
+$\mathop{\den{[t_1]}} = \mathop{\den{t_1}}$ and $\mathop{\den{[t_2]}} = \mathop{\den{t_2}}$.
+Hence,
+\[
+  (\den{t_1}) + (\den{t_2})
+  = (\den{[t_1]}) + (\den{[t_2]})
+  = \mathop{\den{([t_1] \oplus [t_2])}}
+\]
+It remains to show that
+$\mathop{\den{([t_1] \oplus [t_2])}} = \mathop{\den{[t_1 \oplus t_2]}}$.
+Now, $[t_1]$, $[t_2]$, and $[t_1 \oplus t_2]$ are terms built solely from \tt{cst}, \tt{var}, and $\oplus$ since the remaining operators have been eliminated by applying the rules in \cref{fig:grp-rw}, and the terms on both sides of the equation contain the same multisets of subterms. The two terms are therefore identified by AC-canonicalization.
+%
+% $[t_1 \oplus t_2]$ is the canonical (i.e., sorted) form of the multiset of subterms in $t_1$ and $t_2$,
+% and that merge-sorting two normalized (i.e., already sorted) linear polynomials yields the same result as normalizing (i.e sorting) their merge.
+% Therefore, since the normalization preserves denotation, we conclude that $\den{[t]} = \mathop{\den{t}}$ for all $\bb{G}$-terms $t$.
+\qed
+\end{proof}
+
+
+
+We make use of \cref{lem:conv} to embed $\bb{Z}$-terms into $\bb{G}$ to normalize and subsequent comparison.
+In addition, we leverage this normalization process to support the \tt{arith-poly-norm} rule.
+
+\begin{lemma}[Conversion]\label{lem:conv}
+For all $x: \bb{Z}$, we have $x = (\mathop{\den{(\reify{x})}})$.
+\end{lemma}
+\begin{proof}
+By induction on $x$. We consider the three cases: $x = \ZPos(n)$, $x = \ZNeg(n)$, and $x = \tt{Z0}$.  
+In each case, $\reify{(x)}$ yields the corresponding constant $\cst{x}$, and by definition of the denotation function, $x = \mathop{\den{(\cst{x})}}$.
+Hence, $x = (\mathop{\den{(\reify{x})}})$ in all cases.
+\end{proof}
+
+The full proof \cref{lst:smtexampleproof} translated into Lambdapi can be found in \cref{app:example-translation}.
