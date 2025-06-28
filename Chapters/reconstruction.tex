@@ -1,13 +1,12 @@
 %*****************************************
-\chapter{Reconstructing SMT Proofs Formally}\label{ch:reconstruction}
+\chapter{Reconstructing SMT Proofs}\label{ch:reconstruction}
 %*****************************************
 
 \section{Encoding the logic of SMT in Lambdapi}
 \label{sect:recon}
 
 We now describe our embedding of the logic of SMT and Alethe in Lambdapi.
-% and how we extended Carcara with a new module that can export elaborated Alethe proofs to Lambdapi. 
-Our work applies to input problems expressed in the logics \texttt{UFLIA}, \texttt{UFNIA} or their sub-logics.
+Our work applies to input problems expressed in the logics \texttt{UF}, \texttt{LIA} and \texttt{QF} or their sub-logics.
 
 
 \subsection{A Prelude Encoding for Alethe}
@@ -15,50 +14,129 @@ Our work applies to input problems expressed in the logics \texttt{UFLIA}, \text
 
 \begin{definition}[Prelude Encoding]
 \label{def:defuniv}
-The signature $\Sigma$ of our encoding contains the following definitions and rewrite rules provided by the standard library of Lambdapi that we use to encode Alethe proofs:
+The signature $\Sigma$ of our encoding contains the following definitions and rewrite rules that we use to encode Alethe proofs:
 \begin{align*}
-&\index{\set}: \type & &\index{\prop}: \type \\
-&\index{\el}: \set \rightarrow \type  & &\index{\prf} : \prop \rightarrow \type \\
-&\mathop{\leadsto}: \set \rightarrow \set \rightarrow \set & &o: \set \\
-&\el\,(x \leadsto y) \hookrightarrow \el\,x \rightarrow \el\,y & &\el\,o  \hookrightarrow \prop
+&\set\index{\set}: \type & &\prop\index{\prop}: \type \\
+&\index{\el{}} \el{}: \set \rightarrow \type  & &\index{\prf}\prf{} : \prop \rightarrow \type \\
+&\mathop{\leadsto}\index{$\leadsto$}: \set \rightarrow \set \rightarrow \set \quad \text{(infix)} & &o: \set \\
+&\el\,(x \leadsto y) \hookrightarrow \el\,x \rightarrow \el\,y & &\el\,o\index{o}  \hookrightarrow \prop
 \end{align*}
 \end{definition}
 
- The constants \set{} and \prop{} (lines 1 and 6) are type universes ``à la Tarski'' \cite[\S Universes]{intuitype} in $\lpm$.
- The type \set{} represents the universe of \textit{small types}, i.e.\ a subclass of types for which we can define equality.
- SMT sorts are represented in $\lpm$ as elements of type \set{}. Since elements of type \set{} are not types themselves, we also introduce a decoding function $\el: \set \rightarrow \type$ that interprets SMT sorts as $\lpm$ types.
- Thus, we represent the terms of sort \texttt{Bool} of SMT by elements of type $\el{}\,o$. The constructor $\leadsto$ is used to encode SMT functions and predicates.
+The notions of term, proposition, and proof are not primitive in \lpm.
+We ﬁrst deﬁne a notion analogousto the Predicate logic notion of term, to express the objects the theory speaks about, such as the natural number.
+The constants \set{} and \prop{} (lines 1 and 6) are type universes ``à la Tarski'' \cite[\S Universes]{intuitype} in \lpm.
+The type \set{} represents the universe of \textit{small types}, i.e.\ a subclass of types for which we can define equality.
+SMT sorts are represented in \lpm{} as elements of type \set{}. Since elements of type \set{} are not types themselves, 
+we also introduce a decoding function $\el: \set \rightarrow \type$ that  embed the terms of type \set{} into terms of type \type.
+Therefore, our function \el{} interprets SMT sorts as \type.
+Thus, we represent the terms of sort \lstinline[language=SMT,basicstyle=\ttfamily\normalsize]|Bool| of SMT by elements of type $\el{}\,o$. The constructor $\leadsto$ (written infix) is used to encode SMT functions and predicates.
 
-The type \prop{} represents the universe of propositions in $\lpm$. Like \set{}, elements of type \prop{} are not types themselves but are mapped to types by the decoding function $\prf{}: \prop \rightarrow \type$. By analogy with the Curry-de-Brujin-Howard isomorphism, it embeds propositions into types, mapping each proposition $A$ to the type $\prf{}~A$ of its proofs.
+Just like \lpm{} does not contain a primitive notion to express the objects of the theory, it does not contain a primitive notion of proposition.
+The constant \prop{} represents the universe of propositions. Predicates symbols are constants of type $\set{} \ra \dots \ra \prop$ . Like \set{}, elements of type \prop{} are not types themselves but are mapped to types by the decoding function $\prf{}: \prop \rightarrow \type$.
+By analogy with the Curry-de-Brujin-Howard isomorphism, it embeds propositions into types, mapping each proposition $A$ to the type $\prf{}~A$ of its proofs.
+This analogy is moderate in two respects. First, the propositions themselves are not the types of their proofs: if $t$ is a proof of $A$, then it does not have the type $A$,
+but the type $\prf{}A$. Second, this embedding is not surjective. So not all types are types of proofs, in particular \set{} and \prop{} are not.
+Therefore, a \emph{step} in an Alethe proof trace is represented as an inhabitant of type $\prf{}\,p$.
 
-\subsection{Classical connectives, quantifiers and facts}
+\subsection{Constructive connectives, quantifiers and classical facts}
 
-Since SMT solvers are based on classical logic, we use the constructive connectives and quantifiers from the Lambdapi standard library and define the classical ones from them using the double-negation translation \cite{dowek:classical} as a definition.
+Given that SMT solvers operate under classical logic, we employ the constructive connectives and quantifiers, while explicitly introducing the classical principles of the Law of the Excluded Middle and propositional extensionality.
 %
-\begin{align*}
-& \mathop{\pic} p \coloneqq \mathop{\prf{}} (\neg \neg p) \\
-& \mathop{=}:  \Pi {[a: \set]}, \el\, a \rightarrow \el\,a \rightarrow \prop \\
-& p \lor^c q \coloneqq  \neg \neg p \lor \neg \neg q \\
-& \forall^c \coloneqq \Pi {[a: \set]},  \Pi p: (\el\, a \ra \prop),  \forall \, x. \neg \neg  p\,x \\
+\begin{align}
+& \top : \prop \\
+& \bot : \prop \\
+& \land : \prop \ra \prop \ra \prop \qquad \text{(written inﬁx)} \\
+& \lor : \prop \ra \prop \ra \prop \qquad \text{(written inﬁx)} \\
+& \Rightarrow : \prop \ra \prop \ra \prop \qquad \text{(written inﬁx)} \\
+&  \prf (a \Rightarrow\,b) \re \prf a \ra \prf b \label{eq:imp}\\
+& \neg a \is a \Rightarrow \bot \\
+& \forall : \Pi {[a: \set]}, (\el\, a \ra \prop) \ra \prop \label{eq:forall}\\
+& \prf{}(\forall\,p) \re \Pi x, \prf{p~x}\\
+& \exists : \Pi {[a: \set]}, (\el\, a \ra \prop) \ra \prop \\
+& {=} : \Pi [a : \set], \el\, a \ra \el\, a \ra \prop \qquad \text{(written inﬁx)} \\
 & \epsilon: \Pi {[a: \set]}, (\el\,a \ra \prop) \ra \el\,a \\
-& \epsilon_i: \Pi {[a: \set]}, \Pi (x : \el\,a), \Pi (P : \el\,a \ra \prop) \ra \pic P\,x \ra \pic P\,(\epsilon\,P) \\
-& \epsilon_{d}: \Pi {[a: \set]}, \Pi (P\,Q : \el\,a \ra \prop) \ra \Pi x : \el\,a, \pic (P\,x = Q\,x) \ra (\epsilon \, P = \epsilon \, Q)
-\end{align*}
+& \epsilon_i: \Pi {[a: \set]}, \Pi (x : \el\,a), \Pi (P : \el\,a \ra \prop) \\
+& \quad \ra \prf P\,x \ra \prf P\,(\epsilon\,P) \\
+& \epsilon_{d}: \Pi {[a: \set]}, \Pi (P\,Q : \el\,a \ra \prop) \\
+& \quad \ra \Pi x : \el\,a, \prf (P\,x = Q\,x) \ra (\epsilon \, P = \epsilon \, Q)
+\end{align}
 
-Therefore, a step in an Alethe proof trace is represented as a proposition $\pic~p$, defined as the intuitionistic proof \prf{} of the doubly negated predicate.
-Equality over small types is parameterized over types
+Accordingto the Curry-de Bruijn-Howard correspondence, a proof of $A \Rightarrow B$ should have the type $\prf (A \Rightarrow B)$,
+but it has the type $\prf\,A \ra \prf\,B$. So, the types $\prf (A \Rightarrow B)$ and $\prf\,A \ra \prf\,B$ must be identiﬁed.
+To do so, we introduce a rewriting rule \cref{eq:imp}, so that $\prf (A \Rightarrow B)$ rewrites into $\prf\,A \ra \prf\,B$.
+
+We cannot give the type $\Pi : \type, (X \ra \prop) \ra \prop$ to the universal quantifier because in \lpm{} there is no way to
+quantify over a variable of type \type. Therefore, we give the type $\Pi\,x:\set{},(\el\,x \ra \prop) \ra \prop$ to the generic universal quantiﬁer $\forall$ \cref{eq:forall}.
+Thus, we will be able to quantify over SMT sorts that will be encoded as inhabit of type \set. Moreover the previously defined term $o: Set$ with the rewrite rule $\el\,o\index{o}  \hookrightarrow \prop$
+makes are universal quantiﬁer possible to quantifier over proposition and it is impredicative.
+
+Equality (=) over small types is parameterized over types
 $\el\,a$ for the type parameter $[a : \set{}]$ (the square brackets indicate that this parameter need not be given explicitly).
 We also define classical connectives, quantifiers, and the choice operator $\epsilon$ (\cite[\S 2.1]{alethespec}) as illustrated above.
 The intended interpretation for the $\epsilon$ operator is that $\epsilon\,x,\, P~x$ denotes some $x$ satisfying the predicate $P$, if there is one.
 The characteristic proof rules for the $\epsilon$ operator are represented by
 the constants $\epsilon_i$ for proving a predicate $P\,(\epsilon\,P)$ by exhibiting a witness $x$ such that $P\,x$ is provable, and $\epsilon_d$ that asserts that the epsilon operator assigns the same witness to equivalent predicates $P$ and $Q$.
 
-We prove the law of excluded middle and add the proposition of Boolean extensionality stating that classical equivalence coincides with equality over Booleans.
-SMT logic enjoys the property of propositional completeness (also referred to as propositional degeneracy) asserting that $\forall^c A,~(A = \top) \lor^c (A = \bot)$. Moreover, propositionally equivalent formulas are equal. We thus obtain the theorems
+SMT logic enjoys the property of propositional completeness (also referred to as \emph{propositional degeneracy}) asserting that:
+ \[
+  \forall p,(p = \top) \lor (p = \bot) 
+\]
+Moreover, propositionally equivalent formulas are equal. We thus introduce the axioms
 %
 \begin{align*}
-\texttt{classic}:\ & \Pi [p: \prop], \pic (p \lor^c \neg p) \\
-\texttt{prop\_ext}:\ & \Pi [p\,q: \prop], \pic (p \Leftrightarrow^c q ) \rightarrow \pic (p = q)
+\texttt{em}:\ & \Pi [p: \prop], \prf (p \lor \neg p) \\
+\texttt{prop\_ext}:\ & \Pi [p\,q: \prop], \prf (p \Leftrightarrow q ) \rightarrow \prf (p = q)
+\end{align*}
+
+
+
+
+\subsection{Arithmetic encoding}
+
+\subsection{Encoding bitvector}
+
+%************ Dependent pair **********************
+% [a: Set] (p: τ a → Prop) inductive Σ : TYPE ≔
+%     exist (x: τ a) : π (p x) → Σ p;
+% symbol Sigma [a: Set]: (τ a → Prop) → Set;
+% rule τ (Sigma $p)  ↪ Σ $p;
+%*************************************************
+\begin{align*}
+&\Sigma : \forall a : \set{}, (\el{}~a \ra \prop): \type \\
+&| exist : \Pi (a : \set{}), \prf (p~x) \ra \Sigma~p \\
+&\\
+& Sigma~[a: \set{}]: (\el{}~a \ra \prop) \ra \set{} \\
+& \el{}~Sigma~p \re \Sigma~p \\
+&\\
+& \pi_1~[a: \set{}] [p:(\el{}~a \ra \prop)] (e: \Sigma~a~p): \el{}~a \\
+& (exist~x~\_)~\pi_1 \re x\\
+& \pi_2~[a: \set{}] [p:(\el{}~a \ra \prop)] (e: \Sigma~a~p): \prf{}(p~(e~\pi_1)) \\
+& (exist~x~p)~\pi_2 \re p\\
+\end{align*}
+
+%************ bitvector ***************************
+% injective symbol Fin (n: ℕ) ≔ Σ (λ x, istrue (x < n));
+% injective symbol FinMk (n: ℕ) (m: ℕ) (isLT : π (m < n)): Fin n
+%  ≔ @exist nat (λ x, istrue (x < n)) m isLT;
+% symbol fin: ℕ →  Set;
+% rule τ (fin $n) ↪ Fin $n;
+
+% injective symbol BitVec n ≔ Fin (2 ^ n);
+% symbol mkBv n v p : BitVec n  ≔ FinMk (2 ^ n) v p;
+%*************************************************
+\begin{align*}
+& Fin~(n: \N) \coloneq \Sigma~(\lambda\,x, istrue(x < n)) \\
+& FinMk~(n: \N) (m: \N) (islt: \prf (m < n)) : Fin~n \\
+&\quad\is exist~(\lambda\,x, istrue(x <n))~m~islt\\
+&\\
+& \hat{}: \N \ra \N \ra \N \qquad \text{(written inﬁx)}\\
+& 0 ~\hat{}~ 1 \re 1 \N\\
+& n ~\hat{}~ (m + 1) \re n * (n ~\hat{}~ m)\\
+&\\
+&BitVec~n \is Fin~(2~\hat{}~n) \\ 
+& mkBv: \Pi(n: \N)(p: \prf~(istrue(n < 2~\hat{}~n))): BitVec~n\\
+&\quad\is FinMk~(2~\hat{}~n)~n~p \\
 \end{align*}
 
 
@@ -66,15 +144,14 @@ SMT logic enjoys the property of propositional completeness (also referred to as
 
 We now describe how we encode input problems expressed in a given
 SMT-LIB signature \cite[\S 5.2.1]{smtlib}. In order to avoid a notational clash with the Lambdapi signature $\Sigma$, we denote the set of SMT-LIB sorts as $\Theta^\mathcal{S}$, the set of function symbols $\Theta^\cal{F}$, and the set of variables $\Theta^\cal{X}$.
-Alethe does not support the sorts \texttt{Array} and \texttt{String}. Moreover, we do not yet provide support for \texttt{Bitvector} and \texttt{Real}. Our translation is based on the following functions:
+Alethe does not support the sorts \texttt{Array} and \texttt{String}. Our translation is based on the following functions:
 \begin{itemize}
 \item $\cal{D}$ translates declarations of sorts and functions in $\Theta^\cal{S}$ and $\Theta^\mathcal{F}$ into constants,
 \item $\cal{S}$ maps sorts to $\Sigma$ types,
 \item $\cal{E}$ translates SMT expression to $\lpm$ terms,
-\item $\cal{C}$ translates a list of commands  $c_1 \dots c_n$ of the form $i.~\Gamma \triangleright~\varphi~(\mathcal{R}~P)[A]$ to typing judgments $\Gamma \vdash_\Sigma i := M: N$.
+\item $\cal{C}$ translates a list of commands  $c_1 \dots c_n$ of the form\\
+  $i.~\Gamma \triangleright~\varphi~(\mathcal{R}~P)[A]$ to typing judgments $\Gamma \vdash_\Sigma i : N$ with $N$ the corresponding type of the clause $\varphi$.
 \end{itemize}
-
-The remainder of this section introduces functions $\cal{D}$, $\cal{S}$, and $\cal{E}$. The function $\cal{C}$ is the core of the proof reconstruction algorithm and will be introduced in \cref{sect:translate-step}.
 
 \smallskip
 

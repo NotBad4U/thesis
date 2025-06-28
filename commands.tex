@@ -14,6 +14,33 @@
 %******************************************************************
 % Lambdapi syntax unicode
 %******************************************************************
+% https://colorhunt.co/palette/211c844d55cc7a73d1b5a8d5
+% rgb(33, 28, 132)
+\definecolor{darkpurple}{RGB}{33, 28, 132}
+% rgb(77, 85, 204)
+\definecolor{midpurple}{RGB}{77, 85, 204}
+% rgb(122, 115, 209)
+\definecolor{lpurple}{RGB}{122, 115, 209}
+% rgb(181, 168, 213)
+\definecolor{lpink}{RGB}{181, 168, 213}
+
+% rgb(79, 23, 135)
+ \definecolor{purple2}{RGB}{79, 23, 135}
+% rgb(235, 54, 120)
+ \definecolor{cherrypink}{RGB}{235, 54, 120}
+% rgb(251, 119, 60)
+\definecolor{sunorange}{RGB}{251, 119, 60}
+
+% rgb(230,1,140)
+\definecolor{rxpink}{RGB}{230,1,140}
+% rgb(141,31,137)
+\definecolor{rxpurple}{RGB}{141,31,137}
+% rgb(4,38,137)
+\definecolor{rxpurple}{RGB}{4,38,137}
+
+%******************************************************************
+% Lambdapi syntax unicode
+%******************************************************************
 
 
 \DeclareUnicodeCharacter{03C0}{\texttt{Prf}}
@@ -90,14 +117,14 @@
 
 \newcommand\nil{\blacksquare}
 
-\newcommand\lpm{\lambda\Pi/\mathop{\equiv}}
+\newcommand\lpm{\ensuremath{\lambda\Pi/\mathop{\equiv}}}
 \newcommand\pre{\Sigma_{pre}}
-\newcommand\prf{\textcolor{purple}{\texttt{\upshape{Prf}}}}
-\newcommand\prop{\textcolor{blue}{\texttt{\upshape{Prop}}}}
-\newcommand\el{\textcolor{purple}{\texttt{\upshape{El}}}}
-\newcommand\set{\textcolor{blue}{\texttt{\upshape{Set}}}}
-\newcommand\type{\textcolor{orange}{\texttt{\upshape{TYPE}}}}
-\newcommand\kind{\textcolor{YellowOrange}{\texttt{KIND}}}
+\newcommand\prf{\textcolor{rxpurple}{\texttt{\upshape{Prf}}}}
+\newcommand\prop{\textcolor{lpurple}{\texttt{\upshape{Prop}}}}
+\newcommand\el{\textcolor{rxpurple}{\texttt{\upshape{El}}}}
+\newcommand\set{\textcolor{lpurple}{\texttt{\upshape{Set}}}}
+\newcommand\type{\textcolor{rxpink}{\texttt{\upshape{TYPE}}}}
+\newcommand\kind{\textcolor{rxpink}{\texttt{KIND}}}
 \newcommand\pp{ \ensuremath{ {+}\!{+} } }
 \newcommand\cpl[1]{\mathbin{{ }^{#1}{\longleftarrow}}}
 \newcommand\cpr[1]{\longrightarrow^{#1}}
@@ -117,7 +144,8 @@
 \newcommand\ZNeg{\mathop{\tt{ZNeg}}}
 
 %******************************************************************
-% Alias
+% Alias 
+% some alias correspond to shortcut define in Lambdapi vscode extension
 %******************************************************************
 \let\cal\mathcal
 \let\bb\mathbb
@@ -132,6 +160,7 @@
 \let\cal\mathcal
 \let\bb\mathbb
 \let\cons\veedot
+\let\is\coloneq
 
 \newcommand\kw[1]{\ensuremath{\texttt{\upshape{#1}}}}
 \newcommand\bool[0]{\kw{bool}}
