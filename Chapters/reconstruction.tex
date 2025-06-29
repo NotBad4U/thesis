@@ -30,18 +30,22 @@ The type \set{} represents the universe of \textit{small types}, i.e.\ a subclas
 SMT sorts are represented in \lpm{} as elements of type \set{}. Since elements of type \set{} are not types themselves, 
 we also introduce a decoding function $\el: \set \rightarrow \type$ that  embed the terms of type \set{} into terms of type \type.
 Therefore, our function \el{} interprets SMT sorts as \type.
-Thus, we represent the terms of sort \lstinline[language=SMT,basicstyle=\ttfamily\normalsize]|Bool| of SMT by elements of type $\el{}\,o$. The constructor $\leadsto$ (written infix) is used to encode SMT functions and predicates.
+Thus, we represent the terms of sort \lstinline[language=SMT,basicstyle=\ttfamily\normalsize]|Bool| of SMT by elements of type $\el{}\,o$.
+The constructor $\leadsto$ (written infix) is used to encode SMT functions and predicates.
 
-Just like \lpm{} does not contain a primitive notion to express the objects of the theory, it does not contain a primitive notion of proposition.
-The constant \prop{} represents the universe of propositions. Predicates symbols are constants of type $\set{} \ra \dots \ra \prop$ . Like \set{}, elements of type \prop{} are not types themselves but are mapped to types by the decoding function $\prf{}: \prop \rightarrow \type$.
-By analogy with the Curry-de-Brujin-Howard isomorphism, it embeds propositions into types, mapping each proposition $A$ to the type $\prf{}~A$ of its proofs.
-This analogy is moderate in two respects. First, the propositions themselves are not the types of their proofs: if $t$ is a proof of $A$, then it does not have the type $A$,
-but the type $\prf{}A$. Second, this embedding is not surjective. So not all types are types of proofs, in particular \set{} and \prop{} are not.
-Therefore, a \emph{step} in an Alethe proof trace is represented as an inhabitant of type $\prf{}\,p$.
+Jus as like \lpm{} does not contain a primitive notion for expressing the objects of the theory, it does not contain a primitive notion of proposition.
+The constant \prop{} represents the universe of propositions. Predicates symbols are represented as constants of type $\set{} \ra \dots \ra \prop$ .
+Similar to \set{}, elements of type \prop{} are not types themselves; they are mapped to types by the decoding function $\prf{}: \prop \rightarrow \type$.
+Drawing an analogy with the Curry-de-Brujin-Howard isomorphism \cite{curryhoward}, this function embeds propositions into types by mapping each proposition $A$ to the type $\prf{}~A$, which represents its proofs.
+However, the analogy is only partial in two important ways. First, the propositions themselves are not the types of their proofs: if $t$ is a proof of $A$, then it does not have the type $A$,
+but the type $\prf{}A$.Second, the embedding is not surjective—meaning not all types correspond to proofs. For instance, neither \set{} nor \prop{} are themselves types of proofs. 
+
+Consequently, a \emph{step} in an Alethe proof trace is represented as an inhabitant of type $\prf{}\,p$.
 
 \subsection{Constructive connectives, quantifiers and classical facts}
 
-Given that SMT solvers operate under classical logic, we employ the constructive connectives and quantifiers, while explicitly introducing the classical principles of the Law of the Excluded Middle and propositional extensionality.
+Given that SMT solvers operate under classical logic, we employ the constructive connectives and quantifiers,
+while explicitly introducing the classical principles of the Law of the Excluded Middle and propositional extensionality.
 %
 \begin{align}
 & \top : \prop \\
@@ -62,22 +66,22 @@ Given that SMT solvers operate under classical logic, we employ the constructive
 & \quad \ra \Pi x : \el\,a, \prf (P\,x = Q\,x) \ra (\epsilon \, P = \epsilon \, Q)
 \end{align}
 
-Accordingto the Curry-de Bruijn-Howard correspondence, a proof of $A \Rightarrow B$ should have the type $\prf (A \Rightarrow B)$,
-but it has the type $\prf\,A \ra \prf\,B$. So, the types $\prf (A \Rightarrow B)$ and $\prf\,A \ra \prf\,B$ must be identiﬁed.
-To do so, we introduce a rewriting rule \cref{eq:imp}, so that $\prf (A \Rightarrow B)$ rewrites into $\prf\,A \ra \prf\,B$.
+Accordingto the Curry-de Bruijn-Howard correspondence, a proof of $A \Rightarrow B$ should have the type $\prf (A \Rightarrow B)$.
+However, such a proof actually has type $\prf\,A \ra \prf\,B$. This means that the types $\prf (A \Rightarrow B)$ and $\prf\,A \ra \prf\,B$ must be identiﬁed.
+To achieve this, we introduce the rewriting rule \cref{eq:imp}, allowing $\prf (A \Rightarrow B)$ to be rewritten as $\prf\,A \ra \prf\,B$.
 
-We cannot give the type $\Pi : \type, (X \ra \prop) \ra \prop$ to the universal quantifier because in \lpm{} there is no way to
-quantify over a variable of type \type. Therefore, we give the type $\Pi\,x:\set{},(\el\,x \ra \prop) \ra \prop$ to the generic universal quantiﬁer $\forall$ \cref{eq:forall}.
-Thus, we will be able to quantify over SMT sorts that will be encoded as inhabit of type \set. Moreover the previously defined term $o: Set$ with the rewrite rule $\el\,o\index{o}  \hookrightarrow \prop$
-makes are universal quantiﬁer possible to quantifier over proposition and it is impredicative.
+We cannot assign the type $\Pi : \type, (X \ra \prop) \ra \prop$ to the universal quantifier, because in \lpm{} there is no mechanism to
+for quantifying over variables of type \type. Instead, we assign the type $\Pi\,x:\set{},(\el\,x \ra \prop) \ra \prop$ to the generic universal quantiﬁer $(\forall)$ \cref{eq:forall}.
+Thus, we will be able to quantify over SMT sorts that will be encoded as inhabit of type \set. Furthermore, the previously defined term $o: Set$, together with the rewrite rule $\el\,o\index{o}  \hookrightarrow \prop$
+, enables quantification over propositions, rendering the universal quantifier impredicative.
 
 Equality (=) over small types is parameterized over types
 $\el\,a$ for the type parameter $[a : \set{}]$ (the square brackets indicate that this parameter need not be given explicitly).
-We also define classical connectives, quantifiers, and the choice operator $\epsilon$ (\cite[\S 2.1]{alethespec}) as illustrated above.
-The intended interpretation for the $\epsilon$ operator is that $\epsilon\,x,\, P~x$ denotes some $x$ satisfying the predicate $P$, if there is one.
+We also define the choice operator $\epsilon$ (\cite[\S 2.1]{alethespec}) as illustrated above.
+The intended interpretation for the $\epsilon$ operator is that $(\epsilon\,x,\, P~x)$ denotes some $x$ satisfying the predicate $P$, if there is one.
 The characteristic proof rules for the $\epsilon$ operator are represented by
-the constants $\epsilon_i$ for proving a predicate $P\,(\epsilon\,P)$ by exhibiting a witness $x$ such that $P\,x$ is provable, and $\epsilon_d$ that asserts that the epsilon operator assigns the same witness to equivalent predicates $P$ and $Q$.
-
+the constants $\epsilon_i$ for proving a predicate $P\,(\epsilon\,P)$ by exhibiting a witness $x$ such that $P\,x$ is provable,
+and $\epsilon_d$ that asserts that the epsilon operator assigns the same witness to equivalent predicates $P$ and $Q$.
 SMT logic enjoys the property of propositional completeness (also referred to as \emph{propositional degeneracy}) asserting that:
  \[
   \forall p,(p = \top) \lor (p = \bot) 
@@ -89,13 +93,351 @@ Moreover, propositionally equivalent formulas are equal. We thus introduce the a
 \texttt{prop\_ext}:\ & \Pi [p\,q: \prop], \prf (p \Leftrightarrow q ) \rightarrow \prf (p = q)
 \end{align*}
 
+\subsection{Representing Linear Arithmetic}
+
+\begin{figure}
+\centering
+\begin{align*}\label{eq:eq1}
+&\N: \type & &\bb{P}: \type & &\Z: \type \\
+&|~0: \N  & &|~\tt{H} : \bb{P} & &|~\ZO: \Z \\
+&|~\tt{+1}:\N \ra \N & &|~\tt{O}: \bb{P} \ra \bb{P} & &|~\ZPos: \bb{P} \ra \Z \\
+& & &|~\tt{I}: \bb{P} \ra \bb{P} & &|~\ZNeg: \bb{P} \ra \Z \\
+&\tt{nat}: \set & &\tt{pos}: \set & &\tt{int}: \set \\
+&\el~\tt{nat} \re \N & &\el~\tt{pos} \re \bb{P} & &\el~\tt{int} \re \Z 
+\end{align*}
+\caption{Inductive type definitions for binary positive number, natural and integers}
+\label{fig:sorts-constructors}
+\end{figure}
 
 
 
-\subsection{Arithmetic encoding}
+\begin{figure}
+\begin{framed}
+{\footnotesize
+\centering
+% --- Integer Addition ---
+\begin{align*}
+&+: \bb{Z} \ra \bb{Z} \ra \bb{Z} \\
+& \ZO + y \re y \\
+& x + \ZO \re x \\
+& (\tt{Zpos x}) + (\tt{Zpos y}) \re (\ZPos~(\tt{add}~x~y))  \\
+& (\tt{Zpos x}) + (\tt{Zneg y}) \re (\tt{sub}~x~y)  \\
+& (\tt{Zneg x}) + (\tt{Zpos y}) \re (\tt{sub}~y~x)  \\
+& (\tt{Zneg x}) + (\tt{Zneg y}) \re \ZNeg~(\tt{add}~x~y)
+\end{align*}
+\noindent
 
-\subsection{Encoding bitvector}
+% --- Positive Binary Arithmetic ---
+\[
+\begin{array}[t]{ll}
+\begin{aligned}
+&\tt{add} : \bb{P} \ra \bb{P} \ra \bb{P} \\
+& \tt{add}~(\tt{I}~x)~(\tt{I}~q) \re \tt{O}~(\tt{addc}~x~q) \\
+& \tt{add}~(\tt{I}~x)~(\tt{O}~q) \re \tt{I}~(\tt{add}~x~q) \\
+& \tt{add}~(\tt{O}~x)~(\tt{I}~q) \re \tt{I}~(\tt{add}~x~q) \\
+& \tt{add}~(\tt{O}~x)~(\tt{O}~q) \re \tt{O}~(\tt{add}~x~q) \\
+& \tt{add}~x~\tt{H} \re \tt{succ}~x \\
+& \tt{add}~\tt{H}~y \re \tt{succ}~y \\
+\end{aligned}
+&
+\begin{aligned}
+&\tt{mul} : \bb{P} \ra \bb{P} \ra \bb{P} \\
+& \tt{mul}~\tt{H}~y \re y \\
+& \tt{mul}~y~\tt{H} \re y \\
+& \tt{mul}~(\tt{O}~x)~y \re \tt{O}~(\tt{mul}~x~y) \\
+& \tt{mul}~(\tt{I}~x)~y \re \\
+& \quad \tt{add}~y~(\tt{O}~(\tt{mul}~x~y)) \\
+\end{aligned}
+\end{array}
+\]
+\noindent
 
+\begin{align*}
+&\tt{addc} : \bb{P} \ra \bb{P} \ra \bb{P} \\
+& \tt{addc}~(\tt{I}~x)~(\tt{I}~q) \re \tt{I}~(\tt{addc}~x~q) \\
+& \tt{addc}~(\tt{I}~x)~(\tt{O}~q) \re \tt{O}~(\tt{addc}~x~q) \\
+& \tt{addc}~(\tt{O}~x)~(\tt{I}~q) \re \tt{O}~(\tt{addc}~x~q) \\
+& \tt{addc}~(\tt{O}~x)~(\tt{O}~q) \re \tt{I}~(\tt{add}~x~q) \\
+& \tt{addc}~x~\tt{H} \re \tt{add}~x~(\tt{O}~\tt{H}) \\
+& \tt{addc}~\tt{H}~y \re \tt{add}~(\tt{O}~\tt{H})~y \\
+\end{align*}
+\noindent
+
+% --- Multiplication ---
+\begin{align*}
+&\tt{*} : \bb{Z} \ra \bb{Z} \ra \bb{Z} \\
+& \ZO *~\_ \re \ZO \\
+& \_ *~\ZO \re \ZO \\
+& \ZPos x *~\ZPos y \re \ZPos (\tt{mul}~x~y) \\
+& \ZPos x *~\ZNeg    y \re \ZNeg    (\tt{mul}~x~y) \\
+& \ZNeg    x *~\ZPos y \re \ZNeg    (\tt{mul}~x~y) \\
+& \ZNeg    x *~\ZNeg    y \re \ZPos (\tt{mul}~x~y) \\
+\end{align*}
+}%
+\caption{Arithmetic operations over binary positive numbers $\bb{P}$ and integers $\Z$}
+\label{fig:arith-ops}
+\end{framed}
+\end{figure}
+
+The definition we use of natural numbers and integers in Lambdapi in \cref{fig:sorts-constructors} follows a common encoding found in many other theories, including the one adopted in the Rocq standard library \cite{Rocq-refman}.
+Natural numbers are defined inductively with the two constructors $0$ and the the successor function $+1$ written postfix.
+The type $\bb{P}$  is an inductive type representing strictly positive integers in binary form.
+Starting from 1 (represented by the constructor \tt{H}), one can add a new least significant digit via the constructor \tt{O} (digit 0) or the constructor \tt{I} (digit 1).
+For example, we represent 5 (101b) as $\tt{I} (\tt{O} (\tt{H}))$. The type $\Z$ represents integers in binary form.
+An integer is either zero (with constructor $\ZO$) or a strictly positive number $\ZPos$ (coded as a $\bb{P}$) or a strictly negative number $\ZNeg$.
+We make use of Lambdapi's \lstinline[language=Lambdapi,basicstyle=\ttfamily\normalsize]|builtin| mechanism to enable decimal notation for numeric values, for instance, writing $2$ for $\ZPos (\mathop{\tt{O}} \tt{H})$.
+to convert natural representations of values into elements of $\Z$.
+To enable quantification over elements of these types, we introduce constants such as $\tt{int}:\set$ that represent codes for these types along with a rule for rewriting codes to their corresponding types, for example $\el~\tt{int} \re \Z$.
+Arithmetic operations over these types are defined in \cref{fig:arith-ops}. This includes addition over $\Z$, denoted $(+)$, and over $\bb{P}$, denoted \texttt{add}.
+These operations are implemented using rewrite rules, which necessitates proofs of both confluence and termination.
+We use this encoding of integer operations for extending the embedding of Alethe proofs in Lambdapi described in \cite{ColtellacciMD24}.
+In particular, the SMT sort $\textbf{Int}$ is mapped to $\el~\texttt{int}$, and the arithmetic operations of SMT to their counterparts in the Lambdapi encoding.
+
+
+\begin{figure}
+\begin{framed}
+{\footnotesize
+\centering
+% --- Comparison and Integer comparison ---
+\[
+\begin{array}[t]{l@{\hspace{4em}}l}
+\begin{aligned}
+&\tt{Comp}: \type{} \\
+&|~\tt{Eq}: \tt{Comp} \\
+&|~\tt{Lt}: \tt{Comp} \\
+&|~\tt{Gt}: \tt{Comp} \\
+&\tt{comp}: \set \\
+&\el{}~\tt{comp} \re \tt{Comp}
+\end{aligned}
+&
+\begin{aligned}
+&\doteq : \Z \ra \Z \ra \tt{Comp} \\
+& \ZO \doteq \ZO \re \tt{Eq} \\
+& \ZO \doteq \ZPos~\_ \re \tt{Lt} \\
+& \ZO \doteq \ZNeg~\_ \re \tt{Gt} \\
+& \ZPos~\_ \doteq \ZO \re \tt{Gt} \\
+& \ZPos~p \doteq \ZPos~q \re \tt{cmp}~p~q \\
+& \ZPos~\_ \doteq \ZNeg~\_ \re \tt{Gt} \\
+& \ZNeg~\_ \doteq \ZO \re \tt{Lt} \\
+& \ZNeg~\_ \doteq \ZPos~\_ \re \tt{Lt} \\
+& \ZNeg~p \doteq \ZNeg~q \re \tt{cmp}~q~p
+\end{aligned}
+\\[3em]
+\begin{aligned}
+  &\tt{isGt} : \tt{Comp} \ra \B \\
+  &\tt{isGt}~\tt{Eq} \re \tt{false} \\
+  &\tt{isGt}~\tt{Lt} \re \tt{false} \\
+  &\tt{isGt}~\tt{Gt} \re \tt{true}
+\end{aligned}
+&
+\begin{aligned}
+  &\tt{istrue} : \B \ra \prop \\
+  &\tt{istrue}~\tt{true} \re \top \\
+  &\tt{istrue}~\tt{false} \re \bot\\
+  &\\
+\end{aligned}
+\end{array}
+\]
+
+\vspace{3em}
+
+\[
+\begin{array}{l@{\hspace{4em}}l}
+\begin{aligned}
+  &\tt{isEq} : \tt{Comp} \ra \B \\
+  &\tt{isEq}~\tt{Eq} \re \tt{true} \\
+  &\tt{isEq}~\tt{Lt} \re \tt{false} \\
+  &\tt{isEq}~\tt{Gt} \re \tt{false}
+\end{aligned}
+&
+\begin{aligned}
+  &\tt{isLt} : \tt{Comp} \ra \B \\
+  &\tt{isLt}~\tt{Eq} \re \tt{false} \\
+  &\tt{isLt}~\tt{Lt} \re \tt{true} \\
+  &\tt{isLt}~\tt{Gt} \re \tt{false}
+\end{aligned}
+\\[3em]
+\begin{aligned}
+  &\tt{isGt} : \tt{Comp} \ra \B \\
+  &\tt{isGt}~\tt{Eq} \re \tt{false} \\
+  &\tt{isGt}~\tt{Lt} \re \tt{false} \\
+  &\tt{isGt}~\tt{Gt} \re \tt{true}
+\end{aligned}
+&
+\begin{aligned}
+  &\tt{istrue} : \B \ra \prop \\
+  &\tt{istrue}~\tt{true} \re \top \\
+  &\tt{istrue}~\tt{false} \re \bot\\
+  &\\
+\end{aligned}
+\end{array}
+\]
+% --- Inequalities relations ---
+\noindent
+\begin{align*}
+&\leq: \Z \ra \Z \ra \prop  \coloneq \lambda x,\lambda y, \neg (\tt{istrue}(\tt{isGt}(x \doteq y))) \\
+&<: \Z \ra \Z \ra \prop  \coloneq \lambda x,\lambda y, (\tt{istrue}(\tt{isLt}(x \doteq y))) \\
+&\geq: \Z \ra \Z \ra \prop \coloneq \lambda x,\lambda y, \neg (x < y) \\
+&>: \Z \ra \Z \ra \prop  \coloneq \lambda x,\lambda y, \neg (x \leq y)
+\end{align*}
+}%
+\end{framed}
+\caption{Definitions for inequalities over $\Z$.}
+\label{fig:arith-inequalities-def}
+\end{figure}
+
+In \cref{fig:arith-inequalities-def}, we also introduce inductive types \tt{Comp} and $\B$ representing comparison operators and Booleans.
+We will refer to the rewrites rules of \cref{fig:arith-ops} and \cref{fig:arith-inequalities-def} as $\ra_\Z$ and $\ra_\bb{P}$ in the following sections.
+The function $\doteq : \Z \to \Z \to \texttt{Comp}$ compares two integers, relying on the auxiliary function $\texttt{cmp} : \bb{P} \to \bb{P} \to \texttt{Comp}$ to perform comparisons between strictly positive binary numbers.
+Based on this comparison mechanism, we define inequality operators over $\Z$ as binary predicates, by reducing them to the decidable comparison $\doteq$. They reduce to $\top$, $\bot$ (or negated) by applying rules of $\ra_\Z$ and $\ra_\bb{P}$.
+For example, $1 < 2 \hookrightarrow \tt{istrue}(\tt{isLt}(1 \doteq 2)) \hookrightarrow \tt{istrue}(\tt{isLt}(\tt{Lt})) \hookrightarrow \tt{istrue}(\tt{true}) \hookrightarrow \top$, with $1 = \mathop{\ZPos} \tt{H}$ and $2 = \mathop{\ZPos} (\mathop{\tt{O}} \tt{H})$.
+
+\begin{lemma}[Confluence of $\ra_\bb{Z}$ and $\ra_\bb{P}$]
+\begin{proof}
+CSI \cite{CSI} automatically proves the confluence of $\ra_\bb{Z}$ and $\ra_\bb{P}$ by giving the polynomial interpretation:
+\begin{align*}
+[\tt{succ}(x)] = 4*x & &[\tt{add}(x, y)] = 4 * x + 4 * y + 2  & &[ {\tt{H}} ] = 4 \\
+\end{align*}
+\end{proof}
+\label{lemma:confluenceZP}
+\end{lemma}
+
+
+\subsection{Encoding rational number (WIP)}
+
+\begin{figure}
+\begin{align*}
+& \Q: \type \\
+& |~\tt{\#}: \Z \ra \bb{P} \ra \Q{} \quad \text{(written infix)}\\
+&\\
+& rational: \set \\
+& \el{}\,\tt{rational} \re \Q
+\end{align*}
+
+\noindent
+
+\begin{align*}
+&\tt{Qnum}(n \,\#\, d) \ra n \\
+&\tt{Qden}(n \,\#\, d) \ra d \\
+&\tt{QDen}(q : \Q) \coloneq \ZPos(\tt{Qden}(q)) \\
+&(n_1 \,\#\, d_1) \doteq_\Q (n_2 \,\#\, d_2) \ra (n_1 * d_2)~\doteq~(n_2 * d_1) \quad \text{(infix)} \\
+&(n_1 \,\#\, d_1) =_\Q (n_2 \,\#\, d_2) \ra (n_1 * d_2) = (n_2 * d_1) \quad \text{(infix)} \\
+&(n_1 \,\#\, d_1) \le_\Q (n_2 \,\#\, d_2) \ra (n_1 * d_2) \le (n_2 * d_1) \quad \text{(infix)} \\
+&(n_1 \,\#\, d_1) <_\Q (n_2 \,\#\, d_2) \ra (n_1 * d_2) < (n_2 * d_1) \quad \text{(infix)} \\
+&(n_1 \,\#\, d_1) \ge_\Q (n_2 \,\#\, d_2) \ra (n_1 * d_2) \ge (n_2 * d_1) \quad \text{(infix)} \\
+&(n_1 \,\#\, d_1)  >_\Q (n_2 \,\#\, d_2) \ra (n_1 * d_2) > (n_2 * d_1) \quad \text{(infix)} \\
+\\
+&(n_1 \,\#\, d_1)~q+~(n_2 \,\#\, d_2) \ra \\
+& \quad (n_1 * d_2 + n_2 * d_1) \,\#\, \text{mul}(d_1, d_2) \quad \text{(infix)}. \\
+\end{align*}
+\caption{Encoding rational}
+\label{fig:rational-sort}
+\end{figure}
+
+SMT solver define the sort \smtinline{Real}, but in practice the reconstruction of Alethe proof with the logic \textbf{\tt{LA}}
+only require the rational number (\Q) for most of the case. We then only define the rational number \cref{fig:rational-sort} and we will translate SMT
+term of sort \smtinline{Real} as lambdapi term of sort {\Q}. We follows the encoding of rational from Rocq \cite{Rocq-refman} that are constructed with a numerator of type {\Z} and a denominator of type {\PP} to prevent
+to have zero as a denominator even if SMT-LIB allows in its format the denominator to be null. The immediate problem with this representation is the lack of canonicity.
+In particular, from the Lambdapi point of view, $1 \# 2 \neq 2 \# 4$. We implemented a normalisation functions for rational numbers based on the a generalized GCD.
+The function \tt{Zggcd} takes two integer $a$ and $b$ returns a triple $(g, (u, v))$ where $g = \tt{gcd}(a, b)$, and the integers $u$ and $v$ satisfy the \emph{Bézout identity}: $g = u \times a + v \times b$.
+The complete auxiliary function (e.g. $\tt{ggcd}_\PP$) can be found in \cref{app:complete-gcd}. The function $|\_|$ compute the absolute value.
+
+\begin{align*}
+&\tt{Zggcd}~\ZO~b \ra (|b|,~(\ZO,~\tt{sgn}~b)) \\
+&\tt{Zggcd}~a~\ZO \ra (|a|,~(\tt{sgn}~a,~\ZO)) \\
+&\tt{Zggcd}~(\ZPos~a)~(\ZPos~b) \ra \tt{let } (g,(u,v)) \coloneqq \tt{ggcd}_\PP~a~b~ \\
+&\quad \tt{ in} (\ZPos(g),~(\ZPos(u),~\ZPos(v))) \\
+&\tt{Zggcd}~(\ZPos~a)~(\ZNeg~b) \ra \tt{let } (g,(u,v)) \coloneqq \tt{ggcd}_\PP~a~b~ \\
+&\quad \tt{ in} (\ZPos(g),~(\ZPos(u),~\ZNeg(v)) \\
+&\tt{Zggcd}~(\ZNeg~a)~(\ZPos~b) \ra \tt{let } g,(u,v)) \coloneqq \tt{ggcd}_\PP~a~b~ \\
+&\quad \tt{ in} (\ZPos(g),~(\ZNeg(u),~\ZPos(v))) \\
+&\tt{Zggcd}~(\ZNeg~a)~(\ZNeg~b) \ra \tt{let } g,(u,v)) \coloneqq \tt{ggcd}_\PP~a~b~\\
+&\quad \tt{ in} (\ZPos(g),~(\ZNeg(u),~\ZNeg(v))).
+\end{align*}
+
+with:
+
+\[
+\operatorname{sgn}(z: \Z) = 
+\left\{
+\begin{array}{ll}
+\phantom{-}1 & \text{if } z > 0, \\
+\phantom{-}0 & \text{if } z = 0, \\
+-1 & \text{if } z < 0.
+\end{array}
+\right.
+\]
+
+\begin{lemma}[Correctness of \texttt{Zggcd}]
+Let $a, b \in \Z$ be arbitrary integers. If 
+\[
+\texttt{Zggcd}(a, b) = (g, (a', b')),
+\]
+then the following equalities hold:
+\[
+a = g \cdot a' \quad \text{and} \quad b = g \cdot b'.
+\]
+\begin{proof}
+TODO
+\end{proof}
+\end{lemma}
+
+We can define the function  $\operatorname{Qred} :\Q \ra \Q$ reduces a rational number to a canonical form by dividing both the numerator and the denominator by their greatest common divisor.
+This canonical representative is unique for each rational equivalence class.
+
+\[
+\operatorname{Qred}(q : \Q) \coloneqq 
+\begin{aligned}[t]
+  &\text{let } q_1 \coloneqq \operatorname{Qnum}(q), \\
+  &\text{let } q_2 \coloneqq \operatorname{Qden}(q), \\
+  &\text{let } (\_,(u,v)) \coloneqq \left( \operatorname{Zggcd}(q_1, \ZPos(q_2)) \right) \text{ in} \\
+  &\quad u \,\#\, \operatorname{to\_pos}(v).
+\end{aligned}
+\]
+
+with:
+
+\[
+\operatorname{to\_pos}(z) = 
+\left\{
+\begin{array}{ll}
+p & \text{if } z = \operatorname{Zpos}~p, \\
+\texttt{H} & \text{if } z = \operatorname{Zneg}~\_, \\
+\texttt{H} & \text{if } z = \Z0.
+\end{array}
+\right.
+\]
+
+We now establish two fundamental properties of $\operatorname{Qred}$: \emph{correctness}, which ensures that reduction preserves the value of a rational number,
+and \emph{completeness}, which guarantees that equivalent rational numbers are reduced to the same canonical form.
+
+\begin{lemma}[Correctness of Qred]
+For any unreduced rational number $q: \Q$, we have $\operatorname{Qred}(q) =_{\Q} q$.
+\begin{proof}
+TODO
+\end{proof}
+\end{lemma}
+
+\begin{lemma}[Completeness of Qred]
+For any unreduced rational numbers $p\,q: \Q$, if $p =_\Q q$ then $\operatorname{Qred}(p) = \operatorname{Qred}(q)$. 
+\begin{proof}
+TODO
+\end{proof}
+\end{lemma}
+
+Therefore, we define auxiliary operations, shown in \cref{fig:rational-sort}, whose results are reduced to canonical form using $\operatorname{Qred}$.
+
+\begin{align*}
+& p~+^r_\Q~q \is \operatorname{Qred}(p~+_\Q~q) \quad \text{(written infix)}, \\
+& p~q-^r_\Q~q \is \operatorname{Qred}(p~-_\Q~q) \quad \text{(written infix)}, \\
+& p~*_\Q~q \is \operatorname{Qred}(p~*_\Q~q) \quad \text{(written infix)}.
+\end{align*}
+
+
+\subsection{Encoding bitvector (WIP)}
+
+
+\begin{figure}
 %************ Dependent pair **********************
 % [a: Set] (p: τ a → Prop) inductive Σ : TYPE ≔
 %     exist (x: τ a) : π (p x) → Σ p;
@@ -138,7 +480,19 @@ Moreover, propositionally equivalent formulas are equal. We thus introduce the a
 & mkBv: \Pi(n: \N)(p: \prf~(istrue(n < 2~\hat{}~n))): BitVec~n\\
 &\quad\is FinMk~(2~\hat{}~n)~n~p \\
 \end{align*}
+\caption{Encoding bitvector}
+\label{fig:bitvector-def}
+\end{figure}
 
+We interpret a bitvector $\operatorname{BitVec}(w: \N)$ from the SMT logic \textbf{BV} as a number less than $2^w$  because we use $\operatorname{Fin}$ as the internal representation of a bitvector as depicted in .
+In particular, a $\operatorname{Fin} n$ is a natural number $i$ with the constraint that $i < n$. It is the canonical type with $n$ elements. In the \cref{fig:bitvector-def}, we provide the definitions of $\operatorname{Fin}$
+which is a dependent pair type i.e. Sigma type ($\Sigma$), the definition of $\operatorname{Fin} n$ and $\operatorname{Bitvector} n$.
+We choose the $\operatorname{Fin}$ representation over others for its relative efficiency.
+If support for special-casing natural numbers is added to the kernel and compiler - such that they are overridden by efficient implementations using arbitrary-precision arithmetic libraries (e.g., GMP\footnote{\url{https://gmplib.org/}})
+then bitvectors would similarly benefit from a compact and efficient representation.
+Alternative representations are also possible. One option is a vector of Booleans, that is, a list of type 
+or a dependent pair $\operatorname{BitVec}(w: \N): \Sigma (List Bool) (\lambda\,(l: \mathop{List Bool}), \mathop{length} l = w)$, or alternatively $\operatorname{BitVec}(w: \N): \Sigma (\mathop{BinNat}) (\lambda\,(n:\mathop{BinNat}), \mathop{size} n = w)$
+where $\mathop{BinNat}$  is an inductive type representing binary natural numbers greater than zero, constructed on top of $\N$.
 
 \subsection{Functions used in the translation}
 
@@ -262,116 +616,6 @@ For any two clauses $a\,b$, the equivalence $\pic (\cal{F}(a~\pp~b)) \Leftrighta
   \item For the case $a = h \veedot tl$ we may use the induction hypothesis $\pic\,(\cal{F}\, (tl\, \pp\, b)) \Leftrightarrow^c \pic\,(\cal{F}\,tl \lor^c \cal{F}\, b)$. The conclusion is then easy to prove based on the rewriting rules for the operators $\cal{F}$ and $\pp$, together with associativity of $\lor^c$.
   \end{itemize}
 \end{proof}
-
-\section{Encoding of Linear Integer Arithmetic in Lambdapi}
-\label{sec:encoding}
-
-%\subsection{Encoding Integers in Lambdapi}
-
-
-\begin{figure}[t]
-\centering
-\begin{align*}\label{eq:eq1}
-&\bb{P}: \type & &\bb{Z}: \type   & &\tt{Comp}: \type & &\bb{B}: \type \\
-&|~\tt{H} : \bb{P} & &|~\tt{Z0}: \bb{Z} & &|~\tt{Eq}: \tt{Comp} & &|~\tt{true}: \bb{B} \\
-&|~\tt{O}: \bb{P} \ra \bb{P} & &|~\tt{ZPos}: \bb{P} \ra \bb{Z} & &|~\tt{Lt}: \tt{Comp} & &|~\tt{false}: \bb{B} \\
-&|~\tt{I}: \bb{P} \ra \bb{P} & &|~\tt{ZNeg}: \bb{P} \ra \bb{Z} & &|~\tt{Gt}: \tt{Comp} & &\\
-&\tt{pos}: \set & &\tt{int}: \set & &\tt{comp}: \set & &\tt{bool}: \set \\
-&\el~\tt{pos} \re \bb{P} & &\el~\tt{int} \re \bb{Z} & &\el~\tt{comp} \re \tt{Comp} & &\el~\tt{bool} \re \bb{B}
-\end{align*}
-\caption{Type definitions for binary positive number, integers, comparison and Booleans.}
-\label{fig:sorts-constructors}
-\end{figure}
-
-The definition we use of integers in Lambdapi in \cref{fig:sorts-constructors} follows a common encoding found in many other theories, including the one adopted in the Rocq standard library \cite{Rocq-refman}.
-First, the type $\bb{P}$  is an inductive type representing strictly positive integers in binary form.
-Starting from 1 (represented by the constructor \tt{H}), one can add a new least significant digit via the constructor \tt{O} (digit 0) or the constructor \tt{I} (digit 1). 
-The type $\bb{Z}$ represents integers in binary form.
-An integer is either zero (with constructor \tt{Z0}) or a strictly positive number \tt{Zpos} (coded as a $\bb{P}$) or a strictly negative number \tt{Zneg}.
-We make use of Lambdapi's \lstinline[language=Lambdapi,basicstyle=\ttfamily\footnotesize]|builtin| mechanism to enable decimal notation for numeric values, for instance, writing $2$ for $\ZPos (\mathop{\tt{O}} \tt{H})$.
-to convert natural representations of values into elements of $\bb{Z}$.
-%
-We also introduce enumeration types \tt{Comp} and $\bb{B}$ representing comparison operators and Booleans. 
-%
-To enable quantification over elements of these types, we introduce constants such as $\tt{int}: \set$ that represent codes for these types along with a rule for rewriting codes to their corresponding types, for example $\el~\tt{int} \re \bb{Z}$.
-Figure~\ref{fig:arith-ops} introduces operations on these types, including addition $(+)$ and comparison $(\doteq)$ over $\bb{Z}$. The functions \texttt{add} and \texttt{sub} implement addition and subtraction for binary positive numbers, respectively, cf. \cref{app:lambdapi-func-def}.
-We also define the operations of multiplication ($\mathbin{*}$) and subtraction ($\mathbin{-}$) over $\bb{Z}$. 
-% A detailed description of their implementation is provided in \cref{app:lambdapi-func-def}.
-The function $\texttt{cmp}: \bb{P} \to \bb{P} \to \texttt{Comp}$ performs a comparison between two binary positive numbers. 
-These operators are defined by rewriting rules that we will refer to as $\ra_\bb{Z}$ and $\ra_\bb{P}$ (for operations on $\bb{Z}$ and $\bb{P}$) in the following sections.
-The confluence of these rewriting rules has been proven using CSI \cite{CSI}, cf. \cref{app:confluence-int-pos}. 
-% A detailed proof of confluence can be found in \cref{app:confluence-int-pos}.
-We leverage these rewriting rules to perform the constant folding required by the \texttt{evaluate} rule, enabling the final proof step to be discharged by reflexivity.
-
-\begin{figure}
-\centering
-\begin{minipage}[t]{0.48\textwidth}
-\begin{align*}
-&+: \bb{Z} \ra \bb{Z} \ra \bb{Z} \\
-& \tt{Z0} + y \re y \\
-& x + \tt{Z0} \re x \\
-& (\tt{Zpos x}) + (\tt{Zpos y}) \re (\tt{Zpos}~(\tt{add}~x~y))  \\
-& (\tt{Zpos x}) + (\tt{Zneg y}) \re (\tt{sub}~x~y)  \\
-& (\tt{Zneg x}) + (\tt{Zpos y}) \re (\tt{sub}~y~x)  \\
-& (\tt{Zneg x}) + (\tt{Zneg y}) \re \tt{Zneg}~(\tt{add}~x~y)
-\end{align*}
-\hfill
-\end{minipage}
-\begin{minipage}[t]{0.48\textwidth}
-\begin{align*}
-&\doteq : \bb{Z} \ra \bb{Z} \ra \tt{Comp} \\
-& \tt{Z0} \doteq \tt{Z0} \re \tt{Eq} \\
-& \tt{Z0} \doteq \tt{Zpos}~\_ \re \tt{Lt} \\
-& \tt{Z0} \doteq \tt{Zneg}~\_ \re \tt{Gt} \\
-& \tt{Zpos}~\_ \doteq \tt{Z0} \re \tt{Gt} \\
-& \tt{Zpos}~p \doteq \tt{Zpos}~q \re \tt{cmp}~p~q \\
-& \tt{Zpos}~\_ \doteq \tt{Zneg}~\_ \re \tt{Gt} \\
-& \tt{Zneg}~\_ \doteq \tt{Z0} \re \tt{Lt} \\
-& \tt{Zneg}~\_ \doteq \tt{Zpos}~\_ \re \tt{Lt} \\
-& \tt{Zneg}~p \doteq \tt{Zneg}~q \re \tt{cmp}~q~p
-\end{align*}
-\end{minipage}
-\noindent
-\[
-\begin{array}{l@{\hspace{4em}}l@{\hspace{4em}}l}
-\begin{aligned}
-  &\tt{isEq} : \tt{Comp} \ra \bb{B} \\
-  &\tt{isEq}~\tt{Eq} \re \tt{true} \\
-  &\tt{isEq}~\tt{Lt} \re \tt{false} \\
-  &\tt{isEq}~\tt{Gt} \re \tt{false} 
-\end{aligned}
-&
-\begin{aligned}
-  &\tt{isLt} : \tt{Comp} \ra \bb{B} \\
-  &\tt{isLt}~\tt{Eq} \re \tt{false} \\
-  &\tt{isLt}~\tt{Lt} \re \tt{true} \\
-  &\tt{isLt}~\tt{Gt} \re \tt{false} \\
-\end{aligned}
-&
-\begin{aligned}
-  &\tt{isGt} : \tt{Comp} \ra \bb{B} \\
-  &\tt{isGt}~\tt{Eq} \re \tt{false} \\
-  &\tt{isGt}~\tt{Lt} \re \tt{false} \\
-  &\tt{isGt}~\tt{Gt} \re \tt{true} 
-\end{aligned}
-\end{array}
-\]
-\noindent
-\begin{align*}
-&\leq: \bb{Z} \ra \bb{Z} \ra \prop  \coloneq \lambda x,\lambda y, \neg (\tt{istrue}(\tt{isGt}(x \doteq y))) & &\tt{istrue} : \bb{B} \ra \prop \\
-&<: \bb{Z} \ra \bb{Z} \ra \prop  \coloneq \lambda x,\lambda y, (\tt{istrue}(\tt{isLt}(x \doteq y))) & &\tt{istrue}~\tt{true} \re \top \\
-&\geq: \bb{Z} \ra \bb{Z} \ra \prop  \coloneq \lambda x,\lambda y, \neg (x < y) & &\tt{istrue}~\tt{false} \re \bot \\
-&>: \bb{Z} \ra \bb{Z} \ra \prop  \coloneq \lambda x,\lambda y, \neg (x \leq y) & &
-\end{align*}
-\caption{Definitions for operators over $\bb{Z}$.}
-\label{fig:arith-ops}
-\end{figure}
-
-Finally, we define inequality operators for $\bb{Z}$ as binary predicates by reducing them to the decidable comparison $\doteq$. They reduce to $\top$, $\bot$ (or negated) by applying rules of $\ra_\bb{Z}$ and $\ra_\bb{P}$.
-For example, $1 < 2 \hookrightarrow \tt{istrue}(\tt{isLt}(1 \doteq 2)) \hookrightarrow \tt{istrue}(\tt{isLt}(\tt{Lt})) \hookrightarrow \tt{istrue}(\tt{true}) \hookrightarrow \top$, with $1 = \mathop{\tt{Zpos}} \tt{H}$ and $2 = \mathop{\tt{Zpos}} (\mathop{\tt{O}} \tt{H})$.
-
-We use this encoding of integer operations for extending the embedding of Alethe proofs in Lambdapi described in \cite{ColtellacciMD24}. In particular, the SMT sort $\textbf{Int}$ is mapped to $\el~\texttt{int}$, and the arithmetic operations of SMT to their counterparts in the Lambdapi encoding. The remainder of the paper describes how we simulate in Lambdapi the algorithm presented in \cref{sssect:la-in-alethe} for checking applications of the rule \tt{la\_generic}.
-
 
 \section{Translating Alethe steps}
 \label{sect:translate-step}
@@ -1016,8 +1260,8 @@ Let $P: Z \ra \prop$ be a predicate over a data type Z and $f: Z \ra \tt{bool}$ 
 \end{equation*}
 
 If $\mathop{f} z$ reduces to \tt{true}, then the proof term  $\tt{f\_correct}~z~(\tt{refl}~\tt{bool}~\tt{true})$ with $\tt{refl}: \Pi A: \set,\, \Pi x: \el\,A,\, \pic (x = x)$, constitutes a proof of predicate $(P~z)$. In step 6 of checking an application of rule \tt{la\_generic},
-the primary challenge lies in reasoning modulo associativity and commutativity when manipulating expressions over $\bb{Z}$.
-The key idea is to provide a normalization function that transforms a $\bb{Z}$ expression into a canonical form.
+the primary challenge lies in reasoning modulo associativity and commutativity when manipulating expressions over $\Z$.
+The key idea is to provide a normalization function that transforms a $\Z$ expression into a canonical form.
 % such that it can be reduced to a constant because variables will cancel each other, as is the case with the constant $f$ in \cref{ex:la_generic_example_red}.
 
 
@@ -1025,8 +1269,8 @@ The key idea is to provide a normalization function that transforms a $\bb{Z}$ e
 \label{ssec:representation}
 
 The procedure is based on an algebraic group structure, denoted as  $\bb{G}$ defined in \cref{fig:grp}, which represents linear polynomials.
-The base type for its elements is $\bb{G}: \type$. The unary operator $\tt{cst}$ injects constants from $\bb{Z}$ into $\bb{G}$.
-The term $\tt{var}~c~x$ is intended for representing expressions $c \times x$ that appear as constituents of linear inequalities, where $c$ is an integer coefficient and $x$ a $\bb{Z}$ term, in particular a variable.
+The base type for its elements is $\bb{G}: \type$. The unary operator $\tt{cst}$ injects constants from $\Z$ into $\bb{G}$.
+The term $\tt{var}~c~x$ is intended for representing expressions $c \times x$ that appear as constituents of linear inequalities, where $c$ is an integer coefficient and $x$ a $\Z$ term, in particular a variable.
 The constructor $\tt{mul}$  represents the multiplication of an element of $\bb{G}$ by a constant. The constructor $\tt{opp}$ corresponds to unary minus.
 Lastly, the constructor $\add{}{}$ represents the addition between two elements of $\bb{G}$.
 
@@ -1038,12 +1282,12 @@ ensuring that expressions involving sums of elements of $\bb{G}$ are systematica
 
 \begin{figure}[t]
 \begin{align*}
-& \bb{G}: \type & & \reify{} : \bb{Z} \ra \bb{G} & & \den{}: \bb{G} \ra \bb{Z} \\
-&|~\add{}{}: \bb{G} \ra \bb{G} \ra \bb{G} & & \reify{\tt{Z0}} \re \cst{\tt{Z0}} & & \den{\cst{c}} \re c \\
-&|~\tt{var}: \bb{Z} \ra \bb{Z} \ra \bb{G} & & \mathop{\reify{\ZPos}} c \re \cst{(\ZPos c)} & & \den{\opp{x}} \mathrel{\re}  \mathop{\sim (\den{x})} \\
-&|~\tt{mul}: \bb{Z} \ra \bb{G} \ra \bb{G} & & \mathop{\reify{\ZNeg}} c \re \cst{(\ZNeg c)} & & \den{\mul{c}{x}} \re  c \times (\den{x}) \\
+& \bb{G}: \type & & \reify{} : \Z \ra \bb{G} & & \den{}: \bb{G} \ra \Z \\
+&|~\add{}{}: \bb{G} \ra \bb{G} \ra \bb{G} & & \reify{\ZO} \re \cst{\ZO} & & \den{\cst{c}} \re c \\
+&|~\tt{var}: \Z \ra \Z \ra \bb{G} & & \mathop{\reify{\ZPos}} c \re \cst{(\ZPos c)} & & \den{\opp{x}} \mathrel{\re}  \mathop{\sim (\den{x})} \\
+&|~\tt{mul}: \Z \ra \bb{G} \ra \bb{G} & & \mathop{\reify{\ZNeg}} c \re \cst{(\ZNeg c)} & & \den{\mul{c}{x}} \re  c \times (\den{x}) \\
 &|~\tt{opp}: \bb{G} \ra \bb{G} & & \reify{(x + y)} \re \add{(\reify{x})}{(\reify{y})} & & \den{\add{x}{y}} \re (\den{x}) + (\den{y}) \\
-&|~\tt{cst}: \bb{Z} \ra \bb{G} & & \reify{(\sim x)} \re \opp{\reify{x}} & & \den{\var{c}{x}} \re  c \times x \\
+&|~\tt{cst}: \Z \ra \bb{G} & & \reify{(\sim x)} \re \opp{\reify{x}} & & \den{\var{c}{x}} \re  c \times x \\
 &\tt{grp}: \set & & \mathop{\reify{((\mathop{\ZPos} c) * x})} \re \mul{c}{(\reify{x})}  & & \\
 &\el~\tt{grp} \re \bb{G} & & \mathop{\reify{((\mathop{\ZNeg} c) * x)}} \re \mul{c}{(\reify{x})} & & \\
 & & & \mathop{\reify{(x * (\mathop{\ZPos} c))}} \re \mul{c}{(\reify{x})}  & & \\
@@ -1113,7 +1357,7 @@ AProVE \cite{aprove} automatically proves the termination of $\rwModAC$.
 	$\ACcanon$ is locally confluent on AC-canonical terms.
 \end{lemma}
 \begin{proof}
-We show that every critical pair is joinable using $\ACcanon$ and confluence of $\ra_\bb{Z}$ and $\ra_\bb{P}$ from \cref{lemma:confluenceZP}.
+We show that every critical pair is joinable using $\ACcanon$ and confluence of $\ra_\Z$ and $\ra_\bb{P}$ from \cref{lemma:confluenceZP}.
 We use the notation $\MRAC$ to denote a multistep rewriting with AC-canonical form.
 
 % t ≔ opp (add (var $k $x) (var $c $x))
@@ -1136,7 +1380,7 @@ We use the notation $\MRAC$ to denote a multistep rewriting with AC-canonical fo
 \end{center}
 
 But $\opp{\var{c_1}{x}} \oplus \opp{\var{c_2}{x}} \MRAC \var{(\sim c_1 + \sim c_2)}{x}$
-and $\opp{\var{(c_1 + c_2)}{x}} \MRAC \var{\sim (c_1 + c_2)}{x}$ converge by the confluence of $\ra_\bb{Z}$.
+and $\opp{\var{(c_1 + c_2)}{x}} \MRAC \var{\sim (c_1 + c_2)}{x}$ converge by the confluence of $\ra_\Z$.
 
 % t ≔ opp (add (var $k $x) (add (var $l $x) $y))
 % t ↪[] add (opp (var $k $x)) (opp (add (var $l $x) $y)) ↪* add (var (— $k + — $l) $x) (opp $y)
@@ -1157,7 +1401,7 @@ and $\opp{\var{(c_1 + c_2)}{x}} \MRAC \var{\sim (c_1 + c_2)}{x}$ converge by the
 
 We note that $\opp{\var{c_1}{x}} \oplus \opp{(\var{c_2}{x} \oplus y)} \MRAC \add{\var{(\sim c_1 + \sim c_2)}{x}}{(\opp{y})}$
 and $\opp{\var{(c_1 + c_2)}{x} \oplus y} \MRAC \add{\var{(\sim (c_1 + c_2))}{x}}{(\opp{y})}$
-both reduce to the same term, as guaranteed by the confluence of $\ra_\bb{Z}$.
+both reduce to the same term, as guaranteed by the confluence of $\ra_\Z$.
 
 % t ≔ opp (add (cst $k) (cst $l))
 % t ↪[] add (opp (cst $k)) (opp (cst $l)) ↪* cst (— $k + — $l)
@@ -1176,7 +1420,7 @@ both reduce to the same term, as guaranteed by the confluence of $\ra_\bb{Z}$.
 {11}{4}
 
 We observe that $\opp{\cst{c_1}} \oplus \opp{\cst{c_2}} \MRAC \cst{(\sim c_1) + (\sim c_2)}$
-and $\opp{\cst{(c_1 + c_2)}} \MRAC \cst{\sim (c_1 + c_2)}$ reduce to the same result due to the confluence of $\ra_\bb{Z}$.
+and $\opp{\cst{(c_1 + c_2)}} \MRAC \cst{\sim (c_1 + c_2)}$ reduce to the same result due to the confluence of $\ra_\Z$.
 
 
 % t ≔ opp (add (cst $k) (add (cst $l) $y))
@@ -1198,7 +1442,7 @@ and $\opp{\cst{(c_1 + c_2)}} \MRAC \cst{\sim (c_1 + c_2)}$ reduce to the same re
 
 The expressions $\opp{\cst{c_1}} \oplus \opp{(\cst{c_2} \oplus y)} \MRAC \cst{(\sim c_1) + (\sim c_2)} \oplus \opp{y}$
 and $ \opp{(\cst{c_1 + c_2} \oplus y)} \MRAC \add{ \cst{\sim (c_1 + c_2)} }{\opp{y}}$
-both reduce to a common term, which follows from the confluence property of $\ra_\bb{Z}$.
+both reduce to a common term, which follows from the confluence property of $\ra_\Z$.
 
 % t ≔ add (var $k' $x) (add (var $k $x) (add (var $l $x) $y))
 % t ↪[] add (var ($0' + $k) $x) (add (var $l $x) $y) ↪* add (var (($0' + $k) + $l) $x) $y
@@ -1219,7 +1463,7 @@ both reduce to a common term, which follows from the confluence property of $\ra
 
 The terms $\var{(c_1 + c_2)}{x} \oplus ((\var{c_3}{x} \oplus y)) \MRAC \add{\var{(c_1 + (c_2 + c_3))}{x}}{y}$
 and $\var{c_1}{x} \oplus (\var{(c_2 + c_3)}{x} \oplus y)) \MRAC \add{\var{((c_1 + c_2) + c_3)}{x}}{y}$
-both reduce to the same result due to the confluence of $\ra_\bb{Z}$.
+both reduce to the same result due to the confluence of $\ra_\Z$.
 
 % t ≔ add (cst $k') (add (cst $k) (add (cst $l) $y))
 % t ↪[] add (cst ($0' + $k)) (add (cst $l) $y) ↪* add (cst (($0' + $k) + $l)) $y
@@ -1235,7 +1479,7 @@ both reduce to the same result due to the confluence of $\ra_\bb{Z}$.
 
 We observe that $\cst{c_1 + c_2} \oplus (\cst{c_3} \oplus y) \MRAC \add{\cst{((c_1 + c_2) + c_3)}}{y}$
 and $\cst{c_1} \oplus (\cst{(c_2 + c_3)} \oplus y) \MRAC \add{\cst{(c_1 + (c_2 + c_3)}}{y}$
-both reduce to the same expression due to the confluence property of $\ra_\bb{Z}$.
+both reduce to the same expression due to the confluence property of $\ra_\Z$.
 
 % t ≔ mul $k' (mul $k (mul $l $z))
 % t ↪[] mul ($0' * $k) (mul $l $z) ↪* mul (($0' * $k) * $l) $z
@@ -1249,12 +1493,12 @@ both reduce to the same expression due to the confluence property of $\ra_\bb{Z}
 {16}{16}
 
 Finally, we have $\mul{(c_1)}{(\mul{(c_2 * l)}{z})} \MRAC \mul{((c_1 * c_2) * c_3)}{z})$
-and $\mul{(c_1 * c_2)}{(\mul{c_3}{z}}) \MRAC \mul{(c_1 * (c_2 * c_3))}{z})$ that converge by the confluence of $\ra_\bb{Z}$.
+and $\mul{(c_1 * c_2)}{(\mul{c_3}{z}}) \MRAC \mul{(c_1 * (c_2 * c_3))}{z})$ that converge by the confluence of $\ra_\Z$.
 
 \end{proof}
 
-We compare two $\bb{Z}$-terms $t_1$ and $t_2$ wrt $\ACcanon$ by reifying them into their corresponding $\bb{G}$-terms, denoted $[g_1]$ and $[g_2]$, using the reification function $\reify{}$,
-and normalizing them using $\twoheadrightarrow^{AC}$. Following the reduction rules specified in \cref{fig:grp-rw}, we can then compare their corresponding $\bb{Z}$-terms by applying the denotation function $\den{}$.
+We compare two $\Z$-terms $t_1$ and $t_2$ wrt $\ACcanon$ by reifying them into their corresponding $\bb{G}$-terms, denoted $[g_1]$ and $[g_2]$, using the reification function $\reify{}$,
+and normalizing them using $\twoheadrightarrow^{AC}$. Following the reduction rules specified in \cref{fig:grp-rw}, we can then compare their corresponding $\Z$-terms by applying the denotation function $\den{}$.
 To validate this procedure, it is necessary to establish the correctness of the following diagram, formally expressed by \cref{thm:normalization}.
 
 \begin{figure}
@@ -1263,7 +1507,7 @@ To validate this procedure, it is necessary to establish the correctness of the 
 \(\begin{tikzcd}[ampersand replacement=\&]
 	{\Uparrow(t_1) =_\bb{G} (\Uparrow(t_2)} \& \bb{G} \&\& \bb{G} \& {[g_1] =_\bb{G} [g_2]} \\
 	\\
-	{t_1 =_\bb{Z} t_2} \& \bb{Z} \&\& \bb{Z} \& {\den{g_1} =_\bb{Z} \den{g_2}}
+	{t_1 =_\Z t_2} \& \Z \&\& \Z \& {\den{g_1} =_\Z \den{g_2}}
 	\arrow["{[\_]}", dashed, from=1-2, to=1-4]
 	\arrow["\lrcorner"{anchor=center, pos=0.125}, draw=none, from=1-2, to=3-4]
 	\arrow["{\Downarrow(\_)}", from=1-4, to=3-4]
@@ -1301,14 +1545,14 @@ Now, $[t_1]$, $[t_2]$, and $[t_1 \oplus t_2]$ are terms built solely from \tt{cs
 
 
 
-We make use of \cref{lem:conv} to embed $\bb{Z}$-terms into $\bb{G}$ to normalize and subsequent comparison.
+We make use of \cref{lem:conv} to embed $\Z$-terms into $\bb{G}$ to normalize and subsequent comparison.
 In addition, we leverage this normalization process to support the \tt{arith-poly-norm} rule.
 
 \begin{lemma}[Conversion]\label{lem:conv}
-For all $x: \bb{Z}$, we have $x = (\mathop{\den{(\reify{x})}})$.
+For all $x: \Z$, we have $x = (\mathop{\den{(\reify{x})}})$.
 \end{lemma}
 \begin{proof}
-By induction on $x$. We consider the three cases: $x = \ZPos(n)$, $x = \ZNeg(n)$, and $x = \tt{Z0}$.  
+By induction on $x$. We consider the three cases: $x = \ZPos(n)$, $x = \ZNeg(n)$, and $x = \ZO$.  
 In each case, $\reify{(x)}$ yields the corresponding constant $\cst{x}$, and by definition of the denotation function, $x = \mathop{\den{(\cst{x})}}$.
 Hence, $x = (\mathop{\den{(\reify{x})}})$ in all cases.
 \end{proof}
