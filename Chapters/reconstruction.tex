@@ -358,7 +358,7 @@ The complete auxiliary function (e.g. $\tt{ggcd}_\PP$) can be found in \cref{app
 with:
 
 \[
-\operatorname{sgn}(z: \Z) = 
+\mathop{sgn}(z: \Z) = 
 \left\{
 \begin{array}{ll}
 \phantom{-}1 & \text{if } z > 0, \\
@@ -478,21 +478,174 @@ Therefore, we define auxiliary operations, shown in \cref{fig:rational-sort}, wh
 &\\
 &BitVec~n \is Fin~(2~\hat{}~n) \\ 
 & mkBv: \Pi(n: \N)(p: \prf~(istrue(n < 2~\hat{}~n))): BitVec~n\\
-&\quad\is FinMk~(2~\hat{}~n)~n~p \\
+&\quad\is FinMk~(2~\hat{}~n)~n~p\\
+&\\
+&\mathop{to\_nat}[n : \mathbb{N}] : \mathop{BitVec}(n) \ra \mathbb{N} \\
+&\,\mathop{to\_nat}\;n\;(\mathop{exist}(v,\_))\re v
 \end{align*}
 \caption{Encoding bitvector}
 \label{fig:bitvector-def}
 \end{figure}
 
-We interpret a bitvector $\operatorname{BitVec}(w: \N)$ from the SMT logic \textbf{BV} as a number less than $2^w$  because we use $\operatorname{Fin}$ as the internal representation of a bitvector as depicted in .
-In particular, a $\operatorname{Fin} n$ is a natural number $i$ with the constraint that $i < n$. It is the canonical type with $n$ elements. In the \cref{fig:bitvector-def}, we provide the definitions of $\operatorname{Fin}$
-which is a dependent pair type i.e. Sigma type ($\Sigma$), the definition of $\operatorname{Fin} n$ and $\operatorname{Bitvector} n$.
-We choose the $\operatorname{Fin}$ representation over others for its relative efficiency.
-If support for special-casing natural numbers is added to the kernel and compiler - such that they are overridden by efficient implementations using arbitrary-precision arithmetic libraries (e.g., GMP\footnote{\url{https://gmplib.org/}})
-then bitvectors would similarly benefit from a compact and efficient representation.
-Alternative representations are also possible. One option is a vector of Booleans, that is, a list of type 
-or a dependent pair $\operatorname{BitVec}(w: \N): \Sigma (List Bool) (\lambda\,(l: \mathop{List Bool}), \mathop{length} l = w)$, or alternatively $\operatorname{BitVec}(w: \N): \Sigma (\mathop{BinNat}) (\lambda\,(n:\mathop{BinNat}), \mathop{size} n = w)$
-where $\mathop{BinNat}$  is an inductive type representing binary natural numbers greater than zero, constructed on top of $\N$.
+We interpret a bitvector $\mathop{BitVec}(w: \N)$ from the SMT logic \textbf{BV} as a number less than $2^w$  because we use the type $\mathop{Fin}$ as the internal representation of a bitvector as depicted in \cref{fig:bitvector-def}.
+In particular, a $\mathop{Fin} n$ is a natural number $i$ with the constraint that $i < n$. It is the canonical type with $n$ elements. In the \cref{fig:bitvector-def}, we provide the definitions of $\mathop{Fin}$
+which is a dependent pair type i.e. Sigma type ($\Sigma$), the definition of $\mathop{Fin} n$ and $\mathop{Bitvector} n$.
+
+Alternative representations could include a vector of \B{},
+formally $\mathop{BitVec}(w: \mathbb{N}) := \Sigma(\mathop{List\,\B})(\lambda(l: \mathop{List\,\B}),\mathop{length}l = w)$,
+or a binary natural number encoding: $\mathop{BitVec}(w: \mathbb{N}) := \Sigma\,(\mathop{Bin\N})(\lambda (n:\mathop{Bin\N}), \mathop{size}\,n = w)$, where $\mathop{Bin\N}$
+is an inductive type representing binary natural numbers greater than zero, built on top of $\mathbb{N}$.
+However, like $\mathop{Fin}$, these structures are not currently available in Lambdapi's standard library.
+
+We chose the $\mathop{Fin}$ representation over other possible encodings due to its relative efficiency.
+If, in the future, Lambdapi's kernel adds support for efficient representations of natural numbers e.g.,
+via overriding them with arbitrary-precision arithmetic libraries like GMP\footnote{\url{https://gmplib.org/}} bitvectors encoded with $\mathop{Fin}$ would likewise benefit from such optimizations.
+
+We therefore chose to implement $\mathop{Fin}\,n$, as we believe it provides the most suitable and future-proof foundation for representing the $\mathop{BitVec}$ type,
+particularly in light of potential enhancements to the kernel.
+
+
+We recall that the constructor for bitvector in Alethe: $$\mathtt{bbT}\ \enum[n-1]{x}[][0]$$ with $x_i\in\{\bot,\top\}$, for $0\leq i< n$,
+is the Boolean equivalent of the $i$-th bit of $x$ (from least to most significant). Thus $\enum[n-1]{x}[][0]$ is the Boolean bit-level interpretation corresponding to the bit-vector. 
+
+\begin{example}[Bitvector construction]
+The binary number $\#b0010$ is equivalent to:
+
+\begin{lstlisting}[language=SMT]
+(@bbT false true false false)
+\end{lstlisting}
+\end{example}
+
+Because we encode \smtinline{Bool} terms as $\prop$, a list $\enum[n-1]{x}[][0]$ with $x_i \in {\bot, \top}$ is represented as a list of $\prop$ rather than elements of type $\mathbb{B}$.
+To ensure that such a list is well-formed, we require a predicate that guarantees $x_i \in {\bot, \top}$ for each element.
+
+\begin{lemma}[@bbT well-formed]
+For any Boolean list $l : \mathbb{L}\,o$, if every element of $l$ is either $\top$ or $\bot$, then there exists a corresponding bitvector of $\mathop{size} l$ constructed by $\mathop{@bbT}$.
+\label{lem:bbt}
+\end{lemma}
+
+We first define the function $\mathop{list2Nat}$, which computes the natural number corresponding to $\enum[n-1]{x}[][0]$
+with $x_i \in {\bot, \top}$, and the function $\mathop{All}$, which defines a predicate requiring all elements of the list to satisfy a given property.
+Briefly, the constructor $\Box$ of type $(\bb{L}\,a)$ represent the empty list of element of type $a$ that belongs to \set, and the constructor $x\,::\,xs$ add an element $(x: \el{} a)$ to a list $xs: \bb{L}a$.
+
+\begin{definition}[bbT helper functions]
+\begin{align*}
+&\mathop{list2Nat}(\top \,::\, xs) \ra 2 * (\mathop{list2Nat}\,xs) + 1 \\
+&\mathop{list2Nat}(\bot \,::\, xs) \ra 2 * (\mathop{list2Nat}\,xs) \\
+&\mathop{list2Nat}(\Box) \ra 0
+\end{align*}
+
+\begin{align*}
+&\mathop{All}\;p\;\Box \;\rightarrow\; \top \\
+&\mathop{All}\;p\;(x \,\::\, l) \;\rightarrow\; (p\;x) \land \mathop{All}\;p\;l
+\end{align*}
+\end{definition}
+
+Therefore, we can represent \cref{lem:bbt} as the constant given in \cref{def:eqbbt}.
+To construct a bitvector from a list of \smtinline{Bool}, we must provide a proof that the list is well-formed.
+
+\begin{definition}[Bitvector auxiliary constructor]
+\begin{align*}
+&\mathop{bbT}\,(l : \bb{L}\,o) : \prf (\mathop{All}\,(\lambda x.\; x = \top \lor x = \bot)\,l)\\
+&\quad \ra \mathop{BitVec}(\mathop{size}\,l)
+\end{align*}
+\label{def:eqbbt}
+\end{definition}
+
+
+\subsubsection{Arithmetic}
+
+The SMT-LIB language offers arithmetic operations on bitvectors, such as $\mathop{bvadd}$ and $\mathop{bvadd}$. 
+Some of these operations are signed, while others are unsigned. In the implementation, bitvectors are represented as a wrapper around a Fin type with an appropriate bound.
+Since $\mathop{Fin}$ itself wraps a natural number (\N), bitvector operations rely on corresponding functions and proofs defined over \N.
+
+\begin{definition}[Bitvector arithmetic]
+\begin{align*}
+&\mathop{bvsub}[n : \mathbb{N}] : \mathop{BitVec}(n) \ra \mathop{BitVec}(n) \ra \mathop{BitVec}(n) \\
+&\quad\coloneq\; \lambda x, \lambda y, \; \mathop{sub}(2^n, x, y) \\
+&\mathop{bvmul}[n : \mathbb{N}] : \mathop{BitVec}(n) \ra \mathop{BitVec}(n) \ra \mathop{BitVec}(n) \\
+&\quad\coloneq\; \lambda x, \lambda y, \; \mathop{mul}(2^n, x, y) \\
+&\mathop{bvshiftl}[n : \mathbb{N}] : \mathop{BitVec}(n) \ra \mathop{BitVec}(n) \ra \mathop{BitVec}(n) \\
+&\quad\coloneq\; \lambda x, \lambda y, \; \mathop{shiftl}(2^n, x, y) \\
+&\mathop{bvshiftr}[n : \mathbb{N}] : \mathop{BitVec}(n) \ra \mathop{BitVec}(n) \ra \mathop{BitVec}(n) \\
+&\quad\coloneq\; \lambda x, \lambda y, \; \mathop{shiftr}(2^n, x, y) \\
+&\mathop{bvand}[n : \mathbb{N}] : \mathop{BitVec}(n) \ra \mathop{BitVec}(n) \ra \mathop{BitVec}(n) \\
+&\quad\coloneq\; \lambda x, \lambda y, \; \mathop{and}(2^n, x, y) \\
+&\mathop{bvor}[n : \mathbb{N}] : \mathop{BitVec}(n) \ra \mathop{BitVec}(n) \ra \mathop{BitVec}(n) \\
+&\quad\coloneq\; \lambda x, \lambda y, \; \mathop{or}(2^n, x, y)
+\end{align*}
+\end{definition}
+
+
+\subsubsection{Bitwise Operators}
+
+SMT-LIB define bitwise operators such as $\mathop{bvand}$ or $\mathop{bvlshr}$  (which shifts a bitvector to the right) for manipulating the individual bits of one or more bitvectors. 
+ Following a similar strategy, we encoded these operations over \N and wrap the bitvector operations on them. To illustrate this approach, we focus on the $\mathop{bvand}$ operator.
+We begin by defining its natural number analogue, $\mathop{land}$ with its correctness \cref{lem:correct-land}.
+
+\begin{definition}[and operator for Nat]
+We define a higher-order function \( \mathop{\mathrm{bitwise}} : (\mathbb{B} \ra \mathbb{B} \ra \mathbb{B}) \ra \mathbb{N} \ra \mathbb{N} \ra \mathbb{N} \ra \mathbb{N} \) by the following rewrite rules:
+\begin{align*}
+&\mathop{\mathrm{bitwise}}\,op\, 0\, a\, b \re 0 \\
+&\mathop{\mathrm{bitwise}}\,op\, n{+}1\, a\, b \re \\
+&\quad\left( \text{if } (\mathop{op}\,(\mathop{\mathrm{odd}}a)\, (\mathop{\mathrm{odd}}\,b)) 1\,0 \right) \\
+&\quad+ 2 * \mathop{\mathrm{bitwise}}\,op\, n\, (\mathop{\mathrm{div2}}\,a)\,(\mathop{\mathrm{div2}}\,b)
+\end{align*}
+The auxiliaries functions \( \mathop{\mathrm{div2}} : \mathbb{N} \ra \mathbb{N} \) and the boolean \( \mathop{\mathrm{and}} : \B \ra \B \ra \B \) are defined recursively as:
+\begin{align*}
+&\mathop{\mathrm{div2}}\,0 \re 0 \\
+&\mathop{\mathrm{div2}}\,1 \re 0 \\
+&\mathop{\mathrm{div2}}\,x{+}2 \re \mathop{\mathrm{div2}}\,x + 1 \\
+&\\
+&\mathop{\mathrm{and}}(\mathrm{true},\, b) \re b \\
+&\mathop{\mathrm{and}}(b,\, \mathrm{true}) \re b \\
+&\mathop{\mathrm{and}}(\mathrm{false},\, \_) \re \mathrm{false} \\
+&\mathop{\mathrm{and}}(\_,\, \mathrm{false}) \re \mathrm{false}
+\end{align*}
+Then, we can define the natural number bolean and i.e. (\&\&) as:
+\begin{equation*}
+\&\&~(a\,b: \N): \N \is \mathop{bitwise}\,(and)\,a\,a\,b \quad \text{(written infix)}
+\end{equation*}
+\end{definition}
+
+
+\begin{lemma}[Correctness of Bitwise \&\&]
+Let $n, m, i \in \N$. Then the $i$-th bit of the bitwise $\mathbin{\&\&}$ of $n$ and $m$ equals the conjunction of the $i$-th bits of $n$ and $m$, that is:
+\[
+\mathop{testbit} (n \mathbin{\&\&} m)~i = \mathop{andb}~(\mathop{testbit} n~i) (\mathop{testbit} m~i).
+\]
+with:
+\begin{align*}
+&\mathop{\mathrm{testbit}} : \N \ra \N \ra \B \\
+&\mathop{\mathrm{testbit}}\,a,\,0 \re \mathop{\mathrm{odd}}\,a \\
+&\mathop{\mathrm{testbit}}\,a,\,n{+}1 \re \mathop{\mathrm{testbit}}\,\mathop{\mathrm{div2}}(a),\, n
+\end{align*}
+\begin{proof}TODO\end{proof}
+\label{lem:correct-land}
+\end{lemma}
+
+\begin{lemma}[Bitwise $\mathbin{\&\&}$ upper bound]
+Let \( x, y, n : \N \), and suppose \( y < 2 \,\hat{}\, n \). Then:
+\[
+x \mathbin{\&\&} y < 2^n.
+\]
+\label{and_lt_two_pow}
+\end{lemma}
+
+Finally, we can define the $\mathop{bvand}$ function.
+
+\begin{definition}[Bitwise \emph{and} for bitvectors]
+\begin{align*}
+&\mathop{\mathrm{Fin.and}}~[n: \N]: \mathop{Fin} n \ra \mathop{Fin} n \ra \mathop{Fin} n\\
+&\quad\is \lambda f1,\, \lambda f2,\, \mathop{\mathrm{FinMk}}~n~((\mathop{val} f1) \mathbin{\&\&} (\mathop{val} f2)) \\
+&\quad (\mathop{and\_lt\_two\_pow}~(\mathop{val} f1)~(\mathop{val} f2)~n~(\mathop{isLt} f2))
+&\\
+&\mathop{\mathrm{bvand}}~[n: \N]: \mathop{BitVec} n \ra \mathop{BitVec} n \ra \mathop{BitVec} n\\
+&\quad\is \lambda x, \lambda y, \mathop{Fin.and}~(2~\hat{}~n)~x~y
+\end{align*}
+with $\mathop{and\_lt\_two\_pow}$ the constant for \cref{and_lt_two_pow}
+\end{definition}
+
 
 \subsection{Functions used in the translation}
 
