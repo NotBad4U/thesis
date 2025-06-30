@@ -1,0 +1,51 @@
+\section{Correctness of the translation}
+\label{sect:soundness}
+
+An Alethe proof trace is a non-empty list $[c_1, \dots, c_n]$ of steps such that $c_n$ derives the empty clause. Moreover, the justification of every step may only refer to earlier steps, such that the proof trace can be represented as a directed acyclic graph. We recall the definition of a well-formed Alethe proof trace \cite[Def.\ 7.2]{alethespec}.
+
+\smallskip
+
+\begin{definition}[Well-formed proof]
+An Alethe proof trace $P$ is well-formed if every step uses a unique index and $P$ contains no anchor or step that uses a concluding rule.
+\end{definition}
+
+\smallskip
+
+\begin{definition}[Valid Alethe proof trace] 
+  A proof trace $P$ is a \emph{valid Alethe proof trace} if all the following conditions hold:
+  \begin{itemize}
+  \item every step of $P$ has a unique index,
+  \item $P$ contains a last step that has the empty clause as its conclusion,
+  \item all steps $c_i$ in $P$ only use premises $c_j$ in $P$ with $1 \leq j < i$,
+  \item all steps $c_i$ in $P$ adhere to the conditions of their rule under the empty context.
+  \end{itemize}
+  $P$ is a \emph{valid Alethe proof trace prefix} if it satisfies all conditions except the second one, i.e., it may end in a clause other than the empty clause.
+\end{definition}
+
+\smallskip 
+
+Proving correctness of the translation amounts to showing that any valid Alethe proof trace is translated into a Lambdapi proof of the empty clause. This follows from the following theorem for proof traces containing the Alethe commands \kw{assume}, \kw{equiv\_pos2}, \kw{cong}, \kw{resolution}, \kw{subproof}, \kw{bind}, and \kw{sko\_forall}.
+
+\smallskip
+
+\begin{theorem}[Correctness of reconstruction]\label{theorem:soundness}
+  For any \emph{valid} Alethe proof trace prefix $P = [c_1, \dots, c_n]$, $\mathcal{C}(c_n)$ is well-defined. Furthermore, if $c_n.\,\Gamma\, \triangleright l_1 \dots l_n \, (\mathcal{R}\,P)[A]$ then $\vdash_\Sigma c_n : \pid (\E{l_1} \cons \dots  \cons \E{l_n}) [\coloneq M_n]$ and if $M_n$ is provided it is a proof term inhabiting the type of the translated clause.
+\end{theorem}
+\begin{proof}
+  Inductively, assume that the theorem holds for the shorter trace prefix $P = [c_1, \dots, c_{n-1}]$, which is also a valid proof trace prefix, and consider the rule $R$ that is applied for establishing $c_n$.
+  \begin{itemize}
+  \item Case $R = \kw{assume}$. Then the assertion obviously holds, and no proof term is provided.
+  \item For tautologous and simple deductions rules, the proofs follow a similar approach. We illustrate them with two cases:
+  \begin{itemize}
+  \item Case $R = \kw{equiv\_pos2}$. The assertion holds due to the theorem \kw{equiv\_pos2} proved in Lambdapi, cf.\ \cref{ssec:elem-rules}.
+  \item Case $R = \kw{cong}$. Since $P$ is a valid proof trace prefix, the conclusion of the step must be of the form $(f~t_1 \ldots t_m) \approx (f~u_1 \ldots u_m)$ and the justification must refer to previous steps $i_j.\,\Gamma\,\triangleright t_j \approx u_j$. By assumption, we therefore have in Lambdapi that $\vdash_{\Sigma} c_j: \pid (t_j = u_j)$, and an application of rule $\kw{cong}_m$ proves the assertion.
+  \end{itemize}
+  The rest of the supported tautologous and simple deductions can be found in \cref{app:alethe-rules-supported}.
+  \item Case $R = \kw{resolution}$. The assertion follows from \cref{lemma:resolution} since the resolution rule is a chain resolutions of clauses and the permutation of pivots is proved by \cref{lem:eq-C}.
+  \item Case $R = \kw{subproof}$. The assertion follows from \cref{lem:subproof}, cf.\ \cref{app:subproof}, and the assumption that $P$ is a valid Alethe trace prefix.
+  \item Case $R = \kw{bind}$. The assertion follows from Lemmas~\ref{lem:bind-exists} and~\ref{lem:bind-forall} and the assumption that $P$ is a valid Alethe trace prefix.
+  \item Case $R = \kw{sko\_forall}$. Again relying on the assumption that $P$ is a valid Alethe trace prefix, the assertion follows from \cref{lem:sko-forall} and the definition of the translation in \cref{fig:sko-forall}.
+  \end{itemize}
+\end{proof}
+
+We do not formally assert correctness for the simplification and evaluation proof steps, because the latter rely on transformations that are not entirely known to us, but we provide a best-effort translation for these commands. Further Alethe commands are left for future work.
