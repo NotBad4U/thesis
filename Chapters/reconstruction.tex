@@ -46,7 +46,8 @@ Consequently, a \emph{step} in an Alethe proof trace is represented as an inhabi
 
 Given that SMT solvers operate under classical logic, we employ the constructive connectives and quantifiers,
 while explicitly introducing the classical principles of the Law of the Excluded Middle and propositional extensionality.
-%
+
+\begin{definition}[Constructive connectives, quantifiers]
 \begin{align}
 & \top : \prop \\
 & \bot : \prop \\
@@ -65,6 +66,7 @@ while explicitly introducing the classical principles of the Law of the Excluded
 & \epsilon_{d}: \Pi {[a: \set]}, \Pi (P\,Q : \el\,a \ra \prop) \\
 & \quad \ra \Pi x : \el\,a, \prf (P\,x = Q\,x) \ra (\epsilon \, P = \epsilon \, Q)
 \end{align}
+\end{definition}
 
 Accordingto the Curry-de Bruijn-Howard correspondence, a proof of $A \Rightarrow B$ should have the type $\prf (A \Rightarrow B)$.
 However, such a proof actually has type $\prf\,A \ra \prf\,B$. This means that the types $\prf (A \Rightarrow B)$ and $\prf\,A \ra \prf\,B$ must be identiﬁed.
@@ -86,12 +88,15 @@ SMT logic enjoys the property of propositional completeness (also referred to as
  \[
   \forall p,(p = \top) \lor (p = \bot) 
 \]
-Moreover, propositionally equivalent formulas are equal. We thus introduce the axioms
-%
+Moreover, propositionally equivalent formulas are equal. We thus introduce the axioms in \cref{def:classical-facts}.
+
+\begin{definition}[Classical facts]
 \begin{align*}
 \texttt{em}:\ & \Pi [p: \prop], \prf (p \lor \neg p) \\
 \texttt{prop\_ext}:\ & \Pi [p\,q: \prop], \prf (p \Leftrightarrow q ) \rightarrow \prf (p = q)
 \end{align*}
+\label{def:classical-facts}
+\end{definition}
 
 \subsection{Representing Linear Arithmetic}
 
@@ -108,8 +113,6 @@ Moreover, propositionally equivalent formulas are equal. We thus introduce the a
 \caption{Inductive type definitions for binary positive number, natural and integers}
 \label{fig:sorts-constructors}
 \end{figure}
-
-
 
 \begin{figure}
 \begin{framed}
@@ -286,7 +289,7 @@ In particular, the SMT sort $\textbf{Int}$ is mapped to $\el~\texttt{int}$, and 
 \label{fig:arith-inequalities-def}
 \end{figure}
 
-In \cref{fig:arith-inequalities-def}, we also introduce inductive types \tt{Comp} and $\B$ representing comparison operators and Booleans.
+In \cref{fig:arith-inequalities-def}, we also introduce inductive types \tt{Comp} \index{\tt{Comp}} and $\B$ representing comparison operators and Booleans.
 We will refer to the rewrites rules of \cref{fig:arith-ops} and \cref{fig:arith-inequalities-def} as $\ra_\Z$ and $\ra_\bb{P}$ in the following sections.
 The function $\doteq : \Z \to \Z \to \texttt{Comp}$ compares two integers, relying on the auxiliary function $\texttt{cmp} : \bb{P} \to \bb{P} \to \texttt{Comp}$ to perform comparisons between strictly positive binary numbers.
 Based on this comparison mechanism, we define inequality operators over $\Z$ as binary predicates, by reducing them to the decidable comparison $\doteq$. They reduce to $\top$, $\bot$ (or negated) by applying rules of $\ra_\Z$ and $\ra_\bb{P}$.
@@ -305,7 +308,9 @@ CSI \cite{CSI} automatically proves the confluence of $\ra_\bb{Z}$ and $\ra_\bb{
 
 \subsection{Encoding rational number (WIP)}
 
+
 \begin{figure}
+\begin{framed}
 \begin{align*}
 & \Q: \type \\
 & |~\tt{\#}: \Z \ra \bb{P} \ra \Q{} \quad \text{(written infix)}\\
@@ -330,9 +335,11 @@ CSI \cite{CSI} automatically proves the confluence of $\ra_\bb{Z}$ and $\ra_\bb{
 &(n_1 \,\#\, d_1)~q+~(n_2 \,\#\, d_2) \ra \\
 & \quad (n_1 * d_2 + n_2 * d_1) \,\#\, \text{mul}(d_1, d_2) \quad \text{(infix)}. \\
 \end{align*}
+\end{framed}
 \caption{Encoding rational}
 \label{fig:rational-sort}
 \end{figure}
+
 
 SMT solver define the sort \smtinline{Real}, but in practice the reconstruction of Alethe proof with the logic \textbf{\tt{LA}}
 only require the rational number (\Q) for most of the case. We then only define the rational number \cref{fig:rational-sort} and we will translate SMT
@@ -342,6 +349,7 @@ In particular, from the Lambdapi point of view, $1 \# 2 \neq 2 \# 4$. We impleme
 The function \tt{Zggcd} takes two integer $a$ and $b$ returns a triple $(g, (u, v))$ where $g = \tt{gcd}(a, b)$, and the integers $u$ and $v$ satisfy the \emph{Bézout identity}: $g = u \times a + v \times b$.
 The complete auxiliary function (e.g. $\tt{ggcd}_\PP$) can be found in \cref{app:complete-gcd}. The function $|\_|$ compute the absolute value.
 
+\begin{definition}[Zggcd]
 \begin{align*}
 &\tt{Zggcd}~\ZO~b \ra (|b|,~(\ZO,~\tt{sgn}~b)) \\
 &\tt{Zggcd}~a~\ZO \ra (|a|,~(\tt{sgn}~a,~\ZO)) \\
@@ -367,6 +375,7 @@ with:
 \end{array}
 \right.
 \]
+\end{definition}
 
 \begin{lemma}[Correctness of \texttt{Zggcd}]
 Let $a, b \in \Z$ be arbitrary integers. If 
@@ -382,9 +391,10 @@ TODO
 \end{proof}
 \end{lemma}
 
-We can define the function  $\operatorname{Qred} :\Q \ra \Q$ reduces a rational number to a canonical form by dividing both the numerator and the denominator by their greatest common divisor.
+We can define the function  $\operatorname{Qred} :\Q \ra \Q$ \index{Qred} reduces a rational number to a canonical form by dividing both the numerator and the denominator by their greatest common divisor.
 This canonical representative is unique for each rational equivalence class.
 
+\begin{definition}[Qred]
 \[
 \operatorname{Qred}(q : \Q) \coloneqq 
 \begin{aligned}[t]
@@ -407,6 +417,7 @@ p & \text{if } z = \operatorname{Zpos}~p, \\
 \end{array}
 \right.
 \]
+\end{definition}
 
 We now establish two fundamental properties of $\operatorname{Qred}$: \emph{correctness}, which ensures that reduction preserves the value of a rational number,
 and \emph{completeness}, which guarantees that equivalent rational numbers are reduced to the same canonical form.
@@ -438,6 +449,7 @@ Therefore, we define auxiliary operations, shown in \cref{fig:rational-sort}, wh
 
 
 \begin{figure}
+\begin{framed}
 %************ Dependent pair **********************
 % [a: Set] (p: τ a → Prop) inductive Σ : TYPE ≔
 %     exist (x: τ a) : π (p x) → Σ p;
@@ -451,10 +463,10 @@ Therefore, we define auxiliary operations, shown in \cref{fig:rational-sort}, wh
 & Sigma~[a: \set{}]: (\el{}~a \ra \prop) \ra \set{} \\
 & \el{}~Sigma~p \re \Sigma~p \\
 &\\
-& \pi_1~[a: \set{}] [p:(\el{}~a \ra \prop)] (e: \Sigma~a~p): \el{}~a \\
-& (exist~x~\_)~\pi_1 \re x\\
-& \pi_2~[a: \set{}] [p:(\el{}~a \ra \prop)] (e: \Sigma~a~p): \prf{}(p~(e~\pi_1)) \\
-& (exist~x~p)~\pi_2 \re p\\
+& s_1~[a: \set{}] [p:(\el{}~a \ra \prop)] (e: \Sigma~a~p): \el{}~a \\
+& (exist~x~\_)~s_1 \re x\\
+& s_2~[a: \set{}] [p:(\el{}~a \ra \prop)] (e: \Sigma~a~p): \prf{}(p~(e~s_1)) \\
+& (exist~x~p)~s_2 \re p\\
 \end{align*}
 
 %************ bitvector ***************************
@@ -471,6 +483,8 @@ Therefore, we define auxiliary operations, shown in \cref{fig:rational-sort}, wh
 & Fin~(n: \N) \coloneq \Sigma~(\lambda\,x, istrue(x < n)) \\
 & FinMk~(n: \N) (m: \N) (islt: \prf (m < n)) : Fin~n \\
 &\quad\is exist~(\lambda\,x, istrue(x <n))~m~islt\\
+&\mathop{val}~[n]: \mathop{Fin} n \ra \N \is \lambda e, e~s\_1 \\
+&\mathop{isLt}~[n] (f: \mathop{Fin} n): \prf (f~s_1 < n) \is f~s_2\\
 &\\
 & \hat{}: \N \ra \N \ra \N \qquad \text{(written inﬁx)}\\
 & 0 ~\hat{}~ 1 \re 1 \N\\
@@ -483,11 +497,12 @@ Therefore, we define auxiliary operations, shown in \cref{fig:rational-sort}, wh
 &\mathop{to\_nat}[n : \mathbb{N}] : \mathop{BitVec}(n) \ra \mathbb{N} \\
 &\,\mathop{to\_nat}\;n\;(\mathop{exist}(v,\_))\re v
 \end{align*}
+\end{framed}
 \caption{Encoding bitvector}
 \label{fig:bitvector-def}
 \end{figure}
 
-We interpret a bitvector $\mathop{BitVec}(w: \N)$ from the SMT logic \textbf{BV} as a number less than $2^w$  because we use the type $\mathop{Fin}$ as the internal representation of a bitvector as depicted in \cref{fig:bitvector-def}.
+We interpret a bitvector $\mathop{BitVec}(w: \N)$ \index{$\mathop{BitVec}$} from the SMT logic \textbf{BV} as a number less than $2^w$  because we use the type $\mathop{Fin}$ as the internal representation of a bitvector as depicted in \cref{fig:bitvector-def}.
 In particular, a $\mathop{Fin} n$ is a natural number $i$ with the constraint that $i < n$. It is the canonical type with $n$ elements. In the \cref{fig:bitvector-def}, we provide the definitions of $\mathop{Fin}$
 which is a dependent pair type i.e. Sigma type ($\Sigma$), the definition of $\mathop{Fin} n$ and $\mathop{Bitvector} n$.
 
@@ -591,20 +606,20 @@ We define a higher-order function \( \mathop{\mathrm{bitwise}} : (\mathbb{B} \ra
 &\quad\left( \text{if } (\mathop{op}\,(\mathop{\mathrm{odd}}a)\, (\mathop{\mathrm{odd}}\,b)) 1\,0 \right) \\
 &\quad+ 2 * \mathop{\mathrm{bitwise}}\,op\, n\, (\mathop{\mathrm{div2}}\,a)\,(\mathop{\mathrm{div2}}\,b)
 \end{align*}
-The auxiliaries functions \( \mathop{\mathrm{div2}} : \mathbb{N} \ra \mathbb{N} \) and the boolean \( \mathop{\mathrm{and}} : \B \ra \B \ra \B \) are defined recursively as:
+The auxiliaries functions \( \mathop{\mathrm{div2}} : \mathbb{N} \ra \mathbb{N} \) and the boolean \( \mathop{\mathrm{and}_\B} : \B \ra \B \ra \B \) are defined recursively as:
 \begin{align*}
 &\mathop{\mathrm{div2}}\,0 \re 0 \\
 &\mathop{\mathrm{div2}}\,1 \re 0 \\
 &\mathop{\mathrm{div2}}\,x{+}2 \re \mathop{\mathrm{div2}}\,x + 1 \\
 &\\
-&\mathop{\mathrm{and}}(\mathrm{true},\, b) \re b \\
-&\mathop{\mathrm{and}}(b,\, \mathrm{true}) \re b \\
-&\mathop{\mathrm{and}}(\mathrm{false},\, \_) \re \mathrm{false} \\
-&\mathop{\mathrm{and}}(\_,\, \mathrm{false}) \re \mathrm{false}
+&\mathop{\mathrm{and}_\B}(\mathrm{true},\, b) \re b \\
+&\mathop{\mathrm{and}_\B}(b,\, \mathrm{true}) \re b \\
+&\mathop{\mathrm{and}_\B}(\mathrm{false},\, \_) \re \mathrm{false} \\
+&\mathop{\mathrm{and}_\B}(\_,\, \mathrm{false}) \re \mathrm{false}
 \end{align*}
 Then, we can define the natural number bolean and i.e. (\&\&) as:
 \begin{equation*}
-\&\&~(a\,b: \N): \N \is \mathop{bitwise}\,(and)\,a\,a\,b \quad \text{(written infix)}
+\&\&~(a\,b: \N): \N \is \mathop{bitwise}\,(and_\B)\,a\,a\,b \quad \text{(written infix)}
 \end{equation*}
 \end{definition}
 
@@ -638,7 +653,7 @@ Finally, we can define the $\mathop{bvand}$ function.
 \begin{align*}
 &\mathop{\mathrm{Fin.and}}~[n: \N]: \mathop{Fin} n \ra \mathop{Fin} n \ra \mathop{Fin} n\\
 &\quad\is \lambda f1,\, \lambda f2,\, \mathop{\mathrm{FinMk}}~n~((\mathop{val} f1) \mathbin{\&\&} (\mathop{val} f2)) \\
-&\quad (\mathop{and\_lt\_two\_pow}~(\mathop{val} f1)~(\mathop{val} f2)~n~(\mathop{isLt} f2))
+&\quad (\mathop{and\_lt\_two\_pow}~(\mathop{val} f1)~(\mathop{val} f2)~n~(\mathop{isLt} f2)) \\
 &\\
 &\mathop{\mathrm{bvand}}~[n: \N]: \mathop{BitVec} n \ra \mathop{BitVec} n \ra \mathop{BitVec} n\\
 &\quad\is \lambda x, \lambda y, \mathop{Fin.and}~(2~\hat{}~n)~x~y
