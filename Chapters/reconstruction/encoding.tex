@@ -663,9 +663,54 @@ Finally, we can define the $\mathop{bvand}$ function.
 with $\mathop{and\_lt\_two\_pow}$ the constant for \cref{and_lt_two_pow}.
 \end{definition}
 
-
-
-\subsection{SMT-LIB operators}
+\subsection{SMT-LIB helper operators distinct and ite}
 \label{ssec:encoding-distinct-let-enc}
 
-The SMT-LIB provides the operator \smtinline{(par (A) (distinct A A Bool :pairwise))} and \smtinline{(par (A) (ite Bool A A A))}.
+The SMT-LIB provides the operator \smtinline{(par (A) (distinct A A Bool :pairwise))}  denotes the function that
+returns true iff its two arguments are not identical, and \smtinline{(par (A) (ite Bool A A A))} denotes the function that
+returns its second argument or its third depending on whether its first argument is true or not.
+
+
+\begin{definition}[Vectors and Distinctness Predicate encoding]
+Let \( a : \mathop{\mathrm{Set}} \). We define the constant \( \mathop{\mathrm{Vec}}(a, n) \) inductively for \( n \in \N \) as:
+\begin{align*}
+&[a: \set] \mathop{\mathrm{Vec}}: \N \ra \type \\
+&|\Box_\bb{V} : \mathop{\mathrm{Vec}}(a, 0) \\
+&|\mathop{\mathrm{cons}}: \el\,a \ra \mathop{\mathrm{Vec}}(a, n) \ra  \mathop{\mathrm{Vec}}(a, n{+}1) \\
+\end{align*}
+
+We introduce the coding type for vector:
+\begin{align*}
+&\mathop{\mathrm{vector}}~(a: \set): \set \\
+&\el (\mathop{\mathrm{vector}} a) \re \type
+\end{align*}
+
+We define the predicate \( \mathop{\mathrm{distinct}}: \Pi a,\, \Pi n \in \N,\, (\mathop{\mathrm{Vec}}\,a\,n) \ra \prop \) using the following rules:
+\begin{align*}
+&\mathop{\mathrm{distinct}}~\Box_\bb{V} \re \bot \\
+&\mathop{\mathrm{distinct}}~(\mathop{\mathrm{cons}}(\_, \Box_\bb{V})) \re \top \\
+&\mathop{\mathrm{distinct}}~(\mathop{\mathrm{cons}}(x,\, \mathop{\mathrm{cons}}(y,\, \Box_\bb{V}))) \re \neg (x = y) \\
+&\mathop{\mathrm{distinct}}~(\mathop{\mathrm{cons}}(\_,\, \mathop{\mathrm{cons}}(\_,\, \mathop{\mathrm{cons}}(\_,\_)))) \re \bot
+\end{align*}
+\end{definition}
+
+\begin{example}
+\(
+    \mathop{\mathrm{distinct}}~(\mathop{\mathrm{cons}}(1,\, \mathop{\mathrm{cons}}(2,\, \mathop{\mathrm{cons}}(3, \Box_\bb{V})))) \re \bot
+\)
+\end{example}
+
+\begin{definition}[\texttt{ite}]
+Let \( a: \set \) be a \set. We define a conditional expression:
+\begin{align*}
+\mathop{\mathrm{ite}} : \Pi [a: \set],\, \el\,o \ra \el\,a \ra \el\,a \ra \el\,a
+\end{align*}
+
+We also define the dependent eliminator:
+\begin{align*}
+&\mathop{\mathrm{ite\_ind}} : \Pi [a],\, \Pi (c : \el\,o)\, (t\, e : \el\,a)\, (p : \el\,a \ra \mathrm{Prop})\\
+&\quad\left( \prf\,c \ra \prf(p~t) \right) \ra \\
+&\quad\left( (\prf\,c \ra \prf\,\bot) \ra \prf(p~e) \right) \ra \\
+&\quad\prf(p~(\mathop{\mathrm{ite}}~c~t~e)))
+\end{align*}
+\end{definition}
