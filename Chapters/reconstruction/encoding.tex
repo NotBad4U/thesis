@@ -55,6 +55,7 @@ while explicitly introducing the classical principles of the Law of the Excluded
 & \Rightarrow : \prop \ra \prop \ra \prop \qquad \text{(written inﬁx)} \\
 &  \prf (a \Rightarrow\,b) \re \prf a \ra \prf b \label{eq:imp}\\
 & \neg a \is a \Rightarrow \bot \\
+& \mathop{\mathrm{xor}}~a~b \is (\neg a \land b) \lor (a \land \neg b) \\
 & \forall : \Pi {[a: \set]}, (\el\, a \ra \prop) \ra \prop \label{eq:forall}\\
 & \prf{}(\forall\,p) \re \Pi x, \prf{p~x}\\
 & \exists : \Pi {[a: \set]}, (\el\, a \ra \prop) \ra \prop \\
@@ -445,7 +446,7 @@ Therefore, we define auxiliary operations, shown in \cref{fig:rational-sort}, wh
 \end{align*}
 
 
-\subsection{Encoding bitvector (WIP)}
+\subsection{Encoding bitvector (\textbf{BV})}
 \label{ssec:encoding-bv}
 
 \begin{figure}
@@ -675,16 +676,16 @@ returns its second argument or its third depending on whether its first argument
 Let \( a : \mathop{\mathrm{Set}} \). We define the constant \( \mathop{\mathrm{Vec}}(a, n) \) inductively for \( n \in \N \) as:
 \begin{align*}
 &[a: \set] \mathop{\mathrm{Vec}}: \N \ra \type \\
-&|\Box_\bb{V} : \mathop{\mathrm{Vec}}(a, 0) \\
-&|\mathbin{::}_\bb{V}\,[n:\N]: \el\,a \ra \mathop{\mathrm{Vec}}(a, n) \ra  \mathop{\mathrm{Vec}}(a, n{+}1) (\text{infix}) \\
+&|\Box_\bb{V} : \mathop{\mathrm{Vec}}\,a\, 0 \\
+&|\mathbin{::}_\bb{V}\,[n:\N]: \el\,a \ra \mathop{\mathrm{Vec}}\,a\,n \ra  \mathop{\mathrm{Vec}}\,a\,(n{+}1) \quad (\text{infix}) \\
 \end{align*}
 
-We introduce the coding type for vector:
 \begin{align*}
 &\mathop{\mathrm{vector}}~(a: \set): \set \\
 &\el (\mathop{\mathrm{vector}} a) \re \type
 \end{align*}
 
+We chose Vector because the \kw{distinct\_elim} rule in Alethe \cite[(Rule 93)]{alethespec} behaves differently depending on the size and the sort of terms.
 We define the predicate \( \mathop{\mathrm{distinct}}: \Pi a,\, \Pi n \in \N,\, (\mathop{\mathrm{Vec}}\,a\,n) \ra \prop \) using the following rules:
 \begin{align*}
 &\mathop{\mathrm{distinct}}~\Box_\bb{V} \re \bot \\
@@ -718,3 +719,86 @@ We also define the dependent eliminator:
 &\quad\prf(p~(\mathop{\mathrm{ite}}~c~t~e)))
 \end{align*}
 \end{definition}
+
+\subsection{Encoding clauses}
+
+Alethe distinguishes between clauses that appear in steps, such as \colorbox{green!30}{(cl~$l_1 \dots l_n$)} in \cref{eq:step}, and ordinary disjunction \cite[\S 4]{alethespec}.
+The syntax for clauses uses the \textcolor{purple}{\texttt{cl}} operator, while disjunction is represented as the standard SMT-LIB \textcolor{purple}{\texttt{or}}.
+Alethe identifies clause as a set of literals. As mentioned in \cref{ch:alethe}, Alethe identifies clauses that differ only in the order of literals. In particular, note that the ``literals'' appearing in clauses may actually be arbitrary formulas in Alethe.
+It provides the \kw{or} rule for converting disjunctions into clauses:
+\[
+\begin{matrix*}[l]
+  i. & \triangleright & \varphi_1 \lor \dots \lor \varphi_n  & (\dots) \\
+  j. & \triangleright & (\texttt{\textcolor{purple}{cl}}~\varphi_1 \dots \varphi_n)  & (\kw{or}~i)[] \\
+\end{matrix*}
+\]
+
+\begin{remark}[Lack of Structural Canonical Form in Disjunctive Clauses]
+Interpreting a clause as a disjunction, we obtain a concatenated form such as $cl~(l_1~l_2~l_3~l_4)$ will be then translated into $l_1 \lor (l_2 \lor (l_3 \lor l_4))$.
+ Therefore, the concatenation of two clauses (what is happening in the conclusion of \texttt{resolution}) need not unify with the translated clause of the step. For example, taking 3 arbitrary steps:
+
+\begin{itemize}
+    \setlength{\itemsep}{5pt}
+    \setlength{\parskip}{0pt}
+    \item[] $A.~\triangleright~(\text{cl}~\textcolor{purple}{x_1}, \textcolor{blue}{x_2, x_3}) \quad (..)[..]$
+    \item[] $B.~\triangleright~ (\text{cl}~\textcolor{orange}{y_2}, \textcolor{purple}{\neg x_1}, \quad \textcolor{orange}{y_3}) (..)[..]$
+    \item[] $C.~\triangleright~(\text{cl}~\textcolor{blue}{x_2, x_3}, \textcolor{orange}{y_2, y_3}) \quad (\texttt{resolution A B})[(\textcolor{purple}{x_1}~\texttt{true})]$  % Maybe the argument could be removed but it makes an echo with Carcara elaborated proof
+\end{itemize}
+
+Interpreting a clause as a disjunction, we obtain a concatenated form such as $((\textcolor{blue}{x_2} \lor \textcolor{blue}{x_3}) \lor (\textcolor{orange}{y_2} \lor \textcolor{orange}{y_3}))$.
+This aligns with the classical formulation of the \texttt{resolution} inference rule, expressed as $x \lor Y;\ \neg x \lor Z \vdash Y \lor Z$.
+However, in {\lpm} $((\textcolor{blue}{x_2} \lor \textcolor{blue}{x_3}) \lor (\textcolor{orange}{y_2} \lor \textcolor{orange}{y_3})) \nequiv_{\beta\Sigma} (\textcolor{blue}{x_2} \lor (\textcolor{blue}{x_3} \lor (\textcolor{orange}{y_2} \lor \textcolor{orange}{y_3})))
+\nequiv_{\beta\Sigma} (((\textcolor{blue}{x_2} \lor \textcolor{blue}{x_3}) \lor \textcolor{orange}{y_2}) \lor \textcolor{orange}{y_3})$ , even though these forms are semantically identical.
+
+Additionally, in step \emph{B}, the pivot \textcolor{purple}{$\neg x_1$} does not occur at the head of the clause, contrary to the expectation of the resolution rule,
+which requires the pivot to be in the leading position. As a result, resolving clauses requires reasoning modulo associativity and commutativity.
+To address the associativity issue, we propose a canonical representation for clauses.
+
+Accordingly, in \cref{fig:encoding-clause}, we define the type $\kw{Clause}$ to represent an Alethe clause as a list of propositions, thereby ensuring a canonical form.
+The constructor $\veedot$ prepends an element to a list, and $\nil$ denotes the empty list. The operator $\pp$ is used to concatenate lists. 
+Clauses are logically interpreted as disjunctions via the function $\cal{F}$, defined through rewriting rules. For convenience, we also introduce the predicate $\pid$, which asserts the provability of a clause.
+\end{remark}
+
+\begin{figure}
+  \begin{align*}
+  &\texttt{Clause}: \type \\
+  &\nil: \texttt{Clause} \\
+  &\veedot: \prop \ra \texttt{Clause}  \ra \texttt{Clause} \\
+  & \pp: \texttt{Clause} \ra \texttt{Clause} \ra \texttt{Clause} \\
+  & \nil \mathop{\pp} x \re x \\
+  & (x \veedot y) \mathop{\pp} z \re x \veedot (y \mathop{\pp} z) \\
+  & \cal{F}: \texttt{Clause} \ra \prop \\
+  & \cal{F}~\nil \re \bot\\
+  & \cal{F}~x \veedot y \re x \lor (\cal{F}~y)\\
+  & \pid (c : \texttt{Clause}) \coloneqq \prf (\cal{F}~c)
+  \end{align*}
+  \caption{The \texttt{Clause} type and operations on clauses.}
+  \label{fig:encoding-clause}
+\end{figure}
+
+We can now prove the equivalence between clause and disjunction.
+
+\begin{lemma}[Clause elimination]\label{lemma:clause-elim}
+For any $p \colon \prop$ and $q,r \colon \texttt{Clause}$, If $\pid (p \veedot q)$ and $(\pid (p \veedot \nil) \ra  \pid r)$ and $(\pid q \ra  \pid r)$ then $\pid r$.
+\end{lemma}
+\begin{proof}
+Since the hypothesis $\pid (p \veedot q)$ is equivalent to $\prf (p \lor \cal{F}\,q)$, we apply the classic disjunction elimination rule.
+Then we can conclude $\prf p \ra \prf (\cal{F}\,r)$ wih the hypothesis $\pid (p \veedot \nil) \ra  \pid r$, and we can conclude $\prf (\cal{F}\,q) \ra \prf (\cal{F}\,r)$
+with the hypothesis $\pid q \ra  \pid r$.
+\end{proof}
+
+\smallskip
+
+\begin{lemma}[Concatenation is disjunction]\label{lemma:clause-equiv-disj}
+For any two clauses $a\,b$, the equivalence $\prf (\cal{F}(a~\pp~b)) \Leftrightarrow \prf (\cal{F}\,a \lor \cal{F}\,b)$ holds.
+\end{lemma}
+\begin{proof} By induction on $a$.
+  \begin{itemize}
+    \item For the base case $a = \nil$ we must show that
+    \[
+        \prf\, (\cal{F} (\nil\, \pp \, b)) \Leftrightarrow \prf\, (\cal{F}\,\nil \lor \cal{F}\,b)
+    \]
+    The implication ``$\Rightarrow$'' is trivial because $\nil\,\pp\,b$ rewrites to $b$. The implication ``$\Leftarrow$'' is proved using the standard elimination rule $\lor_e$ for disjunction, which requires proving $\prf\,(\cal{F}\,\nil) \ra \prf\,(\cal{F}\,(\nil\,\pp\,b))$ as well as $\prf\,(\cal{F}\,b) \ra \prf\,(\cal{F}\,(\nil\,\pp\,b))$. Both proofs are immediate since $\cal{F}\,\nil$ rewrites to $\bot$ and $\nil\,\pp\,b$ rewrites to $b$.
+    \item For the case $a = h \veedot tl$ we may use the induction hypothesis $\prf\,(\cal{F}\, (tl\, \pp\, b)) \Leftrightarrow \prf\,(\cal{F}\,tl \lor \cal{F}\, b)$. The conclusion is then easy to prove based on the rewriting rules for the operators $\cal{F}$ and $\pp$, together with associativity of $\lor$.
+    \end{itemize}
+\end{proof}
