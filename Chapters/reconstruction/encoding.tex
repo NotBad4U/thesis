@@ -676,7 +676,7 @@ Let \( a : \mathop{\mathrm{Set}} \). We define the constant \( \mathop{\mathrm{V
 \begin{align*}
 &[a: \set] \mathop{\mathrm{Vec}}: \N \ra \type \\
 &|\Box_\bb{V} : \mathop{\mathrm{Vec}}(a, 0) \\
-&|\mathop{\mathrm{cons}}: \el\,a \ra \mathop{\mathrm{Vec}}(a, n) \ra  \mathop{\mathrm{Vec}}(a, n{+}1) \\
+&|\mathbin{::}_\bb{V}\,[n:\N]: \el\,a \ra \mathop{\mathrm{Vec}}(a, n) \ra  \mathop{\mathrm{Vec}}(a, n{+}1) (\text{infix}) \\
 \end{align*}
 
 We introduce the coding type for vector:
@@ -688,15 +688,19 @@ We introduce the coding type for vector:
 We define the predicate \( \mathop{\mathrm{distinct}}: \Pi a,\, \Pi n \in \N,\, (\mathop{\mathrm{Vec}}\,a\,n) \ra \prop \) using the following rules:
 \begin{align*}
 &\mathop{\mathrm{distinct}}~\Box_\bb{V} \re \bot \\
-&\mathop{\mathrm{distinct}}~(\mathop{\mathrm{cons}}(\_, \Box_\bb{V})) \re \top \\
-&\mathop{\mathrm{distinct}}~(\mathop{\mathrm{cons}}(x,\, \mathop{\mathrm{cons}}(y,\, \Box_\bb{V}))) \re \neg (x = y) \\
-&\mathop{\mathrm{distinct}}~(\mathop{\mathrm{cons}}(\_,\, \mathop{\mathrm{cons}}(\_,\, \mathop{\mathrm{cons}}(\_,\_)))) \re \bot
+&\mathop{\mathrm{distinct}}~(\_ \mathbin{::}_\bb{V} \Box_\bb{V}) \re \top \\
+&\mathop{\mathrm{distinct}}~(x \mathbin{::}_\bb{V} y \mathbin{::}_\bb{V}  \Box_\bb{V}) \re \neg (x = y) \\
+&\mathop{\mathrm{distinct}}~(\_ \mathbin{::}_\bb{V} \_ \mathbin{::}_\bb{V} \_ \mathbin{::}_\bb{V} \_)))) \re \bot
 \end{align*}
 \end{definition}
 
 \begin{example}
 \(
-    \mathop{\mathrm{distinct}}~(\mathop{\mathrm{cons}}(1,\, \mathop{\mathrm{cons}}(2,\, \mathop{\mathrm{cons}}(3, \Box_\bb{V})))) \re \bot
+    \mathop{\mathrm{distinct}}~(1 \mathbin{::}_\bb{V} 2 \mathbin{::}_\bb{V} 3 \mathbin{::}_\bb{V} \Box_\bb{V}) \re \bot
+\)
+and
+\(
+    \mathop{\mathrm{distinct}}~(\top \mathbin{::}_\bb{V} \bot \mathbin{::}_\bb{V} \Box_\bb{V}) \re \neg (\top = \bot).
 \)
 \end{example}
 
