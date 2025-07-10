@@ -5,7 +5,7 @@
 We will now present how we translate steps in an Alethe trace. An Alethe proof trace is a list $c_1 \dots c_m$ of steps where every step may only refer to previous steps in its justification.
 We define the function $\cal{C}$ that translates an Alethe step of the form $i.~\Gamma~\triangleright~l_1 \dots l_n\,(R\,P)[A]$ into a constant $i: \pid (\E{l_1}\cons\dots\cons\E{l_n}\cons \nil) \coloneq M$ where $M$ is a proof term of appropriate type.
 The function $\cal{C}$ is defined by cases on the rule $R$. In the case of an \texttt{assume} command, we do not provide a proof term $M$ so $i$ is considered as an axiom. Because a step can only refer to previous steps, each step $i$ can be translated separately. Its proof term may refer to constants representing steps that precede $i$ in the trace and that must therefore have been introduced when Lambdapi checks the definition of constant~$i$.
-In the following sections, we present how different categories of rules are translated by $\cal{C}$. We will sometimes omit writing $\pid$ and $\pic$ in order to simplify the notation.
+In the following sections, we present how different categories of rules are translated by $\cal{C}$. We will sometimes omit writing $\pid$ and $\prf$ in order to simplify the notation.
 
 \subsection{Tautologous rules and simple deduction}
 \label{ssec:elem-rules}
@@ -20,14 +20,16 @@ The definitions use the following lemmas proved in our Lambdapi encoding:
 \begin{itemize}
 \item $\kw{cong}_1 :
     \begin{array}[t]{@{}l@{}}
-        \Pi (a\,b : \set),\ \Pi f : \el\,a \ra \el\,b,\
-        \Pi x\,x',\ \pic (x = x') \ra \pic (f\,x = f\,x'),
+        \Pi (a\,b \colon \set),\ \Pi f \colon \el\,a \ra \el\,b, \\
+        \Pi x\,x',\ \prf (x = x') \ra \prf (f\,x = f\,x'),
     \end{array}$
 \item $\kw{equiv\_pos2} : \Pi (\varphi_1~\varphi_2: \prop),\ \pid (\neg (\varphi_1 = \varphi_2) \veedot \neg \varphi_1 \veedot \varphi_2 \veedot \nil )$,
-\item $\pid_l : \Pi [a : \set],\ \pid (a \cons \nil) \ra \pic a$.
+\item $\pid_l : \Pi [a : \set],\ \pid (a \cons \nil) \ra \prf a$.
 \end{itemize}
 
-\begin{figure}
+
+\begin{figure}[bt]
+  \scriptsize
   \begin{tabular}{@{}l|l@{}}
   \hline
   \multicolumn{2}{|l|}{R = \kw{assume}} \\ \hline
@@ -67,7 +69,7 @@ The definitions use the following lemmas proved in our Lambdapi encoding:
 \begin{example}
   \cref{lst:smtexamplelambdapi} illustrates the result of our main function $\mathcal{C}$ applied to the first steps in the running example of \cref{lst:smtexampleinput}.
   In the code below, all the \texttt{assume} commands (corresponding to the \texttt{assert}s of the input problem) are transformed into constants by~$\mathcal{C}$. A symbol without a definition is considered as an axiom.
-  Each step is encoded as an \lstinline[language=Lambdapi]{opaque symbol} that represents a lemma. Splitting the proof into multiple lemmas is beneficial for larger proofs because it reduces Lambdapi's checking time for the proof.
+  Each step is encoded as an \lpinline{opaque symbol} that represents a lemma. Splitting the proof into multiple lemmas is beneficial for larger proofs because it reduces Lambdapi's checking time for the proof.
 \end{example}
 
 % \begin{minipage}{0.95\linewidth}
@@ -106,29 +108,11 @@ end;
 
 Binary resolution on ground clauses can be expressed as the following proof rule, which we have proved in Lambdapi.
 
-\smallskip
-
 \begin{lemma}[Resolution]\label{lemma:resolution}
 Given $a,b: \texttt{Clause}$, and a pivot $x: \prop$, $\pid (x \veedot a)$ and $\pid (\neg x \veedot b)$ imply $\pid (a \pp b)$.
 \end{lemma}
 
-\smallskip
-
-However, Alethe's \kw{resolution} rule, shown in \cref{fig:resolution-rule}, represents hyper-resolution applied to a set of ground first-order clauses $i_1 \dots i_n$,
-where the resulting clause $l_{s_1}^{r_1} \dots l_{s_m}^{r_m}$ is obtained by a chain of predicate resolution steps that remove complementary literals from the input clauses, with double negations being removed implicitly.
-For example, the formulas $\neg \neg \neg P$ and $\neg \neg P$ can serve as pivots during resolution.
-The first formula is interpreted as $\neg P$ and the second as just $P$ to perform resolution steps.
-Alethe allows resolution steps without providing the pivots; however, Carcara's elaborated proof incorporates the pivots as arguments in the resolution rule, eliminating the need for an additional intermediate step to search for the pivots in our translation to Lambdapi.
-In addition, pivots may appear anywhere in a clause rather than just as the head literal. Hence, Alethe \kw{resolution} involves reasoning modulo associativity and commutativity (AC) on clauses.
-
-In our previous work \cite{ColtellacciMD24}, we simulated Alethe's \kw{resolution} rule as compositions of multiple binary resolution steps, combined with additional proof steps for justifying reasoning modulo AC used to move pivots to the heads of clauses.
-However, the practical application of this approach suffered from inefficiency and did not allow us to reconstruct proofs of some benchmarks in SMT-LIB that involved hundreds of clauses in a single resolution.
-In the following section, we present a new approach where we prove clause permutation through proof by reflection, enabling more efficient pivot movement.
-
-%Moreover, its application requires additional proof steps to move pivots to the head of a clause, sometimes resulting in proofs of hundreds of thousands of lines. We will describe an alternative approach in the following section.
-%To overcome this problem, we now implement resolution by \emph{computational reflection} that we describe in the next section.
-
-\begin{figure}
+\begin{figure}[bt]
   \centering
   \begin{tabular}{l c r}
   $i_1.~\triangleright$  & \qquad $l_1^1,\, \dots,\, l_{k^1}^1$ \qquad & (\dots)  \\
@@ -141,16 +125,85 @@ In the following section, we present a new approach where we prove clause permut
 \end{figure}
 
 
+However, Alethe's \kw{resolution} rule, shown in \cref{fig:resolution-rule}, represents hyper-resolution applied to a set of ground first-order clauses $i_1 \dots i_n$,
+where the resulting clause $l_{s_1}^{r_1} \dots l_{s_m}^{r_m}$ is obtained by a chain of predicate resolution steps that remove complementary literals from the input clauses, with double negations being removed implicitly.
+For example, the formulas $\neg \neg \neg P$ and $\neg \neg P$ can serve as pivots during resolution.
+The first formula is interpreted as $\neg P$ and the second as just $P$ to perform resolution steps.
+Alethe allows resolution steps without providing the pivots; however, Carcara's elaborated proof incorporates the pivots as arguments in the resolution rule, eliminating the need for an additional intermediate step to search for the pivots in our translation to Lambdapi.
+In addition, pivots may appear anywhere in a clause rather than just as the head literal. Hence, Alethe \kw{resolution} involves reasoning modulo associativity and commutativity (AC) on clauses.
+
+In \cite{ColtellacciMD24}, we simulated Alethe's \kw{resolution} rule as compositions of multiple binary resolution steps, combined with additional proof steps for justifying reasoning modulo AC used to move pivots to the heads of clauses.
+However, the practical application of this approach suffered from inefficiency and did not allow us to reconstruct proofs of some benchmarks in SMT-LIB that involved hundreds of clauses in a single resolution.
+In the following, we present an approach where we prove clause permutation through \emph{proof by reflection}\index{proof by reflection}, enabling more efficient pivot movement.
+
+
+\subsection{Proof by reflection}
+\label{ssec:reflection-intro}
+
+Proof by reflection~\cite{reflection-origin-coq} is a technique for constructing certified procedures for automated reasoning by reducing the verification of a logical statement to a symbolic computation.
+This method is particularly applicable to two broad classes of problems. In the first class, we consider a predicate $P \colon T \to \prop$, where $T$ is a data type,
+together with a semi decision procedure $f: T \to \mathbb{B}$ (or $\tt{Comp}$) such that, whenever $f$ returns $\tt{true}$ on input $x$, the predicate $P(x)$ holds.
+Formally, this relationship is captured by the following correctness theorem:
+
+\begin{equation*}
+\mathop{f\_correct} \colon \Pi x \colon T, \prf (f~x = \tt{true}) \ra \prf (P~x).
+\end{equation*}
+
+Hence, to establish $P~y$ for a particular value $y$, it suffices to verify that $f(y)$ reduces to  $\tt{true}$.
+In that case, we can simply apply the lemma $\mathop{f\_correct}$ to $y$ along with a proof that $true = true$ i.e. $(\mathop{eq\_refl} \tt{true})$ with $eq\_refl: \Pi [a \colon \set], \Pi (x: \el\,a), \prf (x = x)$. 
+The resulting proof of $P~y$ is thus given by:
+
+\begin{equation*}
+\mathop{f\_correct} ~y~ (\mathop{refl} \tt{true}) \colon P~y
+\end{equation*}
+
+As an illustration, consider the property of a natural number being even. In Lambdapi, this can be expressed using a computable boolean function $\texttt{even} \colon \N \ra \B$ that checks whether a given number is even.
+The connection between the boolean value and the logical property is established through a correctness lemma stating that if \texttt{even n = true}, then $n$ is even.
+Thus, to prove that a specific number, such as $4$, is even, one can reduce the goal to the boolean check \texttt{even 4 = true}, which is decidable by computation.
+Applying the correctness lemma then lifts this computational fact back into the logical framework to conclude that $4$ is even.
+This approach automates routine reasoning steps involving decidable predicates, allowing for concise and efficient proofs.
+This first class of reflection is particularly suited for properties such as arithmetic equalities, inequalities, and simple inductive predicates.
+
+The size of such a proof only depends on the size of a particular argument $y$ and does not depend on the number of implicit $\equivL$ steps: explicit rewriting steps have been replaced by implicit $\equivL$ reductions.
+The efficiency of this technique of course strongly depends on the efficiency of the system to reduce the application of the decision procedure $f(y)$, hence on the efficiency of the decision procedure ($f$) itself.
+
+
+Moreover, while the proof term of the correctness lemma for $f$ may be large, it needs to be constructed only once. This proof can be shared across all instantiations and does not require rechecking by the type-checker in subsequent uses.
+
+\medskip
+
+The second class of problems where computation can help is the class of algebraic proofs such as proofs relying on rewriting modulo the associativity or the commutativity of some operators e.g. disjunction $(\lor)$ or conjunction $(\land)$.
+For these proofs, we again consider a type $B: \set$ and we exhibit an "abstract type" $A: \set$, with two functions $\mathop{denote} \colon {\el}\,A \ra {\el}\,B$ and $g: \el{}\,A \ra \el{}\,A$.
+The function $\mathop{denote}$ is an interpretation function that we can use to associate terms in the concrete type $B$ with abstract terms of type $A$.
+The function $g$ reasons on the abstract terms. The reflection process relies on a theorem that expresses that the function $g$ does not change the value of the interpreted
+term:
+
+\begin{equation*}
+  g\_ident : \Pi x: A, \prf (\mathop{denote}(g~x) = \mathop{denote} x)
+\end{equation*}
+
+Thus, to prove that two terms $t_1$ and $t_2$ are equal in $B$ , we only need to show that they are the images of two terms $a_1$ and $a_2$ in $A$ such that $g\,a_1 = g\,a_2$.
+As an illustration of this second class of proofs by reflection, consider the commutativity of disjunction: for any two propositions $P$ and $Q$, we wish to prove that $P \lor Q$ is logically equivalent to $Q \lor P$.
+To apply reflection, we first define an \emph{abstract} syntax for formulas, for instance, a type $\mathsf{Monoid}$ with constructors for atomic propositions and for disjunction.
+We then define an \emph{interpretation function} $\mathsf{denote} \colon \mathsf{Monoid} \to \prop$ that maps abstract formulas to their logical meaning. 
+Next, we define a normalization function $\mathop{norm}: \mathsf{Monoid} \to \mathsf{Monoid}$ that rewrites disjunctions into a canonical order, such as ordering operands lexicographically.
+The key theorem states that this normalization preserves meaning:
+\[
+\mathsf{norm\_mono} : \forall x : \mathsf{Monoid}, \mathsf{denote}(\mathop{norm} x) = \mathsf{denote}(x).
+\]
+Hence to prove that $P \lor Q$ and $Q \lor P$, are logically equivalent, it suffices to represent them as abstract expressions $m_1$ and $m_2$ of type $\mathsf{Monoid}$, apply the function $\mathop{norm}$ to normalize both, and check that $\mathop{norm}(m_1) = \mathop{norm}(m_2)$.
+By correctness of the interpretation, their meanings must then coincide.
+
+
+In this thesis, we make use of both classes of reflection to encode certain \texttt{Alethe} rules. For example, the reconstruction of arithmetic steps (\textbf{LIA} and \textbf{LRA}) and bitvector (\textbf{BV}) Alethe rules primarily relies on the first class,
+while the permutation of clauses for the \texttt{resolution} rule relies on the second class.
+
 \subsection{Computing hyper-resolvents}
 \label{sec:refl-reso}
 
 Whereas the technique described in \cref{ssec:resolution} can be used to reconstruct resolution proofs in Alethe proof traces, it suffers from poor scalability.
 Specifically, the permutation proof generated for pivot movement due to reasoning modulo AC may become excessively lengthy. We will now describe an alternative technique based on computational reflection that allows us to prove the permutation of clauses efficiently.
-Proof by computational reflection is a technique introduced in \cite{reflected_origin} that benefits from the internal reduction system of the proof assistant in order to reduce the size of the proof term computed and consequently speed up its checking. In Lambdapi, we can take advantage of the fact that rewriting rules are part of the internal reduction system ($\equiv_{\beta\cal{R}}$), which makes proof by reflection convenient to set up and implement.
-Relying on the rewriting facilities of Lambdapi, we implemented a decision procedure that checks equality between clauses by rewriting modulo AC-canonization.
-
-The core idea is to put clauses with pivots in different positions into a canonical form, allowing them to be compared.
-If two clauses are determined to be equal, the current clause can be substituted with one where the pivot is placed at the head position, allowing for the subsequent application of \cref{lemma:resolution}.
+Proof by computational reflection is a technique introe can be substituted with one where the pivot is placed at the head position, allowing for the subsequent application of \cref{lemma:resolution}.
 To handle associative and commutative symbols, Lambdapi provides the modifiers \texttt{associative} and \texttt{commutative},
 ensuring that terms are systematically placed into a canonical form given a builtin ordering relation, following the technique described in \cite{ACorigin} and \cite[\S 5]{univAC}.
 
@@ -166,7 +219,11 @@ We leverage the elaboration process in Carcara to avoid implementing a proof by 
 %     {b \cons \dots \cons a \cons \dots  \cons \nil} & \kw{Clause} && \kw{Clause} & {a \cons b \cons \dots  \cons \nil}
 %     \arrow["eq", dotted, from=1-2, no head, to=1-4]
 %     % \arrow["{{\reify{\_}}}", tail reversed, no head, from=1-4, to=3-4]
-%     % \arrow["{{\reify{\_}}}"', from=3-2, to=1-2]
+%     % \arrow["{{\reify{\_}}}"', from=3-2, to=1-2]duced in \cite{reflected_origin} that benefits from the internal reduction system of the proof assistant in order to reduce the size of the proof term computed and consequently speed up its checking. In Lambdapi, we can take advantage of the fact that rewriting rules are part of the internal reduction system ($\equiv_{\beta\cal{R}}$), which makes proof by reflection convenient to set up and implement.
+Relying on the rewriting facilities of Lambdapi, we implemented a decision procedure that checks equality between clauses by rewriting modulo AC-canonization.
+
+The core idea is to put clauses with pivots in different positions into a canonical form, allowing them to be compared.
+If two clauses are determined to be equal, the current claus
 %     % \arrow["{=}"{marking, allow upside down}, draw=none, from=3-2, to=3-4]
 %   \end{tikzcd}
 %   \caption{Checking resolution steps via reification in the algebra $\mathcal{C}$.}
@@ -410,6 +467,7 @@ Each transformation of the simplification rules is implemented by a lemma, and t
 For instance, we define the case $R = \kw{not\_simplify}$ for the function $\cal{C}$ in \cref{table:not-simplify}.
 
 \begin{figure}
+  \footnotesize
   \begin{tabular}{l|l}
   \hline
   \multicolumn{2}{|l|}{R = \kw{not\_simplify}} \\ \hline
@@ -476,19 +534,19 @@ $k.\ \Gamma \triangleright (Q~\overline{x}, \varphi) \approx (Q~\overline{y}, \p
 \smallskip
 
 \begin{lemma}[$\kw{subproof}_1$]\label{lem:subproof}
-For $\varphi, \psi : \prop{}$, if $\pic{} \varphi$ implies $\pic{} \psi$ then $\pid (\neg \varphi \cons \psi)$.
+For $\varphi, \psi : \prop{}$, if $\prf{} \varphi$ implies $\prf{} \psi$ then $\pid (\neg \varphi \cons \psi)$.
 \end{lemma}
 
 \smallskip
 
 \begin{lemma}[bind$\forall$]\label{lem:bind-forall}
-Given an arbitrary $a : \kw{Clause}$ and predicates $p, q : \el{}\,a \ra \prop$, if $\Pi x : \el{}\,a,~ \pic (p~x = q~x)$ then $\pic ((\forall x, p~x) = (\forall y, q~y))$.
+Given an arbitrary $a : \kw{Clause}$ and predicates $p, q : \el{}\,a \ra \prop$, if $\Pi x : \el{}\,a,~ \prf (p~x = q~x)$ then $\prf ((\forall x, p~x) = (\forall y, q~y))$.
 \end{lemma}
 
 \smallskip
 
 \begin{lemma}[bind$\exists$]\label{lem:bind-exists}
-  Given an arbitrary $a : \kw{Clause}$ and predicates $p, q : \el{}\,a \ra \prop$, if $\Pi x : \el{}\,a,~ \pic (p~x = q~x)$ then $\pic ((\exists x, p~x) = (\exists y, q~y))$.
+  Given an arbitrary $a : \kw{Clause}$ and predicates $p, q : \el{}\,a \ra \prop$, if $\Pi x : \el{}\,a,~ \prf (p~x = q~x)$ then $\prf ((\exists x, p~x) = (\exists y, q~y))$.
 \end{lemma}
 
 
@@ -518,7 +576,7 @@ We now prove the Skolemization lemma for the universal quantifier that we use to
 \smallskip
 
 \begin{lemma}[skolemize forall]\label{lem:sko-forall}
-For any $a : \set$, predicate $p : \el{}\,a \ra \prop$ and $q : \prop$, if for every $x: \el{}\,a$, $\pic (x = (\epsilon~y, \neg (p~y)))$ implies $\pic (p~x = q)$,  we have that $\pic ((\forall x, p~x) = q)$.
+For any $a : \set$, predicate $p : \el{}\,a \ra \prop$ and $q : \prop$, if for every $x: \el{}\,a$, $\prf (x = (\epsilon~y, \neg (p~y)))$ implies $\prf (p~x = q)$,  we have that $\prf ((\forall x, p~x) = q)$.
 \end{lemma}
 \begin{proof} We apply rule \kw{prop\_ext} and then prove both directions,
 \begin{itemize}
@@ -528,7 +586,7 @@ For any $a : \set$, predicate $p : \el{}\,a \ra \prop$ and $q : \prop$, if for e
 \end{proof}
 
 \cref{fig:sko-forall} describes the translation of the \kw{sko\_forall} command. We use the notation $(T)^n$ to express that the tactic $T$ will be repeated $n$ times where $n$ is the number of bound variables on the left, and $x_i, H_i$ are fresh new variables in the context.
-The $H_i$ hypotheses stand for the equalities $\pic (x_i = (\epsilon\,y, \neg (p~y)))$ in \cref{lem:sko-forall}.
+The $H_i$ hypotheses stand for the equalities $\prf (x_i = (\epsilon\,y, \neg (p~y)))$ in \cref{lem:sko-forall}.
 
 \begin{figure}
 \begin{tabular}{l|l}
@@ -604,8 +662,8 @@ We define the function \texttt{provable} that implements our partial decision pr
 \smallskip
 
 \begin{theorem}[Correctness of \kw{provable}]\label{theorem:provable-sound}
-For any $g: \PP$ and context $\hypst$, if $\pic (\kw{provable}~g~\hyps = \kw{true})$
-then given a mapping $\sigma$, if the context $\pic (\deno{\kw{All}~\hyps})$ represents true propositions then $\pic (\deno{g})$ is true.
+For any $g: \PP$ and context $\hypst$, if $\prf (\kw{provable}~g~\hyps = \kw{true})$
+then given a mapping $\sigma$, if the context $\prf (\deno{\kw{All}~\hyps})$ represents true propositions then $\prf (\deno{g})$ is true.
 \end{theorem}
 \begin{proof}
   cf.\ \cref{app:tauto-description}
@@ -627,24 +685,24 @@ then given a mapping $\sigma$, if the context $\pic (\deno{\kw{All}~\hyps})$ rep
 \begin{example}
 As an illustration of the process described in \cref{fig:tautology-solver}, let us consider a proof goal $\cal{G} \coloneq (p \land \top) \lor \bot \Leftrightarrow p$ and a context map $\sigma \coloneq \{ 0 \mapsto p \}$.
 Reification of $\cal{G}$ yields $\reify{\cal{G}}_\sigma = \kw{pOr}~(\kw{pAnd}~\kw{(pAtomic 0)}~\kw{})~\kw{pFalse} \Leftrightarrow \kw{(pAtomic 0)}$. Then by using \cref{theorem:provable-sound},
-we obtain that $\pic (\kw{provable}~\reify{\cal{G}}_\sigma = \texttt{true})$ implies the desired assertion $\pic ((p \land \top) \lor \bot \Leftrightarrow p)$.
+we obtain that $\prf (\kw{provable}~\reify{\cal{G}}_\sigma = \texttt{true})$ implies the desired assertion $\prf ((p \land \top) \lor \bot \Leftrightarrow p)$.
 \end{example}
 
 
 \section{Reconstruction of linear arithmetic for LIA logic}
 \label{sec:lia-reconstruction}
 
-Proof by reflection \cite{reflection-origin-coq} is a technique for writing certified procedures for automated reasoning. It reduces the validity of a logical statement to a symbolic computation.
-Let $P: Z \ra \prop$ be a predicate over a data type Z and $f: Z \ra \tt{bool}$ be a function such that the following theorem holds:
+% Proof by reflection \cite{reflection-origin-coq} is a technique for writing certified procedures for automated reasoning. It reduces the validity of a logical statement to a symbolic computation.
+% Let $P: Z \ra \prop$ be a predicate over a data type Z and $f: Z \ra \tt{bool}$ be a function such that the following theorem holds:
 
-\begin{equation*}
-\tt{f\_correct} : \forall z: Z, (f~z = \tt{true}) \ra (P~z)
-\end{equation*}
+% \begin{equation*}
+% \tt{f\_correct} : \forall z: Z, (f~z = \tt{true}) \ra (P~z)
+% \end{equation*}
 
-If $\mathop{f} z$ reduces to \tt{true}, then the proof term  $\tt{f\_correct}~z~(\tt{refl}~\tt{bool}~\tt{true})$ with $\tt{refl}: \Pi A: \set,\, \Pi x: \el\,A,\, \pic (x = x)$, constitutes a proof of predicate $(P~z)$. In step 6 of checking an application of rule \tt{la\_generic},
-the primary challenge lies in reasoning modulo associativity and commutativity when manipulating expressions over $\Z$.
-The key idea is to provide a normalization function that transforms a $\Z$ expression into a canonical form.
-% such that it can be reduced to a constant because variables will cancel each other, as is the case with the constant $f$ in \cref{ex:la_generic_example_red}.
+% If $\mathop{f} z$ reduces to \tt{true}, then the proof term  $\tt{f\_correct}~z~(\tt{refl}~\tt{bool}~\tt{true})$ with $\tt{refl}: \Pi A: \set,\, \Pi x: \el\,A,\, \prf (x = x)$, constitutes a proof of predicate $(P~z)$. In step 6 of checking an application of rule \tt{la\_generic},
+% the primary challenge lies in reasoning modulo associativity and commutativity when manipulating expressions over $\Z$.
+% The key idea is to provide a normalization function that transforms a $\Z$ expression into a canonical form.
+% % such that it can be reduced to a constant because variables will cancel each other, as is the case with the constant $f$ in \cref{ex:la_generic_example_red}.
 
 
 \subsection{Representation}
