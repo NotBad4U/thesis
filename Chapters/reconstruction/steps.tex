@@ -191,7 +191,7 @@ The key theorem states that this normalization preserves meaning:
 \[
 \mathsf{norm\_mono} : \forall x : \mathsf{Monoid}, \mathsf{denote}(\mathop{norm} x) = \mathsf{denote}(x).
 \]
-Hence to prove that $P \lor Q$ and $Q \lor P$, are logically equivalent, it suffices to represent them as abstract expressions $m_1$ and $m_2$ of type $\mathsf{Monoid}$, apply the function $\mathop{norm}$ to normalize both, and check that $\mathop{norm}(m_1) = \mathop{norm}(m_2)$.
+Hence to prove that $P \lor Q$ and $Q \lor P$, are logically equivalent, it suffices to represent them as abstract expressions $m_1$ and $m_2$ of type $\mathsf{Monoid}$, apply the function $\mathop{norm}$ with the lemma $\mathsf{norm\_mono}$ to normalize both, and check that $\mathop{norm}(m_1) = \mathop{norm}(m_2)$.
 By correctness of the interpretation, their meanings must then coincide.
 
 
