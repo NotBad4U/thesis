@@ -16,6 +16,7 @@ Alethe does not support the sorts \texttt{Array} and \texttt{String}. Our transl
 \begin{definition}[Function $\mathcal{D}$ translating SMT sort and function symbol declarations]
 For each sort symbol $s$ with arity $n$ in $\Theta^\cal{S}$ we create a constant $s: \set \ra \dots \ra \set$.
 For each function symbol $f~\sigma^+$ in $\Theta^\cal{F}$ we create a constant $f: \cal{S}(\sigma^+)$.
+\label{def:function-d}
 \end{definition}
 
 \smallskip
@@ -36,6 +37,7 @@ For every function declared in the SMT prelude, we define a constant whose arity
     \item otherwise $\Sort{s} = \el\, \mathcal{D}(s)$.
     % where the symbol $s$ on the right-hand side denotes the Lambdapi sort introduced for the SMT sort $s$.
   \end{itemize}
+  \label{def:function-s}
 \end{definition}
 
 \smallskip
@@ -75,4 +77,23 @@ The definition of $\E{e}$ is as follows.
 \item Case $e = (\kw{bbt}~x_1 \dots x_n)$, then $\E{e} = \mathop{bbt}~p~(\E{x_1} \mathbin{\colon\colon} \dots \mathbin{\colon\colon} \E{x_n} \mathbin{\colon\colon} \square)$
 with $p$ a proof that \((\E{x_1} \mathbin{\colon\colon} \dots \mathbin{\colon\colon} \E{x_n} \mathbin{\colon\colon} \square)\) is well-formed.
 \end{itemize}
+\label{def:function-e}
 \end{definition}
+
+We define the function $\cal{C}$ in \cref{def:function-c} that translates an Alethe step of the form $i.~\Gamma~\triangleright~l_1 \dots l_n\,(R\,P)[A]$ into a constant $i: \pid (\E{l_1}\cons\dots\cons\E{l_n}\cons \nil) \coloneq M$ where $M$ is a proof term of appropriate type.
+We recall that an Alethe proof trace is a list $c_1 \dots c_m$ of steps, where every step may only refer to previous steps by index in its justification. Therefore, we can translate each step independently.
+The function $\cal{C}$ is defined by cases on the rule $R$. In the case of an \texttt{assume} command, we do not provide a proof term $M$ so $i$ is considered as an axiom. Because a step can only refer to previous steps, each step $i$ can be translated separately. Its proof term may refer to constants representing steps that precede $i$ in the trace and that must therefore have been introduced when Lambdapi checks the definition of constant~$i$.
+
+\begin{definition}[Function $\cal{C}$ translating step]
+Given a step 
+\[
+  i. \, \Gamma \, \triangleright\, l_1 \dots l_n\,(R\,P)[A]
+\]
+the function $\cal{C}(i)$ produce a constant
+\[
+  \cal{C}(i) = i: \pid (\E{l_1}\cons\dots\cons\E{l_n}\cons \nil) \coloneq M
+\]
+\label{def:function-c}
+\end{definition}
+
+In the following sections, we present how different categories of rules are translated by $\cal{C}$. We will sometimes omit writing $\pid$ and $\prf$ in order to simplify the notation.

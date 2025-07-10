@@ -1,14 +1,5 @@
-
-\section{Translating Alethe steps}
-\label{sect:translate-step}
-
-We will now present how we translate steps in an Alethe trace. An Alethe proof trace is a list $c_1 \dots c_m$ of steps where every step may only refer to previous steps in its justification.
-We define the function $\cal{C}$ that translates an Alethe step of the form $i.~\Gamma~\triangleright~l_1 \dots l_n\,(R\,P)[A]$ into a constant $i: \pid (\E{l_1}\cons\dots\cons\E{l_n}\cons \nil) \coloneq M$ where $M$ is a proof term of appropriate type.
-The function $\cal{C}$ is defined by cases on the rule $R$. In the case of an \texttt{assume} command, we do not provide a proof term $M$ so $i$ is considered as an axiom. Because a step can only refer to previous steps, each step $i$ can be translated separately. Its proof term may refer to constants representing steps that precede $i$ in the trace and that must therefore have been introduced when Lambdapi checks the definition of constant~$i$.
-In the following sections, we present how different categories of rules are translated by $\cal{C}$. We will sometimes omit writing $\pid$ and $\prf$ in order to simplify the notation.
-
-\subsection{Tautologous rules and simple deduction}
-\label{ssec:elem-rules}
+\section{Tautologous rules and simple deduction}
+\label{sec:elem-rules}
 
 Many Alethe rules introduce tautologies or derive their conclusion from a single premise.
 %
@@ -112,7 +103,8 @@ Binary resolution on ground clauses can be expressed as the following proof rule
 Given $a,b: \texttt{Clause}$, and a pivot $x: \prop$, $\pid (x \veedot a)$ and $\pid (\neg x \veedot b)$ imply $\pid (a \pp b)$.
 \end{lemma}
 
-\begin{figure}[bt]
+% FIXME: remove float?
+\begin{figure}[h]
   \centering
   \begin{tabular}{l c r}
   $i_1.~\triangleright$  & \qquad $l_1^1,\, \dots,\, l_{k^1}^1$ \qquad & (\dots)  \\
@@ -135,7 +127,7 @@ In addition, pivots may appear anywhere in a clause rather than just as the head
 In \cite{ColtellacciMD24}, we simulated Alethe's \kw{resolution} rule as compositions of multiple binary resolution steps, combined with additional proof steps for justifying reasoning modulo AC used to move pivots to the heads of clauses.
 However, the practical application of this approach suffered from inefficiency and did not allow us to reconstruct proofs of some benchmarks in SMT-LIB that involved hundreds of clauses in a single resolution.
 In the following, we present an approach where we prove clause permutation through \emph{proof by reflection}\index{proof by reflection}, enabling more efficient pivot movement.
-
+Given the central role of \emph{proof by reflection} in our translation, we dedicate the following section to a more detailed introduction of this concept, which is key to reconstructing certain proof rules in the Alethe format. 
 
 \subsection{Proof by reflection}
 \label{ssec:reflection-intro}
@@ -198,199 +190,138 @@ By correctness of the interpretation, their meanings must then coincide.
 In this thesis, we make use of both classes of reflection to encode certain \texttt{Alethe} rules. For example, the reconstruction of arithmetic steps (\textbf{LIA} and \textbf{LRA}) and bitvector (\textbf{BV}) Alethe rules primarily relies on the first class,
 while the permutation of clauses for the \texttt{resolution} rule relies on the second class.
 
-\subsection{Computing hyper-resolvents}
-\label{sec:refl-reso}
+\subsection{Computing hyper-resolvents with proof by reflection}
+\label{ssec:refl-reso}
+
 
 Whereas the technique described in \cref{ssec:resolution} can be used to reconstruct resolution proofs in Alethe proof traces, it suffers from poor scalability.
 Specifically, the permutation proof generated for pivot movement due to reasoning modulo AC may become excessively lengthy. We will now describe an alternative technique based on computational reflection that allows us to prove the permutation of clauses efficiently.
-Proof by computational reflection is a technique introe can be substituted with one where the pivot is placed at the head position, allowing for the subsequent application of \cref{lemma:resolution}.
-To handle associative and commutative symbols, Lambdapi provides the modifiers \texttt{associative} and \texttt{commutative},
+Relying on the rewriting facilities of Lambdapi, we implemented a decision procedure that checks equality between clauses by rewriting modulo AC-canonization.
+
+The core idea is to put clauses with pivots in different positions into a canonical form, allowing them to be compared.
+If two clauses are determined to be equal, the current clause can be substituted with one where the pivot is placed at the head position, allowing for the subsequent application of \cref{lemma:resolution}.
+To handle associative and commutative symbols, Lambdapi provides the modifiers \lpinline{associative commutative},
 ensuring that terms are systematically placed into a canonical form given a builtin ordering relation, following the technique described in \cite{ACorigin} and \cite[\S 5]{univAC}.
 
 Additionally, as discussed in \cref{sect:elabration-resolution}, the solver can introduce implicit $\tt{contraction}$ steps between binary resolution steps.
 We leverage the elaboration process in Carcara to avoid implementing a proof by reflection for $\tt{contraction}$, which would require structures not present in the standard library of Lambdapi to reason about collections modulo duplicate terms, such as finite sets.
 
-% FIXME
-% \begin{figure}[t]
-%   \centering
-%   \begin{tikzcd}[column sep=tiny]
-%     {\tt{P}(a) \sqcup \tt{P}(b) \sqcup \dots \sqcup \epsilon} & {\cal{C}} && {\cal{C}} & {\tt{P}(a) \sqcup \tt{P}(b) \sqcup \dots \sqcup \epsilon} \\
-%     \\
-%     {b \cons \dots \cons a \cons \dots  \cons \nil} & \kw{Clause} && \kw{Clause} & {a \cons b \cons \dots  \cons \nil}
-%     \arrow["eq", dotted, from=1-2, no head, to=1-4]
-%     % \arrow["{{\reify{\_}}}", tail reversed, no head, from=1-4, to=3-4]
-%     % \arrow["{{\reify{\_}}}"', from=3-2, to=1-2]duced in \cite{reflected_origin} that benefits from the internal reduction system of the proof assistant in order to reduce the size of the proof term computed and consequently speed up its checking. In Lambdapi, we can take advantage of the fact that rewriting rules are part of the internal reduction system ($\equiv_{\beta\cal{R}}$), which makes proof by reflection convenient to set up and implement.
-Relying on the rewriting facilities of Lambdapi, we implemented a decision procedure that checks equality between clauses by rewriting modulo AC-canonization.
-
-The core idea is to put clauses with pivots in different positions into a canonical form, allowing them to be compared.
-If two clauses are determined to be equal, the current claus
-%     % \arrow["{=}"{marking, allow upside down}, draw=none, from=3-2, to=3-4]
-%   \end{tikzcd}
-%   \caption{Checking resolution steps via reification in the algebra $\mathcal{C}$.}
-%   \label{fig:reflective-process}
-% \end{figure}
+\begin{figure}[t]
+  \centering
+  \begin{tikzcd}[column sep=tiny]
+    {C_1 =_{\bb{C}} C_2} & {\bb{C}} && {\bb{C}} & {[C_1] =_{\bb{C}} [C_2]} \\
+    \\
+    {c_1 =_{\tt{Clause}} c_2} & \kw{Clause} && \kw{Clause} & {\den{[C_1]} =_{\tt{Clause}} \den{[C_2]}}
+    \arrow["{{[\_]}}", dotted, from=1-2, to=1-4]
+    \arrow["{{\den{\_}}}", from=1-4, to=3-4]
+    \arrow["{{\reify{\_}}}"', from=3-2, to=1-2]
+    \arrow["{\Leftrightarrow}"{marking, allow upside down}, draw=none, from=3-2, to=3-4]
+  \end{tikzcd}
+  \caption{Checking resolution steps via reification in the algebra $\bb{C}$.}
+  \label{fig:reflective-process}
+\end{figure}
 
 \cref{fig:reflective-process} gives an overview of the realization of this technique in Lambdapi.
-It relies on \emph{reifying} clauses into terms of an algebra $\mathcal{C}$, using the operator $\reify{\_}$ defined in \cref{fig:reify-def}.
-The \emph{target theory} $\mathcal{C}$ has a constructor $\eps: \cal{C}$ representing $\nil$ and a constructor $\sqcup: \cal{C} \ra \cal{C} \ra \cal{C}$ declared \texttt{associative commutative}, which is the analogue of $\cons$.
-Propositions are injected into the algebra by the operator $\cal{P}: \prop \ra \cal{C}$. Thus, a \emph{reified} clause term will be put directly in a canonical form.
+It relies on \emph{reifying} clauses into terms of an algebra $\bb{C}$, using the operator $\reify{(\_)}$ defined in \cref{def:reify-def},
+and we denote by $[t]$ the normalization of term $t$ done from \lpinline{associative commutative} modifiers.
+
+\begin{definition}[The abstract type $\bb{C}$]
+The \emph{abstract type} $\bb{C}$ is an inductive type defined as follows:
+
+\begin{align*}
+&\bb{C} : \type \\
+&|~\eps: \bb{C} \\
+&|~\kw{P}: \prop \ra \bb{C} \\
+&|~\sqcup: \bb{C} \ra \bb{C} \ra \bb{C} \quad \text{(written infix)} \\
+&\kw{clauseAC} : \set \\
+&\el\, \kw{clauseAC} \re \bb{C} \\
+\end{align*}
+
+where the constructor $\eps: \bb{C}$ representing $\nil$ and the constructor $\sqcup$ is declared \lpinline{associative commutative}, which is the analogue of $\cons$.
+Propositions are injected into the algebra by the operator $\tt{P}$.
+\end{definition}
+
+ Thus, a \emph{reified} clause term will be put directly in a canonical form.
 In \cref{fig:reflective-process}, the canonical form is based on lexicographic ordering, whereas in Lambdapi, a fixed built-in ordering relation is used.
 
 
-\begin{figure}[b]
+\begin{definition}[reification function]
 \begin{align*}
-& \reify{\_}: \texttt{Clause} \ra \cal{C} \\
+& \reify{\_}: \texttt{Clause} \ra \bb{C} \\
 &\reify{(x \cons y)} \re \reify{x} \sqcup \reify{y} \\
 &\reify{ \blacksquare } \re \epsilon \\
 &\reify{ x } \re \cal{P}(x)
 \end{align*}
-\caption{Rewrite system for the reification function}
-\label{fig:reify-def}
-\end{figure}
-
-It then remains to decide the equality of two terms in $\mathcal{C}$, and this is accomplished using the operator $=_\cal{C}$ introduced in \cref{def:eqC}.
-Its definition relies on Boolean conjunction \kw{andb}, which is predefined in Lambdapi's standard library, as well as on the operator \kw{eq} that checks equality of two terms of type $\prop$. The rewriting strategy of Lambdapi applies rules bottom-up in expressions.
-Therefore, when evaluating an expression such as $\reify{\varphi_1} =_{\mathcal{C}} \reify{\varphi_2}$, the rewrite rules of \cref{fig:reify-def} that apply to the reified clauses are applied before those defining the operator $=_{\mathcal{C}}$.
-
-\smallskip
-
-\begin{definition}[$=_\cal{C}$]
-  The operators $=_\cal{C} : \cal{C} \ra \cal{C} \ra \kw{bool}$ and $\kw{eq} : \prop \ra \prop \ra \kw{bool}$ are defined by the following rewrite rules.
-
-  \smallskip
-
-%  \begin{minipage}[t]{0.70\linewidth}
-  \(\begin{array}[t]{r@{\ \ }c@{\ \ }l}
-  x_1 \sqcup y_1 =_\cal{C} x_2 \sqcup y_2 & \re & (x_1  =_\cal{C} x_2) ~\kw{andb}~ (y_1  =_\cal{C} y_2) \\
-  \_ \sqcup \_ =_\cal{C} \epsilon & \re & \false \\
-  \_ \sqcup \_ =_\cal{C} \cal{P}(\_) & \re & \false \\
-  \cal{P}(x) =_\cal{C} \cal{P}(y) & \re & (\kw{eq}~x~y) \\
-  \cal{P}(\_) =_\cal{C} \_ \sqcup \_ & \re & \false \\
-  \cal{P}(\_) =_\cal{C} \epsilon & \re & \false \\
-  \epsilon =_\cal{C} \epsilon & \re & \true \\
-  \epsilon =_\cal{C} \cal{P}(\_) & \re & \false \\
-  \epsilon =_\cal{C} \_ \sqcup \_ & \re & \false
-  \end{array}\) \qquad
-%  \end{minipage}
-%  \begin{minipage}[t]{0.25\linewidth}
-  \(\begin{array}[t]{@{}l}
-  \eq~x~x~ \re \true \\
-  \eq~x~y~ \re \false \\
-  \end{array}\)
-%  \end{minipage}
-  \label{def:eqC}
+\label{def:reify-def}
 \end{definition}
 
-\smallskip
-
-The operator \kw{eq} is declared as \kw{sequential} so that the second rewrite rule will be applied only if the first one fails.
-Its definition ensures that $\kw{eq}~x~y$ holds if and only if the two propositions $x$ and $y$ are identical. We define below
-the operator $\tt{istrue}$ that casts Booleans into $\prop$.
+It then remains to decide the equality of two terms in $\bb{C}$, and this is accomplished using the operator $=_\bb{C}$ introduced in \cref{def:eqC}.
+Its definition relies on Boolean conjunction \kw{andb}, which is predefined in Lambdapi's standard library, as well as on the operator \kw{eq} that checks equality of two terms of type $\prop$. The rewriting strategy of Lambdapi applies rules bottom-up in expressions.
+Therefore, when evaluating an expression such as $\reify{\varphi_1} =_{\bb{C}} \reify{\varphi_2}$, the rewrite rules of \cref{fig:reify-def} that apply to the reified clauses are applied before those defining the operator $=_{\bb{C}}$.
 
 \smallskip
+
+\begin{definition}[decidable equivalence relation]
+The operators $=_\bb{C} : \bb{C} \ra \bb{C} \ra \kw{bool}$ is defined by the following rewrite rules.
 
 \begin{align*}
-& \tt{istrue} : \el{}\,\tt{bool} \ra \prop \\
-& \tt{istrue}~\tt{true} \re \top \\
-& \tt{istrue}~\tt{false} \re \bot
+&x_1 \sqcup y_1 =_\bb{C} x_2 \sqcup y_2 \re (x_1  =_\bb{C} x_2) ~\kw{andb}~ (y_1  =_\bb{C} y_2) \\
+&\_ \sqcup \_ =_\bb{C} \epsilon \re \false \\
+&\_ \sqcup \_ =_\bb{C} \cal{P}(\_) \re \false \\
+&\cal{P}(x) =_\bb{C} \cal{P}(y) \re (\kw{eq}~x~y) \\
+&\cal{P}(\_) =_\bb{C} \_ \sqcup \_ \re \false \\
+&\cal{P}(\_) =_\bb{C} \epsilon \re \false \\
+&\epsilon =_\bb{C} \epsilon \re \true \\
+&\epsilon =_\bb{C} \cal{P}(\_) \re \false \\
+&\epsilon =_\bb{C} \_ \sqcup \_ \re \false
 \end{align*}
-
-\smallskip
+with:
+\begin{align*}
+&\eq~x~x~ \re \true  &\kw{andb}~\kw{true}~\kw{true} \re \kw{true} \\
+&\eq~x~y~ \re \false &\kw{andb}~\kw{false}~\_ \re \kw{false} \\
+& &\kw{andb}~\_ \kw{false} \re \kw{false} 
+\end{align*}
+\label{def:eqC}
+The operator \kw{eq} is declared as \kw{sequential} so that the second rewrite rule will be applied only if the first one fails.
+Its definition ensures that $\kw{eq}~x~y$ holds if and only if the two propositions $x$ and $y$ are identical.
+\end{definition}
 
 \begin{lemma}[P-injective]\label{lem:p-inj}
-For any $x, y: \prop$, if $\kw{istrue}(\cal{P}(x) =_{\mathcal{C}} \cal{P}(y))$ then $x = y$.
+For any $x, y: \prop$, if $\kw{istrue}(\cal{P}(x) =_{\bb{C}} \cal{P}(y))$ then $x = y$.
 \begin{proof}
-From the definition of $=_{\mathcal{C}}$ that uses a non-linear sequential rewriting rule,
-it follows directly that if $\cal{P}(x) =_{\mathcal{C}} \cal{P}(y)$ is true then $x$ and $y$ have to be the same.
-% Otherwise, they are not equal and then we have a contradiction.
+From the definition of $=_{\bb{C}}$ that uses a non-linear sequential rewriting rule,
+it follows directly that if $\cal{P}(x) =_{\bb{C}} \cal{P}(y)$ is true then $x$ and $y$ have to be the same.
 \end{proof}
 \end{lemma}
 
 \smallskip
 
 \begin{theorem}[Correctness]\label{lem:eq-C}
-For $c_1, c_2 : \tt{Clause}$, if $\tt{istrue} (\reify{c_1} =_{\mathcal{C}} \reify{c_2})$ then $\cal{F}\,c_1 = \cal{F}\,c_2$.
+For $c_1, c_2 : \tt{Clause}$, if $\tt{istrue} (\reify{c_1} =_{\bb{C}} \reify{c_2})$ then $\cal{F}\,c_1 = \cal{F}\,c_2$.
 \end{theorem}
 \begin{proof}
 By induction on $c_1$ and $c_2$.
 \begin{itemize}
-  \item First suppose $c_1 = \blacksquare$ and $c_2 = \blacksquare$. We must show that $\tt{istrue} (\epsilon =_{\mathcal{C}} \epsilon)$ implies $\cal{F}\, \blacksquare = \cal{F}\, \blacksquare$ which follows directly by reflexivity.
-  \item Next, suppose $c_1 = \blacksquare$ and $c_2 = x \veedot xs$. Then it follows from the the rewriting rules of $=_{\mathcal{C}}$ that we have a contradiction since we supposed that $\tt{istrue}(\epsilon =_{\mathcal{C}} \cal{P}(x) \sqcup \reify{xs})$.
+  \item First suppose $c_1 = \blacksquare$ and $c_2 = \blacksquare$. We must show that $\tt{istrue} (\epsilon =_{\bb{C}} \epsilon)$ implies $\cal{F}\, \blacksquare = \cal{F}\, \blacksquare$ which follows directly by reflexivity.
+  \item Next, suppose $c_1 = \blacksquare$ and $c_2 = x \veedot xs$. Then it follows from the the rewriting rules of $=_{\bb{C}}$ that we have a contradiction since we supposed that $\tt{istrue}(\epsilon =_{\bb{C}} \cal{P}(x) \sqcup \reify{xs})$.
   \item The case where $c_1 = x \veedot xs$ and $c_2 = \blacksquare$ is symmetrical.
   \item Lastly, suppose $c_1 = x \veedot xs$ and $c_2 = y \veedot ys$, and
-%  By induction hypothesis we have that
-%  $\forall (b : \cal{C}), \tt{istrue} (\reify{xs} =_{\mathcal{C}} \reify{b}) \text{ implies that } \cal{F}\, xs = \cal{F}\, b$, and
-  assume that $\tt{istrue}(\reify{c_1} =_{\mathcal{C}} \reify{c_2})$. 
-  %We must show that $\cal{F}\, (x \veedot xs) = \cal{F}\,(y \veedot ys)$.
+  assume that $\tt{istrue}(\reify{c_1} =_{\bb{C}} \reify{c_2})$. 
   Let $d_1 = \reify{(x \veedot xs)}$ and $d_2 = \reify{(y \veedot ys)}$, then $d_1$ must be of the form 
   $\cal{P}(u) \sqcup \reify{u'}$ and $d_2$ must be of the form $\cal{P}(v) \sqcup \reify{v'}$ where 
   the clauses $u'$ and $v'$ are shorter than $xs$ and $ys$, respectively, and such that 
   $\cal{F}\,(u \veedot u') = \cal{F}\,(c_1)$ and similarly
   $\cal{F}\,(v \veedot v') = \cal{F}\,(c_2)$.
-  Moreover, from the assumption $\tt{istrue}(d_1 =_{\mathcal{C}} d_2)$ and \cref{lem:p-inj} it follows that 
+  Moreover, from the assumption $\tt{istrue}(d_1 =_{\bb{C}} d_2)$ and \cref{lem:p-inj} it follows that 
   $u = v$, and by induction hypothesis we obtain that $\cal{F}\,u' = \cal{F}\,v'$. Taking everything
   together, we finally obtain that $\cal{F}\,c_1 = \cal{F}\,c_2$.
-%  By congruence we must show that $x = y$ and $\cal{F}\, xs = \cal{F}\, ys$. The latter follows directly from the induction hypothesis.
-%  To prove the former, we know by hypothesis $\tt{istrue}(\reify{x} =_{\mathcal{C}} \reify{y})$ and $\tt{istrue}(\reify{xs} =_{\mathcal{C}} \reify{ys})$. Thus by the hypothesis that  $\tt{istrue}(\reify{x} =_{\mathcal{C}} \reify{y})$ which is by $=_{\mathcal{C}}$ definition $\tt{istrue}(\cal{P}\,x =_{\mathcal{C}} \cal{P}\,y$ and \cref{lem:p-inj} we can directly conclude that $x = y$.
 \end{itemize}
 \end{proof}
-
-
-% \smallskip
-
-% We can establish a stronger lemma for the completeness direction, where we prove that if two clauses are equal, then they are equal by reflection.
-% We first establish some lemmas in preparation of the completeness proof.
-% \commentSM{Isn't that result entirely trivial, given that $=_{\mathcal{C}}$ is reflexive? And is it relevant for what follows?}
-
-% \smallskip
-  
-
-% \begin{lemma}\label{lem:nil-dif-cons}
-% For any $x : \prop$ and $xs: \tt{Clause}$, we have $(x \veedot xs) \neq \nil$.
-% \begin{proof}
-% We recall that $\neq$ is defined as $(p = q) \ra \bot$. Let us assume that $(x \veedot xs) = \nil$, we need to prove $\bot$.
-% We trivially have $\tt{istrue}(is\blacksquare~\nil)$, and by substitution therefore obtain
-% $\tt{istrue}(is\blacksquare~(x \veedot y))$, which implies $\bot$.
-% %By using the induction on equality $ind\_{eq}$ with the predicate $\forall c, \tt{istrue}(is\blacksquare~c)$,
-% %it is trivial that $\tt{istrue}(is\blacksquare~\blacksquare)$, thus we have $\tt{istrue}(is\blacksquare~(x \veedot y))$ which prove $\bot$.
-% \end{proof}
-% \end{lemma}
-
-% \begin{align*}
-%   & \tt{cl\_head} : \tt{Clause} \ra \prop & &\tt{cl\_tail} : \tt{Clause} \ra \tt{Clause}  \\
-%   & \tt{cl\_head}~\blacksquare \re \bot & &\tt{cl\_tail}~\blacksquare \re \blacksquare \\
-%   & \tt{cl\_head}~(x \veedot xs) \re x & &\tt{cl\_tail}~(x \veedot xs) \re xs
-%   \end{align*}
-
-%   \begin{lemma}\label{lem:cons-is-inj}
-%   For any $x, y : \prop$ and $xs, ys : \tt{Clause}$, if $(x \veedot xs) = (y \veedot ys)$, then $x = y$ and $xs = ys$.
-%   \begin{proof}
-%   We prove the result by congruence. Given the hypothesis $(x \veedot xs) = (y \veedot ys)$, we apply the congruence rule, first, using $\tt{cl\_head}$ to conclude that $x = y$, and then applying $\tt{cl\_tail}$ to deduce that $xs = ys$.
-%   \end{proof}
-%   \end{lemma}
-    
-
-% \smallskip
-
-% \begin{theorem}[Completeness]\label{lem:eq-C}
-% For $c_1, c_2 : \tt{Clause}$, if $c_1 = c_2$ then $\tt{istrue}(\reify{c_1} =_{\mathcal{C}} \reify{c_2})$.
-% \end{theorem}
-% \begin{proof}
-% By induction on $c_1$ and $c_2$.
-% \begin{itemize}
-%   \item For the base case when $c_1 = \blacksquare$ and $c_2 = \blacksquare$. We must show $\tt{istrue} (\epsilon =_{\mathcal{C}} \epsilon)$ which follows directly by the definitions of $=_{\mathcal{C}}$ and $\tt{istrue}$.
-%   \item Next, suppose $c_1 = \blacksquare$ and $c_2 = x \veedot xs$. We know that we have a contradiction by using the \cref{lem:nil-dif-cons}.
-%   \item Similarly, we also derive a contradiction in the cases when $c_1 = x \veedot xs$ and $c_2$ is an empty clause.
-%   \item Lastly, suppose $c_1 = x \veedot xs$ and $c_2 = y \veedot ys$. By induction hypothesis we have $\forall (b : \tt{Clause}), xs = b \text{ implies that } \tt{istrue} (\reify{xs} =_{\mathcal{C}} \reify{b})$,
-%   .We also assume that $x \veedot xs = y \veedot ys$. We need to show that $\tt{istrue}(\reify{x \veedot xs} = \reify{y \veedot ys})$.
-%   Using \cref{lem:cons-is-inj},  from the assumption $x \veedot xs = y \veedot ys$,  we conclude that $x = y$ and $xs = ys$. Therefore, the result follows directly.
-% \end{itemize}
-% \end{proof}
 
 \begin{example}
 The code in \cref{lst:new-reso} demonstrates how \cref{lem:eq-C} is used to move the pivot within a clause.
 It introduces a proof of clause permutation using a cut at line 8, where \cref{lem:eq-C} is used to show, by computation, that the clause of step $t1$ is a permutation of another clause with the pivot at the head.
-Line 10, the $\tt{trivial}$ is the constructor for the proposition $\top$, and it concludes the proof if the $=_{\cal{C}}$ of \cref{lem:eq-C} returns $\tt{true}$. % AC: Should we mention again that this is because (istrue true) -> True?
+Line 10, the $\tt{trivial}$ is the constructor for the proposition $\top$, and it concludes the proof if the $=_{\bb{C}}$ of \cref{lem:eq-C} returns $\tt{true}$. % AC: Should we mention again that this is because (istrue true) -> True?
 Additionally, we utilize the lemma $\tt{subst\_equiv\_clause}$, which states that for any clauses $c_1$ and $c_2$, if $\cal{F}(c_1) = \cal{F}(c_2)$ and there exists a proof of $c_1$, then we can derive a proof of $c_2$.
 Thus, we combine in the $\tt{resolution}$ (line 12) this lemma with the permutation proof of $t1$ and the clause of $t2$ to derive the clause asserted by $t3$.
 
@@ -402,7 +333,7 @@ opaque symbol t2 : Prf$\textcolor{purple}{\smash{^\bullet}}$ ((¬ (p)) ⟇ c ⟇
 opaque symbol t3 : Prf$\textcolor{purple}{\smash{^\bullet}}$ (a ⟇ b ⟇ c ⟇ d ⟇ ▩) ≔ 
 begin
 have t1_t2 : Prf$\textcolor{purple}{\smash{^\bullet}}$ (a  ⟇ b  ⟇ c  ⟇ d ⟇ ▩) {
-have t1_perm : Prf$\textcolor{purple}{\smash{}}$ (($\cal{F}$ (a ⟇ b ⟇ p ⟇ ▩)) = ($\cal{F}$ (p ⟇ a ⟇ b ⟇ ▩))) {
+have t1_perm : Prf$\textcolor{purple}{\smash{^c}}$ (($\cal{F}$ (a ⟇ b ⟇ p ⟇ ▩)) = ($\cal{F}$ (p ⟇ a ⟇ b ⟇ ▩))) {
   apply cl_perm_correct (a  ⟇ b  ⟇ p ⟇ ▩) (p  ⟇ a  ⟇ b ⟇ ▩);
   apply trivial;
 };
@@ -464,7 +395,7 @@ $\lightning$
 
 In the case that cvc5 still outputs a proof trace using the original simplification rules, we reconstruct the proof by using a meta-tactic of Lambdapi, i.e.\ a tactic that takes other tactics as arguments. % - "higher-order tactic".
 Each transformation of the simplification rules is implemented by a lemma, and then tried on the goal context. In order to do that, we extended Lambdapi by adding the tactic $\kw{try}~T$ that attempts to apply the tactic $T$. If the application of $T$ fails, the error is caught and the goal is left unchanged.
-For instance, we define the case $R = \kw{not\_simplify}$ for the function $\cal{C}$ in \cref{table:not-simplify}.
+For instance, we define the case $R = \kw{not\_simplify}$ for the function $\bb{C}$ in \cref{table:not-simplify}.
 
 \begin{figure}
   \footnotesize
