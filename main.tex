@@ -53,21 +53,42 @@
 \usepackage{pgfplots}
 \usepackage{imakeidx}
 \usepackage{framed}
+\usepackage{xargs} % Use more than one optional parameter in a new commands
 
 %*******************************************************
 % My dev libraries
 %*******************************************************
-\usepackage{todonotes}
+\let\marginpar\oldmarginpar % Fix from https://tex.stackexchange.com/questions/33423/todonotes-produces-double-inline-notes-instead-of-single-margin-note-with-class
+\usepackage[colorinlistoftodos,prependcaption={text}]{todonotes}
 
-\pgfplotsset{compat=1.8}
-\usepgfplotslibrary{statistics}
+\newcommandx{\change}[3][1=]{%
+  \todo[#1, linecolor=blue, backgroundcolor=blue!25, bordercolor=blue]{\textbf{#2:} #3}%
+}
 
+\newcommandx{\info}[3][1=]{%
+  \todo[#1, linecolor=OliveGreen,backgroundcolor=OliveGreen!25,bordercolor=OliveGreen]{\textbf{#2:} #3}%
+}
+
+\newcommandx{\improvement}[3][1=]{%
+  \todo[#1, linecolor=Plum,backgroundcolor=Plum!25,bordercolor=Plum]{\textbf{#2:} #3}%
+}
+
+\newcommandx{\thiswillnotshow}[3][1=]{%
+  \todo[disable,#1]{\textbf{#2:} #3}%
+}
+
+\newcommandx{\unsure}[3][1=]{%
+  \todo[#1,linecolor=red,backgroundcolor=red!25,bordercolor=red]{\textbf{#2:} #3}%
+}
 
 %*******************************************************
 % My config
 %*******************************************************
 \input{commands}
 \input{lst-cfg}
+
+\pgfplotsset{compat=1.8}
+\usepgfplotslibrary{statistics}
 
 
 %*******************************************************
@@ -82,7 +103,6 @@
 %*******************************************************
 % \makeindex[columns=1, title=Alphabetical Index, intoc]
 \makeindex
-
 
 % ******************************************************
 % Main

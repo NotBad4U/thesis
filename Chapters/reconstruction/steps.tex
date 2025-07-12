@@ -97,6 +97,8 @@ end;
 \subsection{Resolution rule}
 \label{ssec:resolution}
 
+\change{Alessio}{The algorithm to reconstruct resolution will be modified}
+
 Binary resolution on ground clauses can be expressed as the following proof rule, which we have proved in Lambdapi.
 
 \begin{lemma}[Resolution]\label{lemma:resolution}
@@ -198,12 +200,12 @@ Whereas the technique described in \cref{ssec:resolution} can be used to reconst
 Specifically, the permutation proof generated for pivot movement due to reasoning modulo AC may become excessively lengthy. We will now describe an alternative technique based on computational reflection that allows us to prove the permutation of clauses efficiently.
 Relying on the rewriting facilities of Lambdapi, we implemented a decision procedure that checks equality between clauses by rewriting modulo AC-canonization.
 
-The core idea is to put clauses with pivots in different positions into a canonical form, allowing them to be compared.
+The core idea is to put clauses with pivots in different positions into a canonical form, allowing them to be compared. To achieve this, we present a proof by reflection of the second class in the following.
 If two clauses are determined to be equal, the current clause can be substituted with one where the pivot is placed at the head position, allowing for the subsequent application of \cref{lemma:resolution}.
-To handle associative and commutative symbols, Lambdapi provides the modifiers \lpinline{associative commutative},
+To handle associative and commutative symbols, Lambdapi provides the modifiers \lpinline{associative commutative} \info{ac}{the introduction of Lambdapi will present AC and its builtin order},
 ensuring that terms are systematically placed into a canonical form given a builtin ordering relation, following the technique described in \cite{ACorigin} and \cite[\S 5]{univAC}.
 
-Additionally, as discussed in \cref{sect:elabration-resolution}, the solver can introduce implicit $\tt{contraction}$ steps between binary resolution steps.
+Additionally, as discussed in \cref{sect:elabration-resolution} \change{ac}{Need Alethe intro}, the solver can introduce implicit $\tt{contraction}$ steps between binary resolution steps.
 We leverage the elaboration process in Carcara to avoid implementing a proof by reflection for $\tt{contraction}$, which would require structures not present in the standard library of Lambdapi to reason about collections modulo duplicate terms, such as finite sets.
 
 \begin{figure}[t]
@@ -221,13 +223,14 @@ We leverage the elaboration process in Carcara to avoid implementing a proof by 
   \label{fig:reflective-process}
 \end{figure}
 
-\cref{fig:reflective-process} gives an overview of the realization of this technique in Lambdapi.
-It relies on \emph{reifying} clauses into terms of an algebra $\bb{C}$, using the operator $\reify{(\_)}$ defined in \cref{def:reify-def},
+The \cref{fig:reflective-process} provides an overview of the realization of this technique in Lambdapi.
+It relies on \emph{reifying} clauses into terms of an algebra $\bb{C}$, using the operator $\reify{}$ defined in \cref{def:reify-def},
 and we denote by $[t]$ the normalization of term $t$ done from \lpinline{associative commutative} modifiers.
+This normalization corresponds to the function $g$ introduced in \cref{ssec:reflection-intro}.
+Since we rely on the lambda modifiers, normalization is implicitly handled by $\lpm$, and thus the function $[_]$ is simply the identity: $[_]: \bb{C} \rightarrow \bb{C} \coloneq \lambda x., x$.
 
 \begin{definition}[The abstract type $\bb{C}$]
 The \emph{abstract type} $\bb{C}$ is an inductive type defined as follows:
-
 \begin{align*}
 &\bb{C} : \type \\
 &|~\eps: \bb{C} \\
@@ -236,30 +239,23 @@ The \emph{abstract type} $\bb{C}$ is an inductive type defined as follows:
 &\kw{clauseAC} : \set \\
 &\el\, \kw{clauseAC} \re \bb{C} \\
 \end{align*}
-
 where the constructor $\eps: \bb{C}$ representing $\nil$ and the constructor $\sqcup$ is declared \lpinline{associative commutative}, which is the analogue of $\cons$.
 Propositions are injected into the algebra by the operator $\tt{P}$.
 \end{definition}
 
- Thus, a \emph{reified} clause term will be put directly in a canonical form.
-In \cref{fig:reflective-process}, the canonical form is based on lexicographic ordering, whereas in Lambdapi, a fixed built-in ordering relation is used.
-
-
 \begin{definition}[reification function]
 \begin{align*}
-& \reify{\_}: \texttt{Clause} \ra \bb{C} \\
-&\reify{(x \cons y)} \re \reify{x} \sqcup \reify{y} \\
+& \reify{}: \texttt{Clause} \ra \bb{C} \\
+&\reify{(x \cons y)} \re \reify{x} \,\sqcup \reify{y} \\
 &\reify{ \blacksquare } \re \epsilon \\
 &\reify{ x } \re \cal{P}(x)
 \end{align*}
+where the $\reify{}$ is defined with the modifier \lpinline{sequential}.
 \label{def:reify-def}
 \end{definition}
-
+\graffito{x}
 It then remains to decide the equality of two terms in $\bb{C}$, and this is accomplished using the operator $=_\bb{C}$ introduced in \cref{def:eqC}.
-Its definition relies on Boolean conjunction \kw{andb}, which is predefined in Lambdapi's standard library, as well as on the operator \kw{eq} that checks equality of two terms of type $\prop$. The rewriting strategy of Lambdapi applies rules bottom-up in expressions.
-Therefore, when evaluating an expression such as $\reify{\varphi_1} =_{\bb{C}} \reify{\varphi_2}$, the rewrite rules of \cref{fig:reify-def} that apply to the reified clauses are applied before those defining the operator $=_{\bb{C}}$.
-
-\smallskip
+Its definition relies on Boolean conjunction \kw{andb} (written infix), which is predefined in Lambdapi's standard library, as well as on the operator \kw{eq} that checks equality of two terms of type $\prop$.
 
 \begin{definition}[decidable equivalence relation]
 The operators $=_\bb{C} : \bb{C} \ra \bb{C} \ra \kw{bool}$ is defined by the following rewrite rules.
@@ -277,14 +273,16 @@ The operators $=_\bb{C} : \bb{C} \ra \bb{C} \ra \kw{bool}$ is defined by the fol
 \end{align*}
 with:
 \begin{align*}
-&\eq~x~x~ \re \true  &\kw{andb}~\kw{true}~\kw{true} \re \kw{true} \\
-&\eq~x~y~ \re \false &\kw{andb}~\kw{false}~\_ \re \kw{false} \\
-& &\kw{andb}~\_ \kw{false} \re \kw{false} 
+&\eq~x~x~ \re \true  & \kw{andb}~\kw{true}~\kw{true} \re \kw{true} \\
+&\eq~x~y~ \re \false & \kw{andb}~\kw{false}~\_ \re \kw{false} \\
+& & \kw{andb}~\_ \kw{false} \re \kw{false} 
 \end{align*}
 \label{def:eqC}
-The operator \kw{eq} is declared as \kw{sequential} so that the second rewrite rule will be applied only if the first one fails.
+The binary operator \kw{eq} is declared as \kw{sequential} so that the second rewrite rule will be applied only if the first one fails.
 Its definition ensures that $\kw{eq}~x~y$ holds if and only if the two propositions $x$ and $y$ are identical.
 \end{definition}
+
+We now state the correctness theorem, demonstrating that a given clause is a permutation of another.
 
 \begin{lemma}[P-injective]\label{lem:p-inj}
 For any $x, y: \prop$, if $\kw{istrue}(\cal{P}(x) =_{\bb{C}} \cal{P}(y))$ then $x = y$.
@@ -294,7 +292,6 @@ it follows directly that if $\cal{P}(x) =_{\bb{C}} \cal{P}(y)$ is true then $x$ 
 \end{proof}
 \end{lemma}
 
-\smallskip
 
 \begin{theorem}[Correctness]\label{lem:eq-C}
 For $c_1, c_2 : \tt{Clause}$, if $\tt{istrue} (\reify{c_1} =_{\bb{C}} \reify{c_2})$ then $\cal{F}\,c_1 = \cal{F}\,c_2$.
@@ -347,7 +344,8 @@ end;
 
 \subsection{Simplification rules}
 
-The Alethe format provides rules to represent the usual operator-level simplifications made by the solver. For example, the rule \texttt{or\_simplify} in \cref{eqn:or-simp} simplifies disjunction by applying equivalence-preserving transformations until a fixed point is reached. The general form of the rule is:
+The Alethe format provides rules to represent the usual operator-level simplifications made by the solver. \info{ac}{The introduction of Alethe will contain the description of RARE, so we do not need to introduce it here anymore}
+For example, the rule \tt{or\_simplify} in \cref{eqn:or-simp} simplifies disjunction by applying equivalence-preserving transformations until a fixed point is reached. The general form of the rule is:
 
 \begin{equation}\label{eqn:or-simp}
 i. \quad \Gamma~\triangleright \quad l_1 \lor \dots \lor l_n ~ \approx \psi \quad \texttt{or\_simplify}
@@ -361,37 +359,37 @@ where $\psi$ is the transformed term. The possible transformations are:
 \item[(5)] $l_1 \lor \dots \lor l_i \lor \dots \lor l_j \lor \dots \lor  l_n \Rightarrow \top$ where $l_i = \neg^{2p} x$, $l_j = \neg^{2q+1} x$.
 \end{enumerate}
 
-Given that the solver does not explicitly indicate which transformations have been applied and in which order, rules such as \texttt{or\_simplify} are challenging to certify.
-We used the TRS confluence checker CSI \cite{CSI} to analyze the confluence the possible transformations applied by each rule and discovered that somes rules are not confluent. For example, the term $\bot = \bot$ can be simplified into both $\top$ and $\neg \bot$ with the rule \kw{equiv\_simplify}.
+% Given that the solver does not explicitly indicate which transformations have been applied and in which order, rules such as \texttt{or\_simplify} are challenging to certify.
+% We used the TRS confluence checker CSI \cite{CSI} to analyze the confluence the possible transformations applied by each rule and discovered that somes rules are not confluent. For example, the term $\bot \Leftrightarrow \bot$ can be simplified into both $\top$ and $\neg \bot$ with the rule \kw{equiv\_simplify}.
 
-To address this problem, we use the domain-specific language RARE \cite{rare} provided by cvc5 for defining rewrite rules.  It allows users to extend Alethe by additional rules for transforming coarse-grained simplification steps into finer-grained ones. RARE elaborates proofs for specific rewrite steps on demand based on built-in rewrite rules of cvc5. The RARE rule used and its arguments are made explicit in the \lstinline[language=SMT]{:args} parameter of the rule \kw{rare\_rewrite} in the proof trace.
-%cvc5 elaborates the proof by rendering each coarse step into fined grain with atomic rewrite.
-Although RARE is currently only supported by cvc5, its use has allowed us to increase the success rate of proof reconstruction.
+% To address this problem, we use the domain-specific language RARE \cite{rare} provided by cvc5 for defining rewrite rules. RARE elaborates proofs for specific rewrite steps on demand based on built-in rewrite rules of cvc5. The RARE rule used and its arguments are made explicit in the \lstinline[language=SMT]{:args} parameter of the rule \kw{rare\_rewrite} in the proof trace.
+% %cvc5 elaborates the proof by rendering each coarse step into fined grain with atomic rewrite.
+% Although RARE is currently only supported by cvc5, its use has allowed us to increase the success rate of proof reconstruction.
 
-The example of \cref{lst:or_simp_example} illustrates how RARE transforms an Alethe proof trace into a more fine-grained proof.
-The original step \texttt{t1} uses the rule \texttt{or\_simplify} by applying twice the transformation (2).
-However, cvc5 can output instead a proof trace using RARE that indicates the rule \kw{bool-or-false} and makes the arguments explicit.
-Note that the RARE format represents an empty list as \kw{rare-list} without argument.
+% The example of \cref{lst:or_simp_example} illustrates how RARE transforms an Alethe proof trace into a more fine-grained proof.
+% The original step \texttt{t1} uses the rule \texttt{or\_simplify} by applying twice the transformation (2).
+% However, cvc5 can output instead a proof trace using RARE that indicates the rule \kw{bool-or-false} and makes the arguments explicit.
+% Note that the RARE format represents an empty list as \kw{rare-list} without argument.
 
 
 
-\begin{lstlisting}[language=SMT]
-(step t1 (cl (= (or false x y false z) (x y z)))
-      :rule or_simplify)
-\end{lstlisting}
+% \begin{lstlisting}[language=SMT]
+% (step t1 (cl (= (or false x y false z) (x y z)))
+%       :rule or_simplify)
+% \end{lstlisting}
 
-\begin{center}
-$\lightning$
-\end{center}
+% \begin{center}
+% $\lightning$
+% \end{center}
 
-\begin{lstlisting}[language=SMT,caption={\texttt{or\_simplify} elaborated by RARE}, label={lst:or_simp_example}]
-(step t1 (cl (= (or false x y false z) (or x y false z)))
-      :rule rare_rewrite :args ("bool-or-false" rare-list
-                                   (rare-list (x y false z))))
-(step t2 (cl (= (or x false y z) (or x y z)))
-      :rule rare_rewrite :args ("bool-or-false" (rare-list x)
-                                   (rare-list (y z))))
-\end{lstlisting}
+% \begin{lstlisting}[language=SMT,caption={\texttt{or\_simplify} elaborated by RARE}, label={lst:or_simp_example}]
+% (step t1 (cl (= (or false x y false z) (or x y false z)))
+%       :rule rare_rewrite :args ("bool-or-false" rare-list
+%                                    (rare-list (x y false z))))
+% (step t2 (cl (= (or x false y z) (or x y z)))
+%       :rule rare_rewrite :args ("bool-or-false" (rare-list x)
+%                                    (rare-list (y z))))
+% \end{lstlisting}
 
 In the case that cvc5 still outputs a proof trace using the original simplification rules, we reconstruct the proof by using a meta-tactic of Lambdapi, i.e.\ a tactic that takes other tactics as arguments. % - "higher-order tactic".
 Each transformation of the simplification rules is implemented by a lemma, and then tried on the goal context. In order to do that, we extended Lambdapi by adding the tactic $\kw{try}~T$ that attempts to apply the tactic $T$. If the application of $T$ fails, the error is caught and the goal is left unchanged.
@@ -404,82 +402,76 @@ For instance, we define the case $R = \kw{not\_simplify}$ for the function $\bb{
   \multicolumn{2}{|l|}{R = \kw{not\_simplify}} \\ \hline
   \\
   $i. \quad \Gamma~\triangleright \quad \neg \psi \approx \varphi \quad (\kw{not\_simplify})$ & $\C{i} = \pid (\neg \E{\psi} = \E{\varphi} \cons \nil) \coloneq $ \\
-  $(1) \neg \neg \varphi \Rightarrow \varphi$ &  $\kw{try}~\kw{rewrite}~\kw{not\_simplify1};$ \\
-  $(2) \neg \bot \Rightarrow \top$  &  $\kw{try}~\kw{rewrite}~\kw{not\_simplify2};$ \\
-  $(3) \neg \top \Rightarrow \bot$  & $\kw{try}~\kw{rewrite}~\kw{not\_simplify3};$
+  $(1) \neg \neg \varphi \Rightarrow \varphi$ &  \lpinline{eval not_simplify} \\
+  $(2) \neg \bot \Rightarrow \top$  &   \\
+  $(3) \neg \top \Rightarrow \bot$  & 
   \end{tabular}
   \caption{Translating the command \kw{not\_simplify}.}
   \label{table:not-simplify}
 \end{figure}
 
-Nevertheless, Lambdapi does not include a mechanism to repeat the application of a tactic $T$  until a fixed point is reached.
-Therefore, we can not completely support Alethe's simplification rule. For the present, a fixed number of rewrite attempts are tried.
+% symbol applyAny : 𝕃 tactic → Tactic;
+% rule applyAny ($t0 ⸬ $tl) ↪ $t0 #orelse (applyAny $tl)
+% with applyAny □ ↪ #fail;
+% symbol all_not_simplify ≔ (#rewrite not_simplify1) ⸬(#rewrite not_simplify2) ⸬(#rewrite not_simplify3) ⸬ □;
+% symbol not_simplify ≔ #repeat (applyAny all_not_simplify) and #reflexivity;
 
+\begin{definition}[Encoding \kw{not\_simplify}]
+\begin{align*}
+&\mathop{\mathtt{applyAny}} : \bb{L} \, \kw{tactic} \ra \kw{Tactic} \\
+&\mathop{\mathtt{applyAny}} \Box \re \fail \\
+&\mathop{\mathtt{applyAny}} (\kw{t} \colon\colon \kw{ts}) \re t \orelse (\mathop{\mathtt{applyAny}} \kw{ts}) \\
+&\\
+&\mathop{\mathtt{all\_not\_simplify}} \is (\rewrite \kw{not\_simplify1}) \colon\colon  \\
+&\quad (\rewrite \kw{not\_simplify2}) \colon\colon (\rewrite \kw{not\_simplify3}) \\
+& \\
+&\mathop{\mathtt{not\_simplify}} \is \repeatT (\mathop{\mathtt{applyAny}} \mathop{\mathtt{all\_not\_simplify}}) \\
+&\quad \andT \reflexivity
+\end{align*}
+\end{definition}
+\info{ac}{Tactic script will be introduce in Lambdapi intro.}
 
-\subsection{Alethe subproofs}
-\label{app:subproof}
+\subsection{N-ary rules}
 
-Alethe uses subproofs to prove lemmas and to create and manipulate the context $\Gamma$. To prove lemmas, a subproof can introduce local assumptions.
-From an assumption $\varphi$ and a formula $\psi$ proved from $\varphi$, the subproof rule deduces the clause $\neg \varphi, \psi$ that discharges the local assumption $\varphi$.
-A subproof step cannot use a premise from a subproof nested within the current subproof. Subproofs are also used to manipulate the context.
-Alethe contexts are a general mechanism to write substitutions and to change them by attaching new elements.
-We recall that a context is a possibly empty list $x_1 \dots x_n$ where each element is either a variable or a variable-term tuple denoted $x \mapsto t$.
-
-As shown in the example of \cref{lst:subproof}, the \lstinline[language=SMT]{anchor} command indicates that a subproof will be introduced and it is concluded by a concluding rule such as \texttt{subproof},
-\texttt{bind} or \texttt{sko\_forall}. Anchors are provided with two annotations. The annotation \lstinline[language=SMT]{:step} provides the name of the step that concludes the subproof whereas the annotation \lstinline[language=SMT]{:args} provides the context as sorted variables and assignments. The example shows a proof that uses a subproof with a context to rename a bound variable.
-The subproof starts at the \lstinline[language=SMT]{anchor} command at line 1 and ends at line 5 with the \emph{bind} rule that concludes the $\alpha$-conversion proof of $z2$ to $vr4$. The sub-steps $t9.t1$ and $t9.t2$ are carried out in the context $\Gamma = \{ z2 \mapsto vr4 \}$, hence, all occurrences of $z2$ in the clauses are substituted by $vr4$, allowing in particular step \texttt{t9.t1} to succeed using rule \texttt{refl}.
-
-% \begin{minipage}{\linewidth}
-\begin{lstlisting}[language=SMT,mathescape=true, caption={Alethe subproof example.}, label={lst:subproof}]
-(anchor :step t9 :args ((vr4 U) (:= (z2 U) vr4)))
-(step t9.t1 (cl (= z2 vr4)) :rule refl)
-(step t9.t2 (cl (= (p z2) (p vr4))) :rule cong :premises (t9.t1))
-(step t9 (cl (= (forall ((z2 U)) (p z2))
-                (forall ((vr4 U)) (p vr4)))) :rule bind)
-\end{lstlisting}
-% \end{minipage}
-
-We define in \cref{table:subproof-c} the definitions of the function $\mathcal{C}$ for the \kw{subproof} and \kw{bind} commands. The translation of \kw{bind} and \kw{subproof} relies on the following lemmas that have been proved in Lambdapi.
-
-\begin{figure}
-\begin{tabular}{lr|l}
-\hline
-\multicolumn{2}{|l|}{R = \kw{subproof}} \\ \hline
-$i_1.\ \Gamma \triangleright \varphi_1$ & $(\kw{assume})$ &  \\
-$\vdots$ & & \\
-$i_n.\ \Gamma \triangleright \varphi_n $ & $ (\kw{assume})$ &  \\
-$\vdots$ & & \\
-$i_j.\ \Gamma \triangleright \psi $ & $ (\dots)$ & with $u \in 1\dots n$ \\
-$k.\ \Gamma \triangleright \neg \varphi_1, \dots, \neg \varphi_n, \psi $ & $ (\kw{subproof})$ & $\C{k} = \pid ( \neg \E{\varphi_1} \cons \dots \cons \neg \E{\varphi_n}$ \\
-& & $ \cons \E{\psi} ) \cons \nil \coloneq \kw{apply}~\kw{subproof}_n$ \\
-\hline
-\multicolumn{2}{|l|}{R = \kw{bind}} \\ \hline
-$j.\ \Gamma~\overline{y},\overline{x} \mapsto \overline{y}  \triangleright \varphi \approx \psi $ & $(\dots)$ & with $\overline{a} = a_1 \dots a_n$ and $Q \in \{\forall, \exists\}$\\
-$k.\ \Gamma \triangleright (Q~\overline{x}, \varphi) \approx (Q~\overline{y}, \psi) $ & $ (\kw{bind})$ & $\C{k} = \pid \E{Q~\overline{x}, \varphi \approx Q~\overline{y}, \psi} \cons \nil \coloneq$ \\
-& & \kw{apply}~$\lor_{i1}$; \kw{apply bindQ};  \\
-& & \kw{assume}~$x_j$; \kw{apply}~ $(\pid{}_l~j)$;\\
+\begin{table}
+\centering
+\caption{N-ary operators rules}
+\begin{tabular}{ll}
+Rule & Description \\ \hline
+la\_generic & Tautologous disjunction of linear inequalities \\
+lia\_generic & Tautologous disjunction of linear integer inequalities \\
+la\_disequality & $t_1 \approx t_2 \lor \neg (t_1 \geq t_2) \lor \neg (t_2 \geq t_1)$ \\
+la\_totality & $t_1 \geq t_2 \lor t_2 \geq t_1$ \\
+la\_mult\_pos & $t_1 > 0 \land (t_2 \bowtie t_3) \rightarrow t_1 * t_2 \bowtie t_1 * t_3$ and $\bowtie \in \{<, >, \geq, \leq, =\}$ \\
 \end{tabular}
-\caption{Translating \kw{subproof} and \kw{bind} commands.}
-\label{table:subproof-c}
-\end{figure}
-\smallskip
+\label{table:nary-operators}
+\end{table}
 
-\begin{lemma}[$\kw{subproof}_1$]\label{lem:subproof}
-For $\varphi, \psi : \prop{}$, if $\prf{} \varphi$ implies $\prf{} \psi$ then $\pid (\neg \varphi \cons \psi)$.
-\end{lemma}
+% Proof by reflection
 
-\smallskip
+\subsection{Quantifiers}
 
-\begin{lemma}[bind$\forall$]\label{lem:bind-forall}
-Given an arbitrary $a : \kw{Clause}$ and predicates $p, q : \el{}\,a \ra \prop$, if $\Pi x : \el{}\,a,~ \prf (p~x = q~x)$ then $\prf ((\forall x, p~x) = (\forall y, q~y))$.
-\end{lemma}
+The Alethe format defines rules for quantifier instantiation, substitution, and other manipulations of bound variables.
+For instance, the rule \tt{forall\_inst} is used to express quantifier instantiation. It produces a unit clause with a formula of the form $(\neg \forall \bar{x},\, \varphi) \lor (\varphi[\bar{t}])$,
+where $\varphi$ is a term containing the free variables $\bar{x}$, and each term $t$ is a ground term of the same sort as the corresponding variable $x$.
 
-\smallskip
+\begin{example}[Quantifier instantiation]
+The following example shows a simple Alethe proof expressed in the abstract
+notation used in this document. It uses quantifier instantiation and resolution to show a
+contradiction. The paragraphs below describe the concepts necessary to understand the
+proof step by step.
+\begin{center}
+\begin{tabular}{ l l r}
+a0.& $\triangleright \quad \forall x, (P~x)$  & \kw{(assume)}[\,] \\
+a1.& $\triangleright \quad \neg(P~x)$  & \kw{(assume)}[\,] \\
+t1.& $\triangleright \quad \neg(\forall\,x, P~x) \lor (P~a)$  & \kw{(forall\_inst)}[($x$,$a$)] \\
+t2.& $\triangleright \quad \neg(\forall\,x, P~x), (P~a)$  & \kw{(or t1)}[\,] \\
+t3.& $\triangleright \quad \bot$ & \kw{(resolution a0 a1 t2)}[\,] \\
+\end{tabular}
+\end{center}
+\end{example}
 
-\begin{lemma}[bind$\exists$]\label{lem:bind-exists}
-  Given an arbitrary $a : \kw{Clause}$ and predicates $p, q : \el{}\,a \ra \prop$, if $\Pi x : \el{}\,a,~ \prf (p~x = q~x)$ then $\prf ((\exists x, p~x) = (\exists y, q~y))$.
-\end{lemma}
-
+% shadow embedding with Lambdapi quantifier
 
 \subsection{Skolemization}
 
@@ -548,6 +540,70 @@ The $H_i$ hypotheses stand for the equalities $\prf (x_i = (\epsilon\,y, \neg (p
 \caption{Translating the \kw{sko\_forall} command.}
 \label{fig:sko-forall}
 \end{figure}
+
+\subsection{Alethe subproofs}
+\label{app:subproof}
+
+Alethe uses subproofs to prove lemmas and to create and manipulate the context $\Gamma$. To prove lemmas, a subproof can introduce local assumptions.
+From an assumption $\varphi$ and a formula $\psi$ proved from $\varphi$, the subproof rule deduces the clause $\neg \varphi, \psi$ that discharges the local assumption $\varphi$.
+A subproof step cannot use a premise from a subproof nested within the current subproof. Subproofs are also used to manipulate the context.
+Alethe contexts are a general mechanism to write substitutions and to change them by attaching new elements.
+We recall that a context is a possibly empty list $x_1 \dots x_n$ where each element is either a variable or a variable-term tuple denoted $x \mapsto t$.
+
+As shown in the example of \cref{lst:subproof}, the \lstinline[language=SMT]{anchor} command indicates that a subproof will be introduced and it is concluded by a concluding rule such as \texttt{subproof},
+\texttt{bind} or \texttt{sko\_forall}. Anchors are provided with two annotations. The annotation \lstinline[language=SMT]{:step} provides the name of the step that concludes the subproof whereas the annotation \lstinline[language=SMT]{:args} provides the context as sorted variables and assignments. The example shows a proof that uses a subproof with a context to rename a bound variable.
+The subproof starts at the \lstinline[language=SMT]{anchor} command at line 1 and ends at line 5 with the \emph{bind} rule that concludes the $\alpha$-conversion proof of $z2$ to $vr4$. The sub-steps $t9.t1$ and $t9.t2$ are carried out in the context $\Gamma = \{ z2 \mapsto vr4 \}$, hence, all occurrences of $z2$ in the clauses are substituted by $vr4$, allowing in particular step \texttt{t9.t1} to succeed using rule \texttt{refl}.
+
+% \begin{minipage}{\linewidth}
+\begin{lstlisting}[language=SMT,mathescape=true, caption={Alethe subproof example.}, label={lst:subproof}]
+(anchor :step t9 :args ((vr4 U) (:= (z2 U) vr4)))
+(step t9.t1 (cl (= z2 vr4)) :rule refl)
+(step t9.t2 (cl (= (p z2) (p vr4))) :rule cong :premises (t9.t1))
+(step t9 (cl (= (forall ((z2 U)) (p z2))
+                (forall ((vr4 U)) (p vr4)))) :rule bind)
+\end{lstlisting}
+% \end{minipage}
+
+We define in \cref{table:subproof-c} the definitions of the function $\mathcal{C}$ for the \kw{subproof} and \kw{bind} commands. The translation of \kw{bind} and \kw{subproof} relies on the following lemmas that have been proved in Lambdapi.
+
+\begin{figure}
+\begin{tabular}{lr|l}
+\hline
+\multicolumn{2}{|l|}{R = \kw{subproof}} \\ \hline
+$i_1.\ \Gamma \triangleright \varphi_1$ & $(\kw{assume})$ &  \\
+$\vdots$ & & \\
+$i_n.\ \Gamma \triangleright \varphi_n $ & $ (\kw{assume})$ &  \\
+$\vdots$ & & \\
+$i_j.\ \Gamma \triangleright \psi $ & $ (\dots)$ & with $u \in 1\dots n$ \\
+$k.\ \Gamma \triangleright \neg \varphi_1, \dots, \neg \varphi_n, \psi $ & $ (\kw{subproof})$ & $\C{k} = \pid ( \neg \E{\varphi_1} \cons \dots \cons \neg \E{\varphi_n}$ \\
+& & $ \cons \E{\psi} ) \cons \nil \coloneq \kw{apply}~\kw{subproof}_n$ \\
+\hline
+\multicolumn{2}{|l|}{R = \kw{bind}} \\ \hline
+$j.\ \Gamma~\overline{y},\overline{x} \mapsto \overline{y}  \triangleright \varphi \approx \psi $ & $(\dots)$ & with $\overline{a} = a_1 \dots a_n$ and $Q \in \{\forall, \exists\}$\\
+$k.\ \Gamma \triangleright (Q~\overline{x}, \varphi) \approx (Q~\overline{y}, \psi) $ & $ (\kw{bind})$ & $\C{k} = \pid \E{Q~\overline{x}, \varphi \approx Q~\overline{y}, \psi} \cons \nil \coloneq$ \\
+& & \kw{apply}~$\lor_{i1}$; \kw{apply bindQ};  \\
+& & \kw{assume}~$x_j$; \kw{apply}~ $(\pid{}_l~j)$;\\
+\end{tabular}
+\caption{Translating \kw{subproof} and \kw{bind} commands.}
+\label{table:subproof-c}
+\end{figure}
+\smallskip
+
+\begin{lemma}[$\kw{subproof}_1$]\label{lem:subproof}
+For $\varphi, \psi : \prop{}$, if $\prf{} \varphi$ implies $\prf{} \psi$ then $\pid (\neg \varphi \cons \psi)$.
+\end{lemma}
+
+\smallskip
+
+\begin{lemma}[bind$\forall$]\label{lem:bind-forall}
+Given an arbitrary $a : \kw{Clause}$ and predicates $p, q : \el{}\,a \ra \prop$, if $\Pi x : \el{}\,a,~ \prf (p~x = q~x)$ then $\prf ((\forall x, p~x) = (\forall y, q~y))$.
+\end{lemma}
+
+\smallskip
+
+\begin{lemma}[bind$\exists$]\label{lem:bind-exists}
+  Given an arbitrary $a : \kw{Clause}$ and predicates $p, q : \el{}\,a \ra \prop$, if $\Pi x : \el{}\,a,~ \prf (p~x = q~x)$ then $\prf ((\exists x, p~x) = (\exists y, q~y))$.
+\end{lemma}
 
 \subsection{Builtin theory}
 \label{ssec:refl-builtin-theory}
@@ -620,7 +676,7 @@ we obtain that $\prf (\kw{provable}~\reify{\cal{G}}_\sigma = \texttt{true})$ imp
 \end{example}
 
 
-\section{Reconstruction of linear arithmetic for LIA logic}
+\section{Reconstruction of linear arithmetic}
 \label{sec:lia-reconstruction}
 
 % Proof by reflection \cite{reflection-origin-coq} is a technique for writing certified procedures for automated reasoning. It reduces the validity of a logical statement to a symbolic computation.
@@ -652,6 +708,7 @@ ensuring that expressions involving sums of elements of $\bb{G}$ are systematica
 %In particular, terms of the form $\tt{var}~c~x$ for equal variables will be placed next to each other, facilitating simplification.
 
 \begin{figure}[t]
+\scriptsize
 \begin{align*}
 & \bb{G}: \type & & \reify{} : \Z \ra \bb{G} & & \den{}: \bb{G} \ra \Z \\
 &|~\add{}{}: \bb{G} \ra \bb{G} \ra \bb{G} & & \reify{\ZO} \re \cst{\ZO} & & \den{\cst{c}} \re c \\
@@ -914,8 +971,6 @@ Now, $[t_1]$, $[t_2]$, and $[t_1 \oplus t_2]$ are terms built solely from \tt{cs
 \qed
 \end{proof}
 
-
-
 We make use of \cref{lem:conv} to embed $\Z$-terms into $\bb{G}$ to normalize and subsequent comparison.
 In addition, we leverage this normalization process to support the \tt{arith-poly-norm} rule.
 
@@ -929,3 +984,6 @@ Hence, $x = (\mathop{\den{(\reify{x})}})$ in all cases.
 \end{proof}
 
 The full proof \cref{lst:smtexampleproof} translated into Lambdapi can be found in \cref{app:example-translation}.
+
+\section{Reconstruction of bitvector}
+\label{sec:bv-reconstruction}

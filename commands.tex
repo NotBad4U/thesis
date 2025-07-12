@@ -112,8 +112,8 @@
 \newcommand\E[1]{\mathcal{E}(#1)}
 \newcommand\Sort[1]{\mathcal{S}(#1)}
 \newcommand\equivL{\equiv_{\beta\Sigma}}
-\newcommand\pid{\textcolor{purple}{\texttt{\upshape{Prf}}^\bullet}}
-\newcommand\pic{\textcolor{purple}{\texttt{\upshape{Prf}}^c}}
+\newcommand\pid{\textcolor{rxpurple}{\texttt{\upshape{Prf}}^\bullet}}
+\newcommand\pic{\textcolor{rxpurple}{\texttt{\upshape{Prf}}^c}}
 
 \newcommand\nil{\blacksquare}
 
@@ -225,3 +225,19 @@
 %******************************************************************
 
 \DeclareDocumentCommand{\enum}{ O{n} m O{,\,} O{1} O{}}{#2_{#4}#5#3\dots #3#2_{#1}#5}
+
+
+%******************************************************************
+% Tactics
+%******************************************************************
+\newcommand{\refine}{\ensuremath{\mathop{\mathtt{\textcolor{purple}{\#refine}}}}}
+\newcommand{\reflexivity}{\ensuremath{\mathop{\mathtt{\textcolor{purple}{\#reflexivity}}}}}
+\newcommand{\apply}{\ensuremath{\mathop{\mathtt{\textcolor{purple}{\#apply}}}}}
+\newcommand{\rewrite}{\ensuremath{\mathop{\mathtt{\textcolor{purple}{\#rewrite}}}}}
+\newcommand{\orelse}{\ensuremath{\mathbin{\textcolor{purple}{\mathtt{\#orelse}}}}}
+\newcommand{\andT}{\ensuremath{\mathbin{\mathtt{\textcolor{RoyalBlue}{\#and}}}}}
+\newcommand{\repeatT}{\ensuremath{\mathop{\mathtt{\textcolor{purple}{\#repeat}}}}}
+\newcommand{\doT}{\ensuremath{\mathop{\mathtt{\textcolor{RoyalBlue}{do}}}}}
+\newcommand{\try}{\ensuremath{\mathop{\mathtt{\textcolor{purple}{\#try}}}}}
+\newcommand{\fail}{\ensuremath{\mathop{\mathtt{\textcolor{purple}{\#fail}}}}}
+\newcommand{\nothing}{\ensuremath{\try \fail}}
