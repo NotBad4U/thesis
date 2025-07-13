@@ -438,14 +438,105 @@ For instance, we define the case $R = \kw{not\_simplify}$ for the function $\bb{
 \caption{N-ary operators rules}
 \begin{tabular}{ll}
 Rule & Description \\ \hline
-la\_generic & Tautologous disjunction of linear inequalities \\
-lia\_generic & Tautologous disjunction of linear integer inequalities \\
-la\_disequality & $t_1 \approx t_2 \lor \neg (t_1 \geq t_2) \lor \neg (t_2 \geq t_1)$ \\
-la\_totality & $t_1 \geq t_2 \lor t_2 \geq t_1$ \\
-la\_mult\_pos & $t_1 > 0 \land (t_2 \bowtie t_3) \rightarrow t_1 * t_2 \bowtie t_1 * t_3$ and $\bowtie \in \{<, >, \geq, \leq, =\}$ \\
+and (i)[k] & $i. \triangleright \quad (\varphi_1 \land \dots \land \varphi_n)$ \\
+    & $j. \triangleright \quad \varphi_k $ with $1 \leq k \leq n$\\
+not\_and (i) & $i. \triangleright \quad \neg (\varphi_1 \land \dots \land \varphi_n)$ \\
+    & $j. \triangleright \quad \neg \varphi_1, \dots, \neg \varphi_n $\\
+not\_or (i)[k] & $i. \triangleright \quad \neg (\varphi_1 \lor \dots \lor \varphi_n)$\\
+    & $j. \triangleright \quad \neg \varphi_k$ with $1 \leq k \leq n$\\
+and\_pos [k] & $\triangleright \quad \neg (\varphi_1 \land \dots \land \varphi_n), \varphi_k$ with $1 \leq k \leq n$ \\
+and\_neg & $\triangleright \quad (\varphi_1 \land \dots \land \varphi_n), \neg \varphi_1, \dots, \neg \varphi_n$ \\
+or\_pos & $\triangleright \quad \neg (\varphi_1 \lor \dots \lor \varphi_n), \varphi_1, \dots, \varphi_n$ \\
+or\_neg [k] & $\triangleright \quad \neg (\varphi_1 \lor \dots \lor \varphi_n), \neg \varphi_k$ with $1 \leq k \leq n$ \\
 \end{tabular}
-\label{table:nary-operators}
+\label{table:nary-rules}
 \end{table}
+
+The Alethe format includes n-ary tautological rules—relying on arbitrary n-ary conjunctions and disjunction as outlined in \cref{table:nary-rules}.
+A direct approach to reconstruct these rules would involve generating tactic scripts during the translation in Carcara.
+However, this could lead to proofs requiring hundreds of tactic applications.
+To address this, we adopt an alternative strategy: reconstructing these rules via a \emph{proof by reflection} of the first kind.
+We illustrate our approach by detailing the reconstruction of \tt{and\_pos}.
+In our encoding, n-ary conjunctions and disjunctions are interpreted as values of the abstract type $\kw{list},o$.
+We begin by introducing the following configuration:
+
+\begin{itemize}
+  \item We define the function $\kw{indexes}: \Pi [a: \set],\, \el\,\bb{L}~a, \ra \bb{L}~\kw{nat}$ that maps a list of elements
+  to a list of natural numbers representing the positions (or indices) of the elements in the original list.
+  The behavior of indexes is independent of the values of the elements - it is purely structural.
+  So, even if the list contains duplicated elements, the indexes function simply returns the list of their positions, not caring whether elements are equal or not.
+
+  \begin{example}[indexes]
+  \[
+  \mathop{\mathtt{indexes}} (x \colon\colon y \colon\colon x  \colon\colon z \colon\colon \Box) \equivL 0 \colon\colon 1 \colon\colon 2 \colon\colon 3 \colon\colon \Box
+  \]
+  \end{example}
+  \item The function $\in_k : \N \rightarrow \bb{L}~\kw{nat} \rightarrow \bb{B}$  determines whether a given index is present in a list.
+  \item The denotation function $\kw{conj}: \bb{L}~o \ra \prop$ decodes a list of propositions into an n-ary conjunction.
+  \item The total function $\kw{literal}: \Pi (k: \N),\, \bb{L}~o \ra \prop$ returns the $k$-th element of the list, or $\bot$ otherwise.
+\end{itemize}
+
+% ∈ₙ : τ nat → 𝕃 nat → 𝔹
+
+% select (id : τ nat) (cnf: 𝕃 o) : π (id ∈ₙ (indexes cnf)) → π (conj cnf) → π (literal cnf id) ≔
+\begin{lemma}[select]
+Let $k : \N$ be an index and $c : \bb{L}~o$ a reified conjunction, represented as a list of literals. If
+\[
+  \prf (\kw{istrue}~(k \in_k (\kw{indexes}~c))) \text{ and } \prf (\kw{conj}~c)
+\]
+then
+\[
+  \prf (\neg (\kw{conj}~c) \lor (\kw{literal}~k~c))
+\]
+That is, if a literal indexed by $k$ appears in the reified conjunction $c$ and the conjunction as a whole holds, then the corresponding literal must also hold.
+\label{lemma:select}
+\begin{proof}
+\question{ac}{Do I need to provide the proof}  
+\end{proof}
+\end{lemma}
+
+% and_pos2 (id : τ nat) (cnf: 𝕃 o) : π (id ∈ₙ (indexes cnf)) → π (¬ (conj cnf) ∨ (literal cnf id)) ≔
+\begin{lemma}[and\_pos]
+Given an index $k: \N$ and a list $c: \bb{L}~o$, If
+\[
+  \prf (\kw{istrue} (k \in_k (\kw{indexes}~c)))
+\]
+then
+\[
+  \prf (\neg (\kw{conj}~c) \lor (\kw{literal}~k~c))
+\]
+\begin{proof}
+The proof is direct with \cref{lemma:select}.
+\end{proof}
+\label{lem:and-pos}
+\end{lemma}
+
+We can reconstruct the proof such as described in \cref{fig:pos-and-recon}.
+We first need to retrieve a disjunctions from a clause by applying the disjunction introduction rule $\lor_{i1}$,
+and then we apply \cref{lem:and-pos} with the index $k$ given by Alethe, the conjunction reified $(\E{\varphi_1} \colon\colon \dots \colon\colon \E{\varphi_n} \colon\colon \Box)$ and a proof that $\prf (k \in_k (\kw{indexes}~c))$
+which should reduce to $\top$.
+
+
+\begin{figure}
+\centering
+\begin{tabular}{|l|}
+\hline
+  R = \kw{pos\_and} \\ \hline
+  $i. \triangleright \quad \neg (\varphi_1 \land \dots \land \varphi_n),~ \varphi_k$ \quad (\kw{pos\_and})[k] \\ \hline
+  \begin{tabular}[t]{@{}l}
+    $i: \pid (\neg (\E{\varphi_1} \land \dots \land \E{\varphi_n}) \cons \E{\varphi_k} \cons \nil ) $\\
+    begin
+    \ \ \begin{tabular}[t]{@{}l}
+          apply $\lor_{i1}$;\\ %
+          apply $\kw{and\_pos}~\E{k}$ $(\E{\varphi_1} \colon\colon \dots \colon\colon \E{\varphi_n} \colon\colon \Box)~ \top_i$
+        \end{tabular}\\
+    end
+  \end{tabular}
+  \\\hline
+\end{tabular}
+\caption{Translating the \kw{pos\_and} command.}
+\label{fig:pos-and-recon}
+\end{figure}
 
 % Proof by reflection
 
@@ -471,9 +562,46 @@ t3.& $\triangleright \quad \bot$ & \kw{(resolution a0 a1 t2)}[\,] \\
 \end{center}
 \end{example}
 
+As described \cref{ssec:encoding-prop}, we encode universal and existential quantifier with a shallow embedding to Lambdapi Pi type $\Pi A, B$.
+Therefore, we simply encode the rule \tt{forall\_inst} as a lemma that holds trivially.
+
 % shadow embedding with Lambdapi quantifier
 
 \subsection{Skolemization}
+
+
+\begin{figure}
+\begin{tabular}{|l|}
+\hline
+  R = \kw{sko\_forall} \\ \hline
+  %
+  \begin{tabular}[t]{@{}l}
+    $i.$  \begin{tabular}[t]{@{}l}
+      $\Gamma, x_1 \mapsto \epsilon\,x_1. \neg \varphi \dots x_n \mapsto \epsilon\, x_n. \neg \varphi$\\
+      $\triangleright \varphi \approx \psi~(\dots)$
+    \end{tabular}\\
+    $k.$ $\Gamma \quad \forall x_1, \dots x_n.~ \varphi \approx \psi$ \qquad $(R)$
+  \end{tabular} \\ \hline
+  %
+  \begin{tabular}[t]{@{}l}
+    $i: \pid (\E{\varphi} = \E{\psi} \cons \nil ) \dots $\\
+    $k: \pid (\forall x_1,\dots~x_n, \E{\varphi} = \E{\psi} \cons \nil) \coloneq$\\
+    begin
+    \ \ \begin{tabular}[t]{@{}l}
+          apply $\lor_{i1}$;\\ %
+          (\,\begin{tabular}[t]{@{}l}
+            apply \kw{sko\_forall}; assume $x_i$ $H_i$; rewrite $H_i$;\,)$^n$
+          \end{tabular} \\
+          reflexivity;
+        \end{tabular}\\
+    end
+  \end{tabular}
+\\ \hline
+\end{tabular}
+\caption{Translating the \kw{sko\_forall} command.}
+\label{fig:sko-forall}
+\end{figure}
+
 
 The skolemization rules \kw{sko\_forall} and \kw{sko\_exists} replace the bound variables with \kw{choice} terms instead of fresh symbols. Note that some functions can introduce fresh symbols in the proof trace with the command \lstinline[language=SMT]{(define-fun)}.
 Nevertheless, Carcara eliminates those commands by unfolding the definition during the elaboration process.
@@ -489,57 +617,27 @@ For every $a : \set$ and predicate $p: \el~a \ra \prop$, $(\forall x, p~x) \Left
 \end{lemma}
 \begin{proof}
 \begin{itemize}
-\item[] \textbf{``$\Rightarrow$'':} We have to prove that $\forall x, p~x$ implies $p(\epsilon\,x, \neg (p~x))$, which follows immediately from the hypothesis.
-\item[] \textbf{``$\Leftarrow$'':} We prove the contrapositive assertion. Assuming $\neg \forall x, p~x$, we obtain $\exists x, \neg p~x$. Combining the elimination rule for $\exists$ and the introduction rule $\epsilon_i$, we conclude $\neg p(\epsilon\,x, \neg (p~x))$.
+\item[\textbf{``$\Rightarrow$'':}]  We have to prove that $\forall x, p\,x$ implies $p(\epsilon\,x, \neg (p\,x))$, which follows immediately from the hypothesis.
+\item[\textbf{``$\Leftarrow$'':}]  We prove the contrapositive assertion. Assuming $\neg \forall x, p\,x$, we obtain $\exists x, \neg p\,x$. Combining the elimination rule for $\exists$ and the introduction rule $\epsilon_i$, we conclude $\neg p(\epsilon\,x, \neg (p~x))$.
 \end{itemize}
 \end{proof}
 
-We now prove the Skolemization lemma for the universal quantifier that we use to reconstruct steps using the rule \kw{sko\_forall}.
+We now prove the Skolemization lemma for the universal quantifier that used to reconstruct steps using the rule \kw{sko\_forall}.
 
 \smallskip
 
 \begin{lemma}[skolemize forall]\label{lem:sko-forall}
-For any $a : \set$, predicate $p : \el{}\,a \ra \prop$ and $q : \prop$, if for every $x: \el{}\,a$, $\prf (x = (\epsilon~y, \neg (p~y)))$ implies $\prf (p~x = q)$,  we have that $\prf ((\forall x, p~x) = q)$.
+For any $a : \set$, predicate $p : \el{}\,a \ra \prop$ and $q : \prop$, if for every $x: \el{}\,a$, $\prf (x = (\epsilon \, y, \neg (p\,y)))$ implies $\prf (p\,x = q)$,  we have that $\prf ((\forall x, p\,x) = q)$.
 \end{lemma}
 \begin{proof} We apply rule \kw{prop\_ext} and then prove both directions,
 \begin{itemize}
-\item[] \textbf{``$\Rightarrow$'':} We have to prove that $\forall x, p~x$ implies $q$. By \cref{lemma:eps-forall}, the former is equivalent to $p~(\epsilon~\neg (p~x))$, and together with the assumption of the lemma, we obtain $q$.
-\item[] \textbf{``$\Leftarrow$'':} Conversely, we have to prove that $q$ implies $\forall x, p~x$. For $x$ defined as $(\epsilon~y, \neg (p~y))$, we have $p~x = q$ by assumption and thus obtain $p~(\epsilon~y, \neg (p~y))$. By \cref{lemma:eps-forall}, the latter is equivalent to $\forall x, p~x$.
+\item[\textbf{``$\Rightarrow$'':}]  We have to prove that $\forall x, p~x$ implies $q$. By \cref{lemma:eps-forall}, the former is equivalent to $p~(\epsilon~\neg (p~x))$, and together with the assumption of the lemma, we obtain $q$.
+\item[\textbf{``$\Leftarrow$'':}]  Conversely, we have to prove that $q$ implies $\forall x, p~x$. For $x$ defined as $(\epsilon~y, \neg (p~y))$, we have $p~x = q$ by assumption and thus obtain $p~(\epsilon~y, \neg (p~y))$. By \cref{lemma:eps-forall}, the latter is equivalent to $\forall x, p~x$.
 \end{itemize}
 \end{proof}
 
 \cref{fig:sko-forall} describes the translation of the \kw{sko\_forall} command. We use the notation $(T)^n$ to express that the tactic $T$ will be repeated $n$ times where $n$ is the number of bound variables on the left, and $x_i, H_i$ are fresh new variables in the context.
 The $H_i$ hypotheses stand for the equalities $\prf (x_i = (\epsilon\,y, \neg (p~y)))$ in \cref{lem:sko-forall}.
-
-\begin{figure}
-\begin{tabular}{l|l}
-\hline
-\multicolumn{2}{|l|}{R = \kw{sko\_forall}} \\ \hline
-  \begin{tabular}[t]{@{}l}
-    $i.$  \begin{tabular}[t]{@{}l}
-      $\Gamma, x_1 \mapsto \epsilon\,x_1. \neg \varphi \dots x_n \mapsto \epsilon\, x_n. \neg \varphi$\\
-      $\triangleright \varphi \approx \psi~(\dots)$
-    \end{tabular}\\
-    $k.$ $\Gamma \quad \forall x_1, \dots x_n.~ \varphi \approx \psi$ \qquad $(R)$
-  \end{tabular} &
-  \begin{tabular}[t]{@{}l}
-    $i: \pid (\E{\varphi} = \E{\psi} \cons \nil ) \dots $\\
-    $k: \pid (\forall x_1,\dots~x_n, \E{\varphi} = \E{\psi} \cons \nil) \coloneq$\\
-    begin
-    \ \ \begin{tabular}[t]{@{}l}
-          apply $\lor_{i1}$;\\ %
-          (\,\begin{tabular}[t]{@{}l}
-            apply \kw{sko\_forall}; assume $x_i$ $H_i$;\\
-            rewrite $H_i$;\,)$^n$
-          \end{tabular} \\
-          reflexivity;
-        \end{tabular}\\
-    end
-  \end{tabular}
-\end{tabular}
-\caption{Translating the \kw{sko\_forall} command.}
-\label{fig:sko-forall}
-\end{figure}
 
 \subsection{Alethe subproofs}
 \label{app:subproof}
