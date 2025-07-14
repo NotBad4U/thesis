@@ -330,7 +330,7 @@ opaque symbol t2 : Prf$\textcolor{purple}{\smash{^\bullet}}$ ((¬ (p)) ⟇ c ⟇
 opaque symbol t3 : Prf$\textcolor{purple}{\smash{^\bullet}}$ (a ⟇ b ⟇ c ⟇ d ⟇ ▩) ≔ 
 begin
 have t1_t2 : Prf$\textcolor{purple}{\smash{^\bullet}}$ (a  ⟇ b  ⟇ c  ⟇ d ⟇ ▩) {
-have t1_perm : Prf$\textcolor{purple}{\smash{^c}}$ (($\cal{F}$ (a ⟇ b ⟇ p ⟇ ▩)) = ($\cal{F}$ (p ⟇ a ⟇ b ⟇ ▩))) {
+have t1_perm : Prf$\textcolor{purple}{\smash{}}$ (($\cal{F}$ (a ⟇ b ⟇ p ⟇ ▩)) = ($\cal{F}$ (p ⟇ a ⟇ b ⟇ ▩))) {
   apply cl_perm_correct (a  ⟇ b  ⟇ p ⟇ ▩) (p  ⟇ a  ⟇ b ⟇ ▩);
   apply trivial;
 };
@@ -344,8 +344,9 @@ end;
 
 \subsection{Simplification rules}
 
-The Alethe format provides rules to represent the usual operator-level simplifications made by the solver. \info{ac}{The introduction of Alethe will contain the description of RARE, so we do not need to introduce it here anymore}
-For example, the rule \tt{or\_simplify} in \cref{eqn:or-simp} simplifies disjunction by applying equivalence-preserving transformations until a fixed point is reached. The general form of the rule is:
+The Alethe format includes rules that encode operator-level simplifications typically performed by SMT solvers. \info{ac}{The introduction of Alethe will contain the description of RARE, so we do not need to introduce it here anymore}
+A key challenge arises from the fact that the solver does not explicitly specify which transformations are applied, nor the order in which they are performed. This makes certain rules, such as \tt{or\_simplify}, difficult to certify. 
+For instance, the rule \texttt{or\_simplify}, presented in \cref{eqn:or-simp}, simplifies disjunctions by applying equivalence-preserving transformations repeatedly until a fixpoint is reached. Its general form is:
 
 \begin{equation}\label{eqn:or-simp}
 i. \quad \Gamma~\triangleright \quad l_1 \lor \dots \lor l_n ~ \approx \psi \quad \texttt{or\_simplify}
@@ -358,42 +359,17 @@ where $\psi$ is the transformed term. The possible transformations are:
 \item[(4)] $l_1 \lor \dots \lor \top \lor \dots \lor l_n \Rightarrow \top$
 \item[(5)] $l_1 \lor \dots \lor l_i \lor \dots \lor l_j \lor \dots \lor  l_n \Rightarrow \top$ where $l_i = \neg^{2p} x$, $l_j = \neg^{2q+1} x$.
 \end{enumerate}
+\info{ac}{reconstruction of or\_simplify need to be improve so I still prove not\_simplify only has example}
 
-% Given that the solver does not explicitly indicate which transformations have been applied and in which order, rules such as \texttt{or\_simplify} are challenging to certify.
-% We used the TRS confluence checker CSI \cite{CSI} to analyze the confluence the possible transformations applied by each rule and discovered that somes rules are not confluent. For example, the term $\bot \Leftrightarrow \bot$ can be simplified into both $\top$ and $\neg \bot$ with the rule \kw{equiv\_simplify}.
+To manage these transformations, we leverage the RARE language provided by cvc5 \cite{rare}, which supports elaborated rewrite proofs.
+As detailed in \cref{sec:rare-intro}, RARE generates explicit proof terms on demand, using built-in rewrite rules.
+The RARE rule used and its arguments are made explicit in the \smtinline{:args} parameter of the rule $\kw{rare\_rewrite}$ in the proof trace.
 
-% To address this problem, we use the domain-specific language RARE \cite{rare} provided by cvc5 for defining rewrite rules. RARE elaborates proofs for specific rewrite steps on demand based on built-in rewrite rules of cvc5. The RARE rule used and its arguments are made explicit in the \lstinline[language=SMT]{:args} parameter of the rule \kw{rare\_rewrite} in the proof trace.
-% %cvc5 elaborates the proof by rendering each coarse step into fined grain with atomic rewrite.
-% Although RARE is currently only supported by cvc5, its use has allowed us to increase the success rate of proof reconstruction.
+However, in some cases, cvc5 may emit proof traces using the legacy simplification rules instead of RARE. In such situations, we reconstruct the simplification steps using tactic scripts, as introduced in \cref{ch:intro-lambdapi}.
+These scripts allow us to interpret fixpoint-style transformations.
 
-% The example of \cref{lst:or_simp_example} illustrates how RARE transforms an Alethe proof trace into a more fine-grained proof.
-% The original step \texttt{t1} uses the rule \texttt{or\_simplify} by applying twice the transformation (2).
-% However, cvc5 can output instead a proof trace using RARE that indicates the rule \kw{bool-or-false} and makes the arguments explicit.
-% Note that the RARE format represents an empty list as \kw{rare-list} without argument.
-
-
-
-% \begin{lstlisting}[language=SMT]
-% (step t1 (cl (= (or false x y false z) (x y z)))
-%       :rule or_simplify)
-% \end{lstlisting}
-
-% \begin{center}
-% $\lightning$
-% \end{center}
-
-% \begin{lstlisting}[language=SMT,caption={\texttt{or\_simplify} elaborated by RARE}, label={lst:or_simp_example}]
-% (step t1 (cl (= (or false x y false z) (or x y false z)))
-%       :rule rare_rewrite :args ("bool-or-false" rare-list
-%                                    (rare-list (x y false z))))
-% (step t2 (cl (= (or x false y z) (or x y z)))
-%       :rule rare_rewrite :args ("bool-or-false" (rare-list x)
-%                                    (rare-list (y z))))
-% \end{lstlisting}
-
-In the case that cvc5 still outputs a proof trace using the original simplification rules, we reconstruct the proof by using a meta-tactic of Lambdapi, i.e.\ a tactic that takes other tactics as arguments. % - "higher-order tactic".
-Each transformation of the simplification rules is implemented by a lemma, and then tried on the goal context. In order to do that, we extended Lambdapi by adding the tactic $\kw{try}~T$ that attempts to apply the tactic $T$. If the application of $T$ fails, the error is caught and the goal is left unchanged.
-For instance, we define the case $R = \kw{not\_simplify}$ for the function $\bb{C}$ in \cref{table:not-simplify}.
+To illustrate this process, we describe how we reconstruct a step involving the \kw{not\_simplify} rule, summarized in \cref{fig:not-simplify}.
+Each transformation associated with this rule is implemented by a separate lemma e.g., \kw{not\_simplify1}, \kw{not\_simplify2}, etc. which are then tried sequentially on the current goal.
 
 \begin{figure}
   \footnotesize
@@ -407,29 +383,34 @@ For instance, we define the case $R = \kw{not\_simplify}$ for the function $\bb{
   $(3) \neg \top \Rightarrow \bot$  & 
   \end{tabular}
   \caption{Translating the command \kw{not\_simplify}.}
-  \label{table:not-simplify}
+  \label{fig:not-simplify}
 \end{figure}
 
-% symbol applyAny : 𝕃 tactic → Tactic;
-% rule applyAny ($t0 ⸬ $tl) ↪ $t0 #orelse (applyAny $tl)
-% with applyAny □ ↪ #fail;
-% symbol all_not_simplify ≔ (#rewrite not_simplify1) ⸬(#rewrite not_simplify2) ⸬(#rewrite not_simplify3) ⸬ □;
-% symbol not_simplify ≔ #repeat (applyAny all_not_simplify) and #reflexivity;
+To apply these tactics sequentially, we define a meta-tactic $\mathop{\mathtt{applyAny}}$ that attempts each tactic in the list until one succeeds: 
 
-\begin{definition}[Encoding \kw{not\_simplify}]
+\begin{align*}
+&\mathop{\mathtt{all\_not\_simplify}} \is (\rewrite \kw{not\_simplify1}) \colon\colon  \\
+&\quad (\rewrite \kw{not\_simplify2}) \colon\colon (\rewrite \kw{not\_simplify3})
+\end{align*}
+
+The combinator $t_1 \orelse t_2$ tries $t_1$ on the current goal; if it fails to make progress, $t_2$ is applied instead. We then define the tactic for reconstructing the simplification step as follows:
+
 \begin{align*}
 &\mathop{\mathtt{applyAny}} : \bb{L} \, \kw{tactic} \ra \kw{Tactic} \\
 &\mathop{\mathtt{applyAny}} \Box \re \fail \\
 &\mathop{\mathtt{applyAny}} (\kw{t} \colon\colon \kw{ts}) \re t \orelse (\mathop{\mathtt{applyAny}} \kw{ts}) \\
-&\\
-&\mathop{\mathtt{all\_not\_simplify}} \is (\rewrite \kw{not\_simplify1}) \colon\colon  \\
-&\quad (\rewrite \kw{not\_simplify2}) \colon\colon (\rewrite \kw{not\_simplify3}) \\
-& \\
+\end{align*}
+
+The $t_1 \orelse t_2$ are evaluated respectively to $t_1$ and $t_2$ which must be tactic values.
+The tactic value $t_1$ is applied in the current goal and if it fails to progress then $t_2$ is applied.
+
+\begin{align*}
 &\mathop{\mathtt{not\_simplify}} \is \repeatT (\mathop{\mathtt{applyAny}} \mathop{\mathtt{all\_not\_simplify}}) \\
 &\quad \andT \reflexivity
 \end{align*}
-\end{definition}
-\info{ac}{Tactic script will be introduce in Lambdapi intro.}
+
+Here, $\repeatT$ repeatedly applies the simplification tactics until none can be applied further.
+Finally, a step using the \kw{not\_simplify} rule can be reconstructed as shown in \cref{fig:not-simplify}, by simply running the tactic script using the meta-tactic $\eval$.
 
 \subsection{N-ary rules}
 
@@ -511,10 +492,6 @@ The proof is direct with \cref{lemma:select}.
 \label{lem:and-pos}
 \end{lemma}
 
-We can reconstruct the proof such as described in \cref{fig:pos-and-recon}.
-We first need to retrieve a disjunctions from a clause by applying the disjunction introduction rule $\lor_{i1}$,
-and then we apply \cref{lem:and-pos} with the index $k$ given by Alethe, the conjunction reified $(\E{\varphi_1} \colon\colon \dots \colon\colon \E{\varphi_n} \colon\colon \Box)$ and a proof that $\prf (k \in_k (\kw{indexes}~c))$
-which should reduce to $\top$.
 
 
 \begin{figure}
@@ -538,9 +515,40 @@ which should reduce to $\top$.
 \label{fig:pos-and-recon}
 \end{figure}
 
+We can reconstruct the proof such as described in \cref{fig:pos-and-recon}.
+We first need to retrieve a disjunctions from a clause by applying the disjunction introduction rule $\lor_{i1}$,
+and then we apply \cref{lem:and-pos} with the index $k$ given by Alethe, the conjunction reified $(\E{\varphi_1} \colon\colon \dots \colon\colon \E{\varphi_n} \colon\colon \Box)$ and a proof that $\prf (k \in_k (\kw{indexes}~c))$
+which should reduce to $\top$.
+
 % Proof by reflection
 
 \subsection{Quantifiers}
+
+\begin{figure}
+\centering
+\begin{tabular}{|l|}
+\hline
+  R = \kw{sko\_forall} \\ \hline
+  %
+  \ruleAlethe{i}{(\neg \forall \bar{x},\, \varphi) \lor (\varphi[\bar{t}])}{forall\_inst} \\ \hline
+  %
+  \begin{tabular}[t]{@{}l}
+    $i: \pid (\E{\varphi} = \E{\psi} \cons \nil ) \dots $\\
+    $k: \pid (\forall x_1,\dots~x_n, \E{\varphi} = \E{\psi} \cons \nil) \coloneq$\\
+    begin
+    \ \ \begin{tabular}[t]{@{}l}
+          apply $\lor_{i1}$;\\ %
+          apply imply\_to\_or;\\
+          assume H;\\
+          refine $\forall_e H$\\
+        \end{tabular}\\
+    end
+  \end{tabular}
+\\ \hline
+\end{tabular}
+\caption{Translating the \kw{forall\_inst} command.}
+\label{fig:forall-inst-recon}
+\end{figure}
 
 The Alethe format defines rules for quantifier instantiation, substitution, and other manipulations of bound variables.
 For instance, the rule \tt{forall\_inst} is used to express quantifier instantiation. It produces a unit clause with a formula of the form $(\neg \forall \bar{x},\, \varphi) \lor (\varphi[\bar{t}])$,
@@ -562,15 +570,14 @@ t3.& $\triangleright \quad \bot$ & \kw{(resolution a0 a1 t2)}[\,] \\
 \end{center}
 \end{example}
 
-As described \cref{ssec:encoding-prop}, we encode universal and existential quantifier with a shallow embedding to Lambdapi Pi type $\Pi A, B$.
-Therefore, we simply encode the rule \tt{forall\_inst} as a lemma that holds trivially.
-
-% shadow embedding with Lambdapi quantifier
+As described \cref{ssec:encoding-prop}, we encode universal and existential quantifiers using a shallow embedding into Lambdapi's dependent function type $\Pi A, B$.
+This allows us to reconstruct the rule \tt{forall\_inst} directly, as shown in \cref{fig:forall-inst-recon}. \question{ac}{need more details?}
 
 \subsection{Skolemization}
 
 
 \begin{figure}
+  \centering
 \begin{tabular}{|l|}
 \hline
   R = \kw{sko\_forall} \\ \hline
@@ -665,46 +672,62 @@ The subproof starts at the \lstinline[language=SMT]{anchor} command at line 1 an
 We define in \cref{table:subproof-c} the definitions of the function $\mathcal{C}$ for the \kw{subproof} and \kw{bind} commands. The translation of \kw{bind} and \kw{subproof} relies on the following lemmas that have been proved in Lambdapi.
 
 \begin{figure}
-\begin{tabular}{lr|l}
+\centering
+\begin{tabular}{|l|}
 \hline
-\multicolumn{2}{|l|}{R = \kw{subproof}} \\ \hline
-$i_1.\ \Gamma \triangleright \varphi_1$ & $(\kw{assume})$ &  \\
-$\vdots$ & & \\
-$i_n.\ \Gamma \triangleright \varphi_n $ & $ (\kw{assume})$ &  \\
-$\vdots$ & & \\
-$i_j.\ \Gamma \triangleright \psi $ & $ (\dots)$ & with $u \in 1\dots n$ \\
-$k.\ \Gamma \triangleright \neg \varphi_1, \dots, \neg \varphi_n, \psi $ & $ (\kw{subproof})$ & $\C{k} = \pid ( \neg \E{\varphi_1} \cons \dots \cons \neg \E{\varphi_n}$ \\
-& & $ \cons \E{\psi} ) \cons \nil \coloneq \kw{apply}~\kw{subproof}_n$ \\
+\textbf{R = \kw{subproof}} \\
 \hline
-\multicolumn{2}{|l|}{R = \kw{bind}} \\ \hline
-$j.\ \Gamma~\overline{y},\overline{x} \mapsto \overline{y}  \triangleright \varphi \approx \psi $ & $(\dots)$ & with $\overline{a} = a_1 \dots a_n$ and $Q \in \{\forall, \exists\}$\\
-$k.\ \Gamma \triangleright (Q~\overline{x}, \varphi) \approx (Q~\overline{y}, \psi) $ & $ (\kw{bind})$ & $\C{k} = \pid \E{Q~\overline{x}, \varphi \approx Q~\overline{y}, \psi} \cons \nil \coloneq$ \\
-& & \kw{apply}~$\lor_{i1}$; \kw{apply bindQ};  \\
-& & \kw{assume}~$x_j$; \kw{apply}~ $(\pid{}_l~j)$;\\
+$i_1.\ \Gamma \triangleright \varphi_1$ \quad $(\kw{assume})$ \\
+$\vdots$ \\
+$i_n.\ \Gamma \triangleright \varphi_n$ \quad $(\kw{assume})$ \\
+$\vdots$ \\
+$i_j.\ \Gamma \triangleright \psi$ \quad $(\dots)$ \quad with $u \in 1 \dots n$ \\
+\ruleAlethe{k}{\neg \varphi_1, \dots, \neg \varphi_n, \psi}{subproof} \\
+
+\hline
+
+$\C{k} = \pid (( \neg \E{\varphi_1} \cons \dots \cons \neg \E{\varphi_n} \cons \E{\psi} ) \cons \nil)$ \\
+$\quad \is \kw{apply}~\kw{subproof}_n$ \\
+\hline
+\textbf{R = \kw{bind}} \\
+\hline
+$j.\ \Gamma~\overline{y}, \overline{x} \mapsto \overline{y} \triangleright \varphi \approx \psi$ \quad $(\dots)$ \\
+$\quad$ with $\overline{a} = a_1 \dots a_n$ and $Q \in \{\forall, \exists\}$ \\
+$k.\ \Gamma \triangleright (Q~\overline{x}, \varphi) \approx (Q~\overline{y}, \psi)$ \quad $(\kw{bind})$ \\
+
+\hline
+
+$\C{k} = \pid (\E{Q~\overline{x}, \varphi \approx Q~\overline{y}, \psi} \cons \nil) \is$ \\
+ begin
+    \ \ \begin{tabular}[t]{@{}l}
+          $\kw{apply}~\lor_{i1}; \kw{apply~bindQ};$ \\
+          $\kw{assume}~x_j; \kw{apply}~ (\pid{}_l~j);$ 
+        \end{tabular}\\
+    end
+    \\
+\hline
 \end{tabular}
 \caption{Translating \kw{subproof} and \kw{bind} commands.}
 \label{table:subproof-c}
 \end{figure}
-\smallskip
+
 
 \begin{lemma}[$\kw{subproof}_1$]\label{lem:subproof}
 For $\varphi, \psi : \prop{}$, if $\prf{} \varphi$ implies $\prf{} \psi$ then $\pid (\neg \varphi \cons \psi)$.
 \end{lemma}
 
-\smallskip
 
 \begin{lemma}[bind$\forall$]\label{lem:bind-forall}
 Given an arbitrary $a : \kw{Clause}$ and predicates $p, q : \el{}\,a \ra \prop$, if $\Pi x : \el{}\,a,~ \prf (p~x = q~x)$ then $\prf ((\forall x, p~x) = (\forall y, q~y))$.
 \end{lemma}
 
-\smallskip
 
 \begin{lemma}[bind$\exists$]\label{lem:bind-exists}
   Given an arbitrary $a : \kw{Clause}$ and predicates $p, q : \el{}\,a \ra \prop$, if $\Pi x : \el{}\,a,~ \prf (p~x = q~x)$ then $\prf ((\exists x, p~x) = (\exists y, q~y))$.
 \end{lemma}
 
-\subsection{Builtin theory}
-\label{ssec:refl-builtin-theory}
+\subsection{The evaluate Alethe rule}
+\label{ssec:eval-recon}
 
 SMT solvers can produce proof traces with steps generated by an internal theory (e.g. \kw{evaluate} and \kw{TRUST\_THEORY\_REWRITE} for cvc5). The solver will then use the special rule \kw{hole}, a placeholder for proof steps that cannot be expressed with Alethe rules.
 The Carcara checker simply admits the conclusion of these rules, but here we try to reconstruct such steps using a simple internal or an external solver.
@@ -726,50 +749,180 @@ This prover can output proof certificates in Lambdapi and Dedukti format that we
       :rule hole :args ("evaluate"))
 \end{lstlisting}
 
+
 \begin{figure}
-\[ \begin{matrix*}[l]
-\cal{P}: \set & \textbf{pTrue}: \cal{P} & \textbf{pAnd}: \cal{P} \rightarrow \cal{P} \rightarrow \cal{P}  & \textbf{pOr}: \cal{P} \rightarrow \cal{P} \rightarrow \cal{P} \\
-\textbf{pFalse}: \cal{P}\quad & \textbf{pAtomic}: \mathbb{N} \rightarrow \cal{P}\quad & \textbf{pNegAtomic}: \mathbb{N} \rightarrow \cal{P}\quad & \textbf{pImpl}: \cal{P} \rightarrow \cal{P} \rightarrow \cal{P}
-\end{matrix*}\]
+\begin{align*}
+& \cal{P} : \type \\
+& |\textbf{pTrue} : \cal{P} \\
+& |\textbf{pAnd} : \cal{P} \ra \cal{P} \ra \cal{P} \\
+& |\textbf{pFalse} : \cal{P} \\
+& |\textbf{pOther} : \N \ra \cal{P} \\
+& |\textbf{pOr} : \cal{P} \ra \cal{P} \ra \cal{P} \\
+& |\textbf{pImpl} : \cal{P} \ra \cal{P} \ra \cal{P} \\
+& \kw{propS}: \set \\
+& \el\,\kw{propS} \re \cal{P}
+\end{align*}
 \caption{An inductive type for propositional logic.}
 \label{fig:prop}
 \end{figure}
 
+
 We briefly describe the propositional constant folding solver; a complete description can be found in \cref{app:tauto-description}.
 Similarly to \cref{sec:refl-reso}, we start by defining the target theory that represents formulas of propositional logic in negation normal form. We declare the inductive type $\cal{P}$ with seven constructors given in \cref{fig:prop}.
-The constructors \texttt{pNegAtomic} and \texttt{pAtomic} encode uninterpreted expressions, including variables.
+The constructors \texttt{pNeg} and \texttt{pOther} encode uninterpreted expressions, including variables.
 The index $\mathbb{N}$ will used as an index into a context map $\sigma$ holding the corresponding expressions of type $\prop$.
-Our automation will not look into the context mapping $\sigma$, but will be able to determine if two \texttt{pAtomic} (and \texttt{pNegAtomic}) terms reference the same location and are therefore equal.
+Our automation will not look into the context mapping $\sigma$, but will be able to determine if two \texttt{pOther} (and \texttt{pNeg}) terms reference the same location and are therefore equal.
 Note that while our reification of the goal will try to reuse indices in $\sigma$ when values are repeated, we will not be able to prove that two different indices into $\sigma$ represent different values.
 We define an interpretation $\reify{\_}_\sigma$ and a reification $\deno{\_}$ function between $\prop$ and the target theory $\cal{P}$ that refer to the context map $\sigma$.
 We define the function \texttt{provable} that implements our partial decision procedure that checks if a proposition is decidably equal to \kw{true}.
 
+\begin{minipage}{0.6\linewidth}
+\small
+\begin{flalign*}
+&\reify{\top}_\sigma \re  \kw{pTrue} && \\
+&\reify{\bot}_\sigma \re  \kw{pFalse} && \\
+&\reify{x \lor y}_\sigma \re  \kw{pOr}~(\reify{x}_\sigma) (\reify{y}_\sigma) && \\
+&\reify{x \land y}_\sigma \re \kw{pAnd} ~(\reify{x}_\sigma) (\reify{y}_\sigma) && \\
+&\reify{x \Rightarrow y}_\sigma \re \kw{pImpl}~(\reify{x}_\sigma) (\reify{y}_\sigma) && \\
+&\reify{\neg x}_\sigma \re  \kw{pNeg}~ (\kw{Index}(\sigma, x)) && \\
+&\reify{x}_\sigma \re  \kw{pOther}~(\kw{Index}(\sigma, x)) && \\
+\end{flalign*}
+\end{minipage}%
+\begin{minipage}{0.5\linewidth}
+\small
+\begin{flalign*}
+&\deno{\kw{pTrue}} = \top  &&\\
+&\deno{\kw{pFalse}} = \bot  &&\\
+&\deno{\kw{pOr}\,x\,y} = \deno{x} \lor \deno{y}  &&\\
+&\deno{\kw{pAnd}\,x\,y} = \deno{x} \land \deno{y}  &&\\
+&\deno{\kw{pImpl}\,x\,y} = \deno{x} \Rightarrow \deno{y}  &&\\
+&\deno{\kw{pOther}~i} = \sigma[i] &&\\
+\end{flalign*}
+\end{minipage}
+
+
+We define what it means for all members of a context $\hyps$ of type ($\kw{list}~\cal{P}$) to represent true propositions,
+and we prove some lemmas about this notion. The predicate $\kw{knows}$ checks whether the proposition $p$ exists  in the context.
+The \kw{all} function combines all the $\PP$'s in a list into a $\prop$ representing their conjunction.
+We now define a decidable equality between natural numbers that we will use to compare index of \emph{Atomic} constructor.
+
 \smallskip
 
-\begin{theorem}[Correctness of \kw{provable}]\label{theorem:provable-sound}
-For any $g: \PP$ and context $\hypst$, if $\prf (\kw{provable}~g~\hyps = \kw{true})$
-then given a mapping $\sigma$, if the context $\prf (\deno{\kw{All}~\hyps})$ represents true propositions then $\prf (\deno{g})$ is true.
-\end{theorem}
-\begin{proof}
-  cf.\ \cref{app:tauto-description}
+\begin{definition}[Decidable equality $=_\N \colon \N \ra \N \ra \mathbb{B}$]
+We define the decidable equality between two natural numbers as follows:
+\begin{flalign*}
+&0 =_\N 0 \re \true & &S~x =_\N S~y \re x =_\N y &&\\
+&0 =_\N S~x \re \false & &S~x =_\N 0 \re \false &&
+\end{flalign*}
+\end{definition}
+
+Next, we define a decidable equality between terms of type $\cal{P}$.
+
+\smallskip
+
+\begin{definition}[Decidable equality $=_\cal{P} \colon \cal{P} \ra \cal{P} \ra \mathbb{B}$]
+\begin{flalign*}
+&\kw{pTrue} =_\cal{P} \kw{pTrue} \re \true &&\\
+&\kw{pFalse} =_\cal{P} \kw{pFalse} \re \true &&\\
+&\kw{pAnd}~l_1\,r_1 =_\cal{P} \kw{pAnd}~l_2\,r_2  \re l_1 =_\cal{P} l_2 ~\kw{andb}~r_1 =_\cal{P} =r_2 &&\\
+&\kw{pOr}~l_1\,r_1 =_\cal{P} \kw{pOr}~l_2\,r_2  \re l_1 =_\cal{P} l_2 ~\kw{andb}~r_1 =_\cal{P} =r_2 &&\\
+&\kw{pImpl}~l_1\,r_1 =_\cal{P} \kw{pImpl}~l_2\,r_2  \re l_1 =_\cal{P} l_2 ~\kw{andb}~r_1 =_\cal{P} =r_2 &&\\
+&\kw{pOther}~x =_\cal{P} \kw{pOther}~y  \re x =_\mathbb{N} y  &&\\
+\end{flalign*}
+\end{definition}
+
+
+The function \kw{all} transform a list of $\cal{P}$ into conjonctions to represent a context.
+It use a fold right function from the Lambdapi standard library\footnote{https://github.com/Deducteam/lambdapi-stdlib}.
+\begin{flalign*}
+\kw{all}: \kw{list}~\cal{P} \ra \cal{P} \coloneqq \kw{foldr}~(\kw{pAnd})~\kw{pTrue} &&
+\end{flalign*}
+The function \kw{knows} searches for an element decidably equal to $p$. It also use the function \kw{existsb} from the standard library.
+\begin{flalign*}
+\kw{knows}~(p: \cal{P})~(\Gamma: \kw{list}~\cal{P}) \coloneqq \kw{existsb}~(=_\cal{P})~\Gamma &&\\
+\end{flalign*}
+
+The function \kw{learn} extends the list of known facts $\Gamma$ to include one more fact. We use the standard notation $(::)$ for append an element to a list.
+We destruct conjunctions so that we can prove theorems such as $p \land q \Rightarrow p$. For simplicity, in the case of other constructor, we just learn it.
+%
+\begin{flalign*}
+&\kw{learn}~(p: \PP)~(\hypst): \kw{list}~\PP &&\\
+&\kw{learn}~\kw{pTrue}~\hyps \re \hyps &&\\
+&\kw{learn}~\kw{pFalse}~\hyps \re (\kw{pFalse}::\hyps) &&\\
+&\kw{learn}~(\kw{pAnd}~x~y)~\hyps \re \kw{learn}~x~(\kw{learn}~y~\hyps) &&\\
+&\kw{learn}~p~\hyps \re \kw{learn}~(p :: \hyps)
+\end{flalign*}
+
+Correctness of \kw{learn} says that if the original context is valid, and the fact that you are learning is valid, then the learned context is valid.
+
+\begin{lemma}[Correctness of learning]\label{lemma:learning_sound}
+Given a mapping $\mapty$ and a context $\hypst$ then for any $\kw{p}: \PP$, if $\prf \deno{\kw{all}~\hyps}$ and $\prf \deno{p}$, then  $\prf \deno{\kw{all} (\kw{learn}~\kw{p}~\hyps)}$.
+\end{lemma}
+\begin{proof} By induction on $p$.
+
+Since all the cases follow the same patterns, we provide the case for \kw{pAnd}, and a similar approach can be follow for the rest.
+We want to prove that $\prf \deno{\kw{all} (\kw{learn}~(\kw{pAnd}~a~b)~\hyps)}$ which rewrites to $\prf \deno{a} \land \deno{b} \land \deno{\kw{foldr}~\kw{pTrue}~\Gamma)}$ by definition of \kw{All},
+and we suppose that $\prf \deno{\kw{all}~\hyps}$ and $\prf \deno{\kw{pAnd}~a~b)}$.
+Then we apply the introduction rule of the conjunction ($\land_i$) giving us two case to prove.
+\begin{itemize}
+\item Case $\prf \deno{a}$ which follows directly from the hypothesis that $\prf \deno{\kw{pAnd}~a~b)}$,
+\item Case $\prf \deno{b} \land \deno{\kw{foldr}~\kw{pTrue}~\Gamma)}$ which follows from the hypothesis that $\prf \deno{\kw{pAnd}~a~b)}$ and $\prf \deno{\kw{all}~\hyps}$.
+\end{itemize}
 \end{proof}
 
-% \begin{figure}
-% \centering
-% \begin{tikzcd}[column sep=tiny,row sep=scriptsize]
-% {\kw{provable}~\reify{goal}_\sigma =_\cal{P} \true} & {\cal{P}} \\
-% \\
-% goal : \prop & \prop
-% \arrow["{{\deno{\_}}}"', curve={height=12pt}, tail reversed, no head, from=3-2, to=1-2]
-% \arrow["{\reify{\_}_\sigma}", curve={height=-18pt}, from=3-2, to=1-2]
-% \end{tikzcd}
-% \caption{Constant folding solver.}
-% \label{fig:tautology-solver}
-% \end{figure}
+If our function \kw{knows} returns \true{}, then the proposition is implied by the meaning of the context:
+
+\smallskip
+
+\begin{lemma}[knows correct] \label{lemma:know_correct}
+Given a mapping $\mapty$ with a context $\hypst$ and a proposition $\kw{p}: \cal{P}$, if the context
+$\deno{\kw{all}~\Gamma}$ is sound and $\kw{knowns}~\kw{p}~\Gamma = \true$ then $\deno{\kw{p}}$ is sound.
+\end{lemma}
+\begin{proof}
+By induction on the context list $\Gamma$.
+\begin{itemize}
+\item[] \textbf{Case} $\Gamma = \square$, trivial because we cannot have $\kw{knows}~p~\square = true$.
+\item[] \textbf{Case} $\Gamma = x :: xs $, assume we have $H: \kw{knows}~p~(x::xs) = true$ and $H2: \deno{\kw{all}~(x::xs)}$.
+We know by $H$, that $p$ is equal to $x$ or $p$ is equal to an element in $xs$. If $x$ is equal to $p$, one has $\deno{\kw{x}}$ from $H2$, hence we have $\deno{\kw{p}}$.
+In the other case, $\deno{\kw{p}}$ follows from the induction hypothesis and H2.
+\end{itemize}
+\end{proof}
+
+
+The function \kw{provable} implements our decision procedure. It checks if a proposition $goal: \cal{P}$ is provable in the context $\Gamma$.
+%
+\begin{flalign*}
+&\kw{provable}~(goal: \PP)~(\hypst): \mathbb{B} &&\\
+&\kw{provable}~\kw{pTrue}~\hyps \re \true &&\\
+&\kw{provable}~\kw{pFalse}~\hyps \re \kw{knows}~\kw{pFalse}~\hyps &&\\
+&\kw{provable}~(\kw{pAnd}~x~y)~\hyps \re (\kw{provable}~x~\hyps)~\&\&~(\kw{provable}~y~\hyps) &&\\
+&\kw{provable}~(\kw{pOr}~x~y)~\hyps \re (\kw{provable}~x~\hyps)~||~(\kw{provable}~y~\hyps) &&\\
+&\kw{provable}~(\kw{pImpl}~x~y)~\hyps \re \kw{provable}~y~(\kw{learn}~x~\hyps) &&\\
+&\kw{provable}~(\kw{pOther}~i)~\hyps \re \kw{knows}~(\kw{pOther}~i)~\hyps ~||~\kw{knows}~\kw{pFalse}~\hyps  &&\\
+\end{flalign*}
+
+\begin{theorem}[Correctness of \kw{provable}]
+For any $\kw{goal}: \PP$ and context $\hypst$, if $\prf (\kw{provable}~\kw{goal}~\hyps = \true)$
+then given a mapping $\sigma$, if the context $\prf (\deno{\kw{All}~\hyps})$ represent true propositions then the $\prf (\deno{\kw{goal}})$ is true.
+\begin{proof} By induction on $p$.
+\begin{itemize}
+\item[] \textbf{Case} (p = \kw{pTrue}), we have to prove $\deno{\kw{pTrue}}$ which rewrites into $\top$ which hold trivially.
+\item[] \textbf{Case} (p = \kw{pFalse}), It follow from the \cref{lemma:know_correct} with our hypothesis \kw{provable} \kw{pFalse} $\hyps = \true$ and $\deno{\kw{All}~\hyps}$ that $\deno{\text{pFalse}}$ hold.
+\item[] \textbf{Case} (p = \kw{pAnd a b}), follow directly by induction hypothesis since \kw{provable} \kw{(pAnd a b)} $\hyps = \true$ implies $\kw{provable}~a~\hyps = \true$ and $\kw{provable}~b~\hyps = \true$.
+\item[] \textbf{Case} (p = \kw{pOr}\,a\,b), follow directly by induction hypothesis since \kw{provable}\,\kw{pOr}\,a\,b\,$\hyps = \true$ implies $\kw{provable}\,a\,\hyps = \true$ or $\kw{provable}\,b\,\hyps = \true$.
+\item[] \textbf{Case} (p = \kw{pImpl}\,a\,b), follow directly by induction hypothesis and \cref{lemma:learning_sound}.
+\item[] \textbf{Case} (p = \kw{pOther}~i), let's consider an index $i: \N$, by the hypothesis $\prf (\kw{provable}~\kw{pOther}~i~\hyps = \true)$  we know that $(\kw{pAtom}\,i) \in \Gamma$ or $\kw{pFalse} \in \Gamma$. Therefore,
+if $(\kw{pOther}\,i) \in \Gamma$ then by \cref{lemma:know_correct} and the hypothesis $\deno{\kw{All}~\hyps}$ we have $\deno{\kw{pOther}\,i}$. However,
+in the case that $\kw{pFalse} \in \Gamma$, by using \cref{lemma:know_correct} and the hypothesis $\deno{\kw{All}~\hyps}$ we derive a contradiction.
+\end{itemize}
+\end{proof}
+\end{theorem}
+
+
 
 \begin{example}
 As an illustration of the process described in \cref{fig:tautology-solver}, let us consider a proof goal $\cal{G} \coloneq (p \land \top) \lor \bot \Leftrightarrow p$ and a context map $\sigma \coloneq \{ 0 \mapsto p \}$.
-Reification of $\cal{G}$ yields $\reify{\cal{G}}_\sigma = \kw{pOr}~(\kw{pAnd}~\kw{(pAtomic 0)}~\kw{})~\kw{pFalse} \Leftrightarrow \kw{(pAtomic 0)}$. Then by using \cref{theorem:provable-sound},
+Reification of $\cal{G}$ yields $\reify{\cal{G}}_\sigma = \kw{pOr}~(\kw{pAnd}~\kw{(pOther 0)}~\kw{})~\kw{pFalse} \Leftrightarrow \kw{(pOther 0)}$. Then by using \cref{theorem:provable-sound},
 we obtain that $\prf (\kw{provable}~\reify{\cal{G}}_\sigma = \texttt{true})$ implies the desired assertion $\prf ((p \land \top) \lor \bot \Leftrightarrow p)$.
 \end{example}
 

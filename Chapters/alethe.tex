@@ -78,7 +78,35 @@ Notice that the contexts \colorbox{blue!30}{$\Gamma$} of each step are all empty
 
 
 \section{RARE elaboration}
+\label{sec:rare-intro}
 
+To address this problem, we use the domain-specific language RARE \cite{rare} provided by cvc5 for defining rewrite rules. As described in \cref{sec:rare-intro}, RARE elaborates proofs for specific rewrite steps on demand based on built-in rewrite rules of cvc5.
+The RARE rule used and its arguments are made explicit in the \lstinline[language=SMT]{:args} parameter of the rule \kw{rare\_rewrite} in the proof trace.
+cvc5 elaborates the proof by rendering each coarse step into fined grain with atomic rewrite.
+Although RARE is currently only supported by cvc5, its use has allowed us to increase the success rate of proof reconstruction.
+
+The example of \cref{lst:or_simp_example} illustrates how RARE transforms an Alethe proof trace into a more fine-grained proof.
+The original step \texttt{t1} uses the rule \texttt{or\_simplify} by applying twice the transformation (2).
+However, cvc5 can output instead a proof trace using RARE that indicates the rule \kw{bool-or-false} and makes the arguments explicit.
+Note that the RARE format represents an empty list as \kw{rare-list} without argument.
+
+\begin{example}[RARE example] An original step $\kw{or\_simplify}$ below
+\begin{lstlisting}[language=SMT]
+(step t1 (cl (= (or false x y false z) (x y z)))
+      :rule or_simplify)
+\end{lstlisting}
+
+can be changed by cvc5 if RARE is enabled into:
+
+\begin{lstlisting}[language=SMT,caption={\texttt{or\_simplify} elaborated by RARE}, label={lst:or_simp_example}]
+(step t1 (cl (= (or false x y false z) (or x y false z)))
+      :rule rare_rewrite :args ("bool-or-false" rare-list
+                                   (rare-list (x y false z))))
+(step t2 (cl (= (or x false y z) (or x y z)))
+      :rule rare_rewrite :args ("bool-or-false" (rare-list x)
+                                   (rare-list (y z))))
+\end{lstlisting}
+\end{example}
 
 \section{linear arithmetic}
 

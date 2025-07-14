@@ -12,7 +12,7 @@
 \newtheorem{remark}{Remark}
 
 %******************************************************************
-% Lambdapi syntax unicode
+% Colors
 %******************************************************************
 % https://colorhunt.co/palette/211c844d55cc7a73d1b5a8d5
 % rgb(33, 28, 132)
@@ -181,6 +181,14 @@
 \newcommand\hyps{\ensuremath{\Gamma}}
 \newcommand\mapty{\ensuremath{\sigma: \texttt{list}~\prop}}
 
+%******************************************************************
+% Alethe syntax unicode
+%******************************************************************
+
+\newcommandx{\ruleAlethe}[4][4={}]{%
+  $#1.\ \Gamma \quad \triangleright #2 \quad (\kw{#3})%
+  \ifx#4\empty\else\ [#4]\fi$%
+}
 
 
 %******************************************************************
@@ -230,6 +238,7 @@
 %******************************************************************
 % Tactics
 %******************************************************************
+\newcommand{\eval}{\ensuremath{\mathop{\mathtt{\textcolor{purple}{eval}}}}}
 \newcommand{\refine}{\ensuremath{\mathop{\mathtt{\textcolor{purple}{\#refine}}}}}
 \newcommand{\reflexivity}{\ensuremath{\mathop{\mathtt{\textcolor{purple}{\#reflexivity}}}}}
 \newcommand{\apply}{\ensuremath{\mathop{\mathtt{\textcolor{purple}{\#apply}}}}}
