@@ -945,14 +945,42 @@ private symbol example1: π ((⊤ ∧ ⊤) ⇒ ⊤ ∨ ⊤ ∧ (⊤ ⇒ ⊤)) �
 begin eval tauto; end;
 \end{lstlisting}
 
-As shown in \cref{lst:tauto-ex}, we define a new tactic \kw{tauto} using a tactic script at line 5, and demonstrate its usage at lines 8 and 9.
+As shown in \cref{lst:tauto-ex}, we define a new tactic \kw{tauto} using a tactic script at line 5, and demonstrate its usage at lines 8-9.
 \todo{ac: improve presentation of tauto tactic, but it is not a priority for now}
 
 
 \section{Reconstruction of linear arithmetic}
 \label{sec:lia-reconstruction}
 
-\subsection{Representation}
+\todo{Review also this section when Rational will be introduce.}
+
+In this section, we address the challenge of reconstructing the rule $\kw{la\_generic}$, as introduced in \cref{sssect:la-in-alethe}.
+This rule corresponds to a proof step in which a set of linear inequalities is shown to be contradictory — that is, it leads to $\bot$ (falsehood).
+
+\smallskip
+
+\begin{lstlisting}[language=SMT]
+(step t11 (cl (not (<= f 0)) (<= (+ 1 (* 4 f)) 1))
+  :rule la_generic :args (1/1 1/4))
+\end{lstlisting} 
+
+\smallskip
+
+Unlike most of the rules described in \cref{table:linear-arith-rules}, reconstructing $\kw{la\_generic}$ poses a distinct challenge.
+It often requires reasoning about algebraic identities that hold modulo the axioms of algebraic structures such as groups or rings.
+These identities are typically derived through elementary combinations of canonical equalities. Other rules are just encoded as regular lemma
+following the previous method we described in previous sections.
+
+We reconstruct steps using the $\kw{la\_generic}$ rule through a second-kind proof by reflection.
+The goal is to implement an automated procedure that computes the final sum of inequalities, as described in the Alethe algorithm, by combining implicit rewriting steps to normalize and simplify expressions.
+Our approach relies on a normalization function along with a proof of its correctness.
+In this work, we support two proof-generation strategies. The first uses \lpinline{associative commutative} modifiers to normalize terms directly within the Lambdapi kernel.
+This makes the approach efficient but relies on a meta-level correctness argument for normalization.
+The second encodes the normalization function in Lambdapi and performs symbolic execution to compute the result. While slower, this method provides a fully internal correctness proof within Lambdapi.
+
+
+
+\subsection{Representation of integers}
 \label{ssec:representation}
 
 The procedure is based on an algebraic group structure, denoted as  $\bb{G}$ defined in \cref{fig:grp}, which represents linear polynomials.
@@ -961,11 +989,11 @@ The term $\tt{var}~c~x$ is intended for representing expressions $c \times x$ th
 The constructor $\tt{mul}$  represents the multiplication of an element of $\bb{G}$ by a constant. The constructor $\tt{opp}$ corresponds to unary minus.
 Lastly, the constructor $\add{}{}$ represents the addition between two elements of $\bb{G}$.
 
-Lambdapi provides modifiers %\lstinline[language=Lambdapi,basicstyle=\ttfamily\footnotesize\upshape]{associative commutative} 
-for supporting associative and commutative operations,
-ensuring that terms are systematically transformed into a canonical form w.r.t.\ a builtin ordering relation \cite{univAC,ACorigin}. We declare the operator $\add{}{}$ as \lstinline[language=Lambdapi,basicstyle=\ttfamily\footnotesize\upshape]{associative commutative},
-ensuring that expressions involving sums of elements of $\bb{G}$ are systematically canonicalized. 
-%In particular, terms of the form $\tt{var}~c~x$ for equal variables will be placed next to each other, facilitating simplification.
+% Lambdapi provides modifiers %\lstinline[language=Lambdapi,basicstyle=\ttfamily\footnotesize\upshape]{associative commutative} 
+% for supporting associative and commutative operations,
+% ensuring that terms are systematically transformed into a canonical form w.r.t.\ a builtin ordering relation \cite{univAC,ACorigin}. We declare the operator $\add{}{}$ as \lstinline[language=Lambdapi,basicstyle=\ttfamily\footnotesize\upshape]{associative commutative},
+% ensuring that expressions involving sums of elements of $\bb{G}$ are systematically canonicalized. 
+% %In particular, terms of the form $\tt{var}~c~x$ for equal variables will be placed next to each other, facilitating simplification.
 
 \begin{figure}[t]
 \scriptsize
@@ -1243,7 +1271,18 @@ In each case, $\reify{(x)}$ yields the corresponding constant $\cst{x}$, and by 
 Hence, $x = (\mathop{\den{(\reify{x})}})$ in all cases.
 \end{proof}
 
-The full proof \cref{lst:smtexampleproof} translated into Lambdapi can be found in \cref{app:example-translation}.
+
+\lstinputlisting[language=Lambdapi,mathescape=true,label={lst:translation-example},caption={Lambdapi proof of List. \ref{lst:smtexampleproof}}]{Assets/short_lia.lp}
+
+We present in List. \ref{lst:translation-example} the translation of Step \tt{t2} from List. \ref{lst:smtexampleproof} using our Carcara module.
+The \lstinline[language=Lambdapi,basicstyle=\ttfamily\footnotesize\upshape]|rewrite Zinv_lt_eq| step at line 3 performs the normalization from Step 1, rewriting $\neg (3 < x)$ as $\neg (\sim 3 > \sim x)$.
+The lemmas \lstinline[language=Lambdapi,basicstyle=\ttfamily\footnotesize\upshape]|Z_diff_gt_Z0| and \lstinline[language=Lambdapi,basicstyle=\ttfamily\footnotesize\upshape]|Z_diff_eq_Z0_eq| (lines 4–5) implement Step 2.
+Since the goal involves a $>$ inequality, Step 3 applies with the lemma \lstinline[language=Lambdapi,basicstyle=\ttfamily\footnotesize\upshape]|Zgt_le_succ_r_eq| (line 6).
+The coefficients $[\frac{1}{1}, -\frac{1}{1}]$ from Step 4 are trivially cast to $\bb{Z}$ and applied in lines 7–8.
+To express all inequalities uniformly, remaining equalities are rewritten as $\geq$ using \tt{Z\_eq\_implies\_ge} (line 12).
+Finally, Step 6 derives the contradiction by summing inequalities from lines 13 to 17.
 
 \section{Reconstruction of bitvector}
 \label{sec:bv-reconstruction}
+
+WIP
