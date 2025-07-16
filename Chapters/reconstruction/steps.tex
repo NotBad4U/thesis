@@ -1302,9 +1302,9 @@ In each case, $\reify{(x)}$ yields the corresponding constant $\cst{x}$, and by 
 Hence, $x = (\mathop{\den{(\reify{x})}})$ in all cases.
 \end{proof}
 
-\lstinputlisting[language=Lambdapi,mathescape=true,label={lst:translation-example},caption={Lambdapi proof of List. \ref{lst:smtexampleproof}}]{Assets/short_lia.lp}
+\lstinputlisting[language=Lambdapi,mathescape=true,label={lst:inner-recon-example},caption={Lambdapi proof of List. \ref{lst:smtexampleproof}}]{Assets/short_lia.lp}
 
-We present in List. \ref{lst:translation-example} the translation of Step \tt{t2} from List. \ref{lst:smtexampleproof} using our Carcara module.
+We present in List. \ref{lst:inner-recon-example} the translation of Step \tt{t2} from List. \ref{lst:smtexampleproof} using our Carcara module.
 The \lstinline[language=Lambdapi,basicstyle=\ttfamily\footnotesize\upshape]|rewrite Zinv_lt_eq| step at line 3 performs the normalization from Step 1, rewriting $\neg (3 < x)$ as $\neg (\sim 3 > \sim x)$.
 The lemmas \lstinline[language=Lambdapi,basicstyle=\ttfamily\footnotesize\upshape]|Z_diff_gt_Z0| and \lstinline[language=Lambdapi,basicstyle=\ttfamily\footnotesize\upshape]|Z_diff_eq_Z0_eq| (lines 4–5) implement Step 2.
 Since the goal involves a $>$ inequality, Step 3 applies with the lemma \lstinline[language=Lambdapi,basicstyle=\ttfamily\footnotesize\upshape]|Zgt_le_succ_r_eq| (line 6).
@@ -1315,8 +1315,9 @@ Finally, Step 6 derives the contradiction by summing inequalities from lines 13 
 \subsection{Reflection with outer normalization}
 \info{ac}{this work is still in development compared to inner.}
 
-We now describe the second strategy that encodes the normalization function in Lambdapi and profits of a fully internal correctness proof within Lambdapi but slower in performance.
-Similarly to the first strategy, an inductive type $\bb{G}$ (\cref{outer-g-def}) defines a syntactic representation of arithmetic expressions over $\Z$.
+We now describe the second strategy, which implements the normalization function entirely within Lambdapi.
+This approach benefits from a fully internal correctness proof, but it typically results in slower performance compared to the first strategy.
+As in the first approach, an inductive type $\bb{G}$ (\cref{outer-g-def}) reflect the syntactic representation of arithmetic expressions over $\Z$.
 
 \subsubsection{Reflecting integers}
 
@@ -1326,19 +1327,20 @@ Similarly to the first strategy, an inductive type $\bb{G}$ (\cref{outer-g-def})
 
 \begin{figure}[h]
 \begin{align*}
-& \bb{G}: \type \\
-&|~\kw{add}: \bb{G} \ra \bb{G} \ra \bb{G} \\
-&|~\tt{var}: \N \ra \Z \ra \bb{G} \\
-&|~\tt{cst}: \Z \ra \bb{G} \\
-&\tt{grp}: \set \\
-&\el~\tt{grp} \re \bb{G}
+& \bb{G}: \type &\kw{mul}(k, \cst{l}) \re \cst{(k \cdot l)} \\
+&|~\kw{add}: \bb{G} \ra \bb{G} \ra \bb{G} &\kw{mul}(k, \var{i}{l}) \re \var{i}{(k \cdot l)} \\
+&|~\tt{var}: \N \ra \Z \ra \bb{G} &\kw{mul}(k, \add{x}{y}) \re \add{\kw{mul}(k, x)}{\kw{mul}(k, y)} \\
+&|~\tt{cst}: \Z \ra \bb{G} & \\
+&|~\tt{mul}: \Z \ra \bb{G} \ra \bb{G} & \\
+&\tt{grp}: \set & \\
+&\el~\tt{grp} \re \bb{G} 
 \end{align*}
 \caption{Outer group structure $\bb{G}$ reflecting $\bb{Z}$.}
 \label{outer-g-def}
 \end{figure}
+\todo{fix layout}
 
-
-The \tt{reify} function performs syntactic reification of arithmetic expressions from $\bb{Z}$ into the abstract type $\bb{G}$, producing a pair consisting of a reified term of type $\bb{G}$, and a list of variable values called the \emph{context map}
+The \tt{reify} function $\Uparrow : \bb{L}~\kw{int} \ra \Z \ra (\bb{G} \times \bb{L}~\kw{int})$ performs reification of arithmetic expressions from $\bb{Z}$ into the abstract type $\bb{G}$, producing a pair consisting of a reified term of type $\bb{G}$, and a list of variable values called the \emph{context map}
 that represents uninterpreted terms in domain of $\bb{G}$ such as variable.
 It is defined recursively over the structure of $\bb{Z}$ expressions.
 Below are the defining equations of \texttt{reify}:
@@ -1346,46 +1348,46 @@ Below are the defining equations of \texttt{reify}:
 \begin{scriptsize}
 \begin{align*}
 &\Uparrow: \bb{L}~\kw{int} \ra \Z \ra (\bb{G} \times \bb{L}~\kw{int}) \\
-&\reify{l}{x + y} \re \text{let } (g_1, l_1) = \reify{l}{x} \text{ in let } (g_2, l_2) = \reify{l_1}{y} \text{ in } (\Add(g_1, g_2), l_2) \\
-&\reify{l}{-x} \re \text{let } (g, l') = \reify{l}{x} \text{ in } (\opp(g), l') \\
-&\reify{l}{x - y} \re \reify{l}{x + (-y)} \\
+&\reify{l}{(x + y)} \re \text{let } (g_1, l_1) = \reify{l}{x} \text{ in let } (g_2, l_2) = \reify{l_1}{y} \text{ in } (\Add(g_1, g_2), l_2) \\
+&\reify{l}{(-x)} \re \text{let } (g, l') = \reify{l}{x} \text{ in } (\opp(g), l') \\
+&\reify{l}{(x - y)} \re \reify{l}{x + (-y)} \\
 &\reify{l}{0} \re (\Cst(0), l) \\
 &\reify{l}{\ZPos(c)} \re (\Cst(\ZPos(c)), l) \\
 &\reify{l}{\ZNeg(c)} \re (\Cst(\ZNeg(c)), l) \\
-&\reify{l}{0 * x} \re (\Cst(0), l) \\
-&\reify{l}{\ZPos(c) * x} \re \text{let } (g, l') = \reify{l}{x} \text{ in } (\mul(\ZPos(c), g), l') \\
-&\reify{l}{\ZNeg(c) * x} \re \text{let } (g, l') = \reify{l}{x} \text{ in } (\mul(\ZNeg(c), g), l') \\
-&\reify{l}{x * \ZPos(c)} \re \text{let } (g, l') = \reify{l}{x} \text{ in } (\mul(\ZPos(c), g), l') \\
-&\reify{l}{x * \ZNeg(c)} \re \text{let } (g, l') = \reify{l}{x} \text{ in } (\mul(\ZNeg(c), g), l') \\
+&\reify{l}{(0 * x)} \re (\Cst(0), l) \\
+&\reify{l}{(\ZPos(c) * x)} \re \text{let } (g, l') = \reify{l}{x} \text{ in } (\mul(\ZPos(c), g), l') \\
+&\reify{l}{(\ZNeg(c) * x)} \re \text{let } (g, l') = \reify{l}{x} \text{ in } (\mul(\ZNeg(c), g), l') \\
+&\reify{l}{(x * \ZPos(c))} \re \text{let } (g, l') = \reify{l}{x} \text{ in } (\mul(\ZPos(c), g), l') \\
+&\reify{l}{(x * \ZNeg(c))} \re \text{let } (g, l') = \reify{l}{x} \text{ in } (\mul(\ZNeg(c), g), l') \\
 &\reify{l}{x} \re 
   \begin{cases}
-    (\Var(i, 1), l) & \text{if } x \text{ is definitionally equal to some } l_i \text{ at index } i \\
-    (\Var(i, 1), l \mathbin{++} [x]) & \text{otherwise, with } i = \text{length}(l)
+    (\Var{i}{1}, l) & \text{if } x \text{ is definitionally equal to some } l_i \text{ at index } i \\
+    (\Var{i}{1}, l \mathbin{++} [x]) & \text{otherwise, with } i = \text{length}(l)
   \end{cases}
 \end{align*}
 \end{scriptsize}
 
-The function \den{\_} defines the semantic interpretation of reified arithmetic expressions of type $\bb{G}$.
-Given a pair $(g, l)$ consisting of a term $g : \bb{G}$ and a context map $l$ of integer values corresponding to uninterpreted expression (e.g. variable), the function computes the resulting value in $\mathbb{Z}$.
-Variables are interpreted via lookup in the context map $l$, defaulting to zero if the index is out of bounds. The defining equations of the denotation function $\den{\_}$ are as follows:
+The function $\den{\_}: (\bb{G} \times \bb{L}~\kw{int}) \ra \Z$ defines the semantic interpretation of reified arithmetic expressions of type $\bb{G}$.
+Given a pair $(g, \ell)$ consisting of a term $g : \bb{G}$ and a context map $\ell$ of integer values corresponding to uninterpreted expression (e.g. variable), the function computes the resulting value in $\mathbb{Z}$.
+Variables are interpreted via lookup in the context map $\ell$ with the function \kw{nth}, defaulting to zero if the index is out of bounds. The defining equations of the denotation function $\den{\_}$ are as follows:
 
 \begin{align*}
 &\den: (\bb{G} \times \bb{L}~\kw{int}) \ra \Z\\
-&\den{(\Cst(k), l)} \re k \\
-&\den{(\Var{i}{k}, l)} \re \text{nth}(l, i) \cdot k \\
-&\den{(\Add(x, y), l)} \re \den{(x, l)} + \den{(y, l)}
+&\den{(\Cst(k), \ell)} \re k \\
+&\den{(\Var{i}{k}, \ell)} \re \kw{nth}(\ell, i) \cdot k \\
+&\den{(\Add(x, y), \ell)} \re \den{(x, \ell)} + \den{(y, \ell)}
 \end{align*}
 
 
 \begin{example}
 Consider the arithmetic expression $x + y + x + 1$, where $x$ and $y$ are $\Z$ variables. 
-When reifying this expression, we start with an empty list of previously seen values and apply the $\reify{}$ function recursively.
+When reifying this expression, we start with an empty list $\Box$ of previously seen values and apply the $\reify{}$ function recursively.
 Let us denote the final context map $l = [x, y]$, so that $x$ has index $0$ and $y$ has index $1$. The reification and denotation steps are shown below:
 
 \begin{scriptsize}
 \begin{align*}
 &\reify{\Box}{(x + (y + (x + 1)))}\\
-&\leadsto (
+&\re (
   \mathsf{Add}(
     \mathsf{Var}(0, 1),\ 
     \mathsf{Add}(
@@ -1406,24 +1408,25 @@ Let us denote the final context map $l = [x, y]$, so that $x$ has index $0$ and 
 
 Normalization consists of converting an expression $x : \bb{G}$ into a canonical form through a composition of functions:
 
-\begin{equation*}
+\begin{equation}
 \mathop{\mathtt{norm}} x \is \mathop{\mathtt{sum}} (\mathop{\mathtt{remove0}} (\mathop{\mathtt{sort}} (\mathop{\mathtt{aliens}} x)))
-\end{equation*}
-Where
+\label{eq:norm-outer-grp}
+\end{equation}
+Where shortly:
 \begin{itemize}
   \item $\kw{aliens}: \bb{G} \ra \bb{L}~\kw{grp}$, flattens $x$ into a list of atomic terms.
-  \item $\kw{sort}: \bb{L}~\kw{grp} \ra \bb{L}~\kw{grp}$, sort aliens variables by insertion sort and combines similar terms (e.g. $\Add{\Var{0}{1}}{\Var{0}{1}}$).
+  \item $\kw{sort}: \bb{L}~\kw{grp} \ra \bb{L}~\kw{grp}$, sort aliens variables by insertion sort and combines similar terms. For example:\\ $\Add{\Var{0}{1}}{\Var{0}{1}}$.
   \item $\kw{remove0}: \bb{L}~\kw{grp} \ra \bb{L}~\kw{grp}$, eliminates neutral elements like $\kw{cst}~0$ or $\kw{var}~\_~0$.
   \item $\kw{sum}: \bb{L}~\kw{grp} \ra \bb{G}$, rebuilds the term as a sum.
 \end{itemize}
 
-We first give the definition of $\mathop{\mathtt{aliens}}$. The function \kw{aliens} extracts the list of atomic (non-\kw{Add}) subterms from an expression $x : \bb{G}$.
-It recursively traverses the structure and flattens it into a list of constants and variable terms, discarding the additive structure. This is used as a preprocessing step for normalization. The defining equations are:
+We first give the definition of $\mathop{\mathtt{aliens}}$. The function \kw{aliens} extracts the list of atomic (non-\kw{add}) subterms from an expression $x : \bb{G}$.
+It recursively traverses the structure and flattens it into a list of constants and variable terms, discarding the additive structure. The defining equations are:
 
 \begin{align*}
-&\kw{aliens}(\cst{k}) \re [\cst{k}] \\
-&\kw{aliens}(\var{i}{k}) \re [\var{i}{k}] \\
-&\kw{aliens}(\add{x}{y}) \re \kw{aliens}(x) \mathbin{++} \kw{aliens}(y)
+&\kw{aliens} \cst{k} \re [\cst{k}] \\
+&\kw{aliens} \var{i}{k} \re [\var{i}{k}] \\
+&\kw{aliens}(\Add{x}{y}) \re \kw{aliens}(x) \mathbin{++} \kw{aliens}(y)
 \end{align*}
 
 The function \kw{remove0} eliminates neutral elements from a list of atomic expressions in $\bb{G}$, namely constants equal to $0$ and variables with coefficient $0$.
@@ -1439,12 +1442,12 @@ This cleanup step ensures that the normalized form contains only meaningful term
 &\kw{remove0}~(\var{i}{\ZNeg{k}} \colon\colon l) \re \var{i}{\ZNeg{k}} \colon\colon \kw{remove0}(l)
 \end{align*}
 
-The function \kw{sum} reconstructs a syntactic expression of type $\bb{G}$ from a list of atomic terms by folding them with the \kw{Add} constructor.
-This operation reassembles a flat list into a left nested addition tree. It is defined recursively as follows:
+The function \kw{sum} reconstructs a syntactic expression of type $\bb{G}$ from a list of atomic terms by folding them with the \kw{add} constructor.
+This operation reassembles a flat list into a right nested addition tree. It is defined recursively as follows:
 
 \begin{align*}
 &\kw{sum}~\Box \re \cst{0} \\
-&\kw{sum}~(x \colon\colon l) \re \add{x}{\kw{sum}(l)}
+&\kw{sum}~(x \colon\colon l) \re \Add{x}{\kw{sum}(l)}
 \end{align*}
 
 The function \kw{sort} takes a list of atomic expressions of type $\bb{G}$ and returns a normalized list in which:
@@ -1478,21 +1481,21 @@ The auxiliary function \kw{insert} maintains the sorting invariant and merges te
 \end{align*}
 
 
-\subsubsection{Normalization Correctness}
+\subsubsection{Correctness of Reified Normalization}
 
 Several helper lemmas establish the soundness of the normalization pipeline, by verifying that each transformation step preserves the semantic interpretation of the term.
-In the following we will not mention $\prf$ to lighter the notation.
+In the following, we omit the proof modality symbol $\prf$ to simplify the notation.
 
-The \cref{lem:no-add-inv} asserts that the list of atomic terms produced by the function \kw{aliens} contains no nested additions. This structural invariant is crucial for the correctness of subsequent normalization steps such as sorting and zero elimination, which assume a flat list of atomic expressions.
-To enforce this invariant, one defines a predicate \kw{isNotAdd} that holds only for atomic terms—namely constants and variables—and a recursive predicate \kw{no\_Add} over lists that ensures all elements satisfy \kw{isNotAdd}.
+The \cref{lem:no-add-inv} asserts that the list of atomic terms produced by the function \kw{aliens} contains no nested additions. This structural invariant is crucial for the correctness of subsequent normalization steps such as sorting and eliminating neutral element, which assume a flat list of atomic expressions.
+To enforce this invariant, one defines a predicate \kw{isNotAdd} that holds only for atomic terms, namely constants and variables, and a recursive predicate \kw{no\_Add} over lists that ensures all elements satisfy \kw{isNotAdd}.
 \begin{align*}
 &\kw{no\_Add}~\Box \re \top \\
 &\kw{no\_Add}~(g :: l) \re \kw{isNotAdd}(g) \land \kw{no\_Add}(l)
 \end{align*}
 with:
 \begin{align*}
-&\kw{isNotAdd}(\cst{k}) \re \top \\
-&\kw{isNotAdd}(\var{i}{k}) \re \top \\
+&\kw{isNotAdd} \cst{k} \re \top \\
+&\kw{isNotAdd} \var{i}{k} \re \top \\
 &\kw{isNotAdd}(\add{x}{y}) \re \bot
 \end{align*}
 
@@ -1502,7 +1505,7 @@ with:
 \begin{lemma}[No Add aliens invariant]\label{lem:no-add-inv}
 For any $(x: \bb{G})$
 \[
-  \prf (\kw{no\_Add}(\kw{aliens}(x)))
+    \kw{no\_Add}(\kw{aliens}(x))
 \]
 
 \begin{proof}
@@ -1528,9 +1531,9 @@ For any expression $x : \bb{G}$ and any environment $\ell$, flattening $x$ with 
 The \cref{lem:remove0-correct} guarantees that eliminating zero-valued constants and variables with zero coefficients from the list leaves the evaluation unchanged:
 
 \begin{lemma}[\tt{remove0\_correct}] \label{lem:remove0-correct}
-If a list $l$ contains no additions, then removing all neutral elements with \kw{remove0} does not affect its semantic value:
+If a list $l: \bb{L}~\kw{grp}$ contains no additions, then removing all neutral elements with \kw{remove0} does not affect its semantic value:
 \[
-  \kw{no\_Add}(l) \ra \den{\kw{sum}(\kw{remove0}(l)),\, \ell} = \den{\kw{sum}(l),\, \ell}.
+  \kw{no\_Add}(l) \ra (\den{\kw{sum}(\kw{remove0}(l)),\, \ell}) = (\den{\kw{sum}(l),\, \ell}).
 \]
 \begin{proof} add it \end{proof}
 \end{lemma}
@@ -1542,7 +1545,7 @@ This lemma is crucial for ensuring that two expressions with different syntactic
 \begin{lemma}[\tt{sort\_correct}] \label{lem:sort-correct}
 If a list $l$ of terms contains no nested additions, then sorting it with \kw{sort} preserves its denotation:
 \[
-  \kw{no\_Add}(l) \ra \den{\kw{sum}(\kw{sort}(l)),\, \ell} = \den{\kw{sum}(l),\, \ell}.
+  \kw{no\_Add}(l) \ra (\den{\kw{sum}(\kw{sort}(l)),\, \ell}) = (\den{\kw{sum}(l),\, \ell}).
 \]
 \begin{proof} add it \end{proof}
 \end{lemma}
@@ -1550,14 +1553,14 @@ If a list $l$ of terms contains no nested additions, then sorting it with \kw{so
 The lemma \cref{lem:insert-correct} ensures that inserting a new atomic term into a sorted list produces a denotation equal to the sum of the inserted term and the evaluation of the original list, again assuming the list contains no additions:
 
 \begin{lemma}[\texttt{insert\_correct}] \label{lem:insert-correct}
-If the list $g :: l$ contains no additions, then inserting $g$ into $l$ preserves denotation up to addition:
+If the list $g :: l$ contains no additions, then inserting $g$ into $l$ preserves denotation up to addition. So if $\kw{no\_Add}(g :: l)$ then
 \[
-  \kw{no\_Add}(g :: l) \ra \den{\kw{sum}(\kw{insert}(g, l)),\, \ell} = \den{g,\, \ell} + \den{\kw{sum}(l),\, \ell}.
+    (\den{\kw{sum}(\kw{insert}(g, l)),\, \ell}) = ((\den{g,\, \ell}) + \den{\kw{sum}(l),\, \ell}).
 \]
 \end{lemma}
 
 The main correctness \cref{theorem:norm-correct} ensures that the normalization procedure preserves the semantic meaning of a syntactic arithmetic expression.
-Specifically, the function \kw{norm}, which transforms an expression into a canonical form by flattening, sorting, and removing neutral elements, does not change its denotation.
+Specifically, the function \kw{norm}, which transforms an expression into a canonical form by flattening, sorting, and simplifying the expression, does not change its denotation.
 The theorem holds under the assumption that all variables occurring in the expression are bound within the given environment.
 
 \begin{theorem}[norm correct]\label{theorem:norm-correct}
@@ -1571,6 +1574,35 @@ then
 \]
 \begin{proof}add it\end{proof}
 \end{theorem}
+
+In addition, the correctness of reification is captured by the following \cref{thm:reify-correct}, which states that converting a ground-level integer expression into its syntactic representation and then evaluating it semantically recovers the original value.
+This ensures that \tt{reify} acts as a faithful bridge between the semantic and syntactic domains.
+
+\begin{theorem}[\tt{reify\_correct}]\label{thm:reify-correct}
+Let $x : \Z$ be an arithmetic expression. Then reifying $x$ yields a pair $(t, l)$ such that the denotation of $t$ under the context $l$ is equal to $x$ itself:
+\[
+  \den{\reify{x}} = x.
+\]
+\begin{proof} The proof is direct by structural induction on $x$. \end{proof}
+\end{theorem}
+
+
+\subsubsection{Application of outer normalisation}
+
+\lstinputlisting[language=Lambdapi,mathescape=true,label={lst:outer-recon-example},caption={Lambdapi proof of List. \ref{lst:smtexampleproof} with outer normalisation}]{Assets/outer_lia.lp}
+
+The normalisation of inequalities of steps 1-4 from $\kw{la\_generic}$ algorithm is done simmilarly than \cref{lst:inner-recon-example}.
+To conclude the proof using reflection, both $l$ and $r$ are reified using the $\reify{}$ function at line 20-21, yielding a pair consisting of a syntactic term and a list of variable values. 
+The correctness of this reification step is ensured by the \cref{thm:reify-correct} (\texttt{reify\_correct}).
+The lemma \texttt{eta\_prod} expresses the $\eta$-equivalence principle for dependent pairs. It states that any pair $x : a \times b$ is equal to the pair formed by projecting its first and second components:
+\[
+  x = (x_1,\, x_2) \text{with } {\_}_1 \text{ and } {\_}_2 \text{ left and right projection }
+\]
+This principle allows one to destruct a pair syntactically into its components while preserving definitional equality.
+In the context of reification, where a reified expression is represented as a pair $(t, \ell)$ of a $\bb{G}$-term and a context map, \texttt{eta\_prod} is used to explicitly access the components of the result of $\reify{x}$.
+Hence we can apply the \cref{theorem:norm-correct} (\texttt{norm\_correct}) at line 26.
+The final inequality is then reduced to a comparison between the normalized syntactic forms of $l$ and $r$, using the theorem \texttt{norm\_correct}, which guarantees that normalization preserves semantic equivalence.
+This enables the proof to conclude by purely syntactic comparison of the normalized forms, reducing $\den{[\reify{l}]} \geq \den{[\reify{r}]}$ to a contradiction.
 
 \section{Reconstruction of Linear Real Arithmetic}
 \label{sec:bv-reconstruction}
