@@ -54,6 +54,7 @@
 \usepackage{imakeidx}
 \usepackage{framed}
 \usepackage{xargs} % Use more than one optional parameter in a new commands
+% \usepackage{tlaps}
 
 %*******************************************************
 % My dev libraries
@@ -89,6 +90,7 @@
 % My config
 %*******************************************************
 \input{commands}
+\input{tlaps}
 \input{lst-cfg}
 
 \pgfplotsset{compat=1.8}
@@ -118,7 +120,6 @@
 
 \pagenumbering{roman}
 \pagestyle{plain}
-
 
 %*******************************************************
 % Frontmatter
@@ -156,6 +157,8 @@
 \part{The Showcase}
 
 \include{Chapters/reconstruction/reconstruction}
+
+\include{Chapters/tla}
 
 \include{Chapters/evaluation}
 

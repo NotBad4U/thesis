@@ -1,3 +1,71 @@
+% ======== SMT =======================================
+
+@inproceedings{verit,
+  author       = {Thomas Bouton and
+                  Diego Caminha Barbosa De Oliveira and
+                  David D{\'{e}}harbe and
+                  Pascal Fontaine},
+  editor       = {Renate A. Schmidt},
+  title        = {{veriT}: An Open, Trustable and Efficient {SMT}-Solver},
+  booktitle    = {22nd Intl. Conf. Automated Deduction (CADE-22)},
+  address      = {Montreal, Canada},
+  series       = {Lecture Notes in Computer Science},
+  volume       = {5663},
+  pages        = {151--156},
+  publisher    = {Springer},
+  year         = {2009},
+}
+
+@InProceedings{z3,
+author="de Moura, Leonardo
+and Bj{\o}rner, Nikolaj",
+editor="Ramakrishnan, C. R.
+and Rehof, Jakob",
+title="Z3: An Efficient SMT Solver",
+booktitle="Tools and Algorithms for the Construction and Analysis of Systems",
+year="2008",
+publisher="Springer Berlin Heidelberg",
+pages="337--340"
+}
+
+
+
+@inproceedings{cvc5,
+  author    = {Haniel Barbosa and
+               Clark W. Barrett and
+               Martin Brain and
+               Gereon Kremer and
+               Hanna Lachnitt and
+               Makai Mann and
+               Abdalrhman Mohamed and
+               Mudathir Mohamed and
+               Aina Niemetz and
+               Andres N{\"{o}}tzli and
+               Alex Ozdemir and
+               Mathias Preiner and
+               Andrew Reynolds and
+               Ying Sheng and
+               Cesare Tinelli and
+               Yoni Zohar},
+  editor    = {Dana Fisman and
+               Grigore Rosu},
+  title     = {cvc5: {A} Versatile and Industrial-Strength {SMT} Solver},
+  booktitle = {Tools and Algorithms for the Construction and Analysis of Systems
+               - 28th International Conference, {TACAS} 2022, Held as Part of the
+               European Joint Conferences on Theory and Practice of Software, {ETAPS}
+               2022, Munich, Germany, April 2-7, 2022, Proceedings, Part {I}},
+  series    = {Lecture Notes in Computer Science},
+  volume    = {13243},
+  pages     = {415--442},
+  publisher = {Springer},
+  year      = {2022},
+  url       = {https://doi.org/10.1007/978-3-030-99524-9\_24},
+  doi       = {10.1007/978-3-030-99524-9\_24},
+  timestamp = {Fri, 01 Apr 2022 15:49:27 +0200},
+  biburl    = {https://dblp.org/rec/conf/tacas/BarbosaBBKLMMMN22.bib},
+  bibsource = {dblp computer science bibliography, https://dblp.org},
+}
+
 @INPROCEEDINGS{carcara,
 author = {Andreotti, Bruno and Lachnitt, Hanna and Barbosa, Haniel},
 title = {Carcara: An Efficient Proof Checker and Elaborator for {SMT} Proofs in the {Alethe} Format},
@@ -29,6 +97,9 @@ address="Cham",
 
 }
 
+
+% ======== Lambdapi =======================================
+
 @article{utheory,
   TITLE = {{A modular construction of type theories}},
   AUTHOR = {Frédéric Blanqui and Gilles Dowek and Emilie Grienenberger and Gabriel Hondet and François Thiré},
@@ -38,63 +109,6 @@ address="Cham",
   YEAR = {2023},
 }
 
-@InCollection{allocator,
-  author = 	 {Stephan Merz},
-  title = 	 {The Specification Language {TLA}\textsuperscript{+}},
-  booktitle = 	 {Logics of Specification Languages},
-  pages = 	 {401--451},
-  publisher = {Springer},
-  year = 	 2008,
-  editor = 	 {Dines Bjørner and Martin C. Henson},
-  series = 	 {Monographs in Theoretical Computer Science},
-  address = 	 {Berlin-Heidelberg}
-}
-
-@misc{ewd840,
-  author =   {Stephan Merz},
-  title =    {Termination detection in a ring},
-  howpublished = {\url{https://github.com/tlaplus/Examples/tree/master/specifications/ewd840}}
-}
-
-@inproceedings{smttlaps,
-  author       = {Stephan Merz and 
-                  Hern{\'{a}}n Vanzetto},
-  title        = {Automatic Verification of {TLA}\textsuperscript{+} Proof Obligations with {SMT} Solvers},
-  booktitle    = {18th Intl. Conf. Logic for Programming, Artificial Intelligence, and Reasoning},
-  series       = {LNCS},
-  volume       = {7180},
-  pages        = {289--303},
-  publisher    = {Springer},
-  year         = {2012},
-  address =   {M{\'{e}}rida, Venezuela},
-}
-
-@InProceedings{tla-proofs,
-  author =       {Denis Cousineau and Damien Doligez and Leslie Lamport and Stephan Merz and Daniel Ricketts and Hern{\'a}n Vanzetto},
-  title = {{TLA}\textsuperscript{+} Proofs},
-  booktitle = {18th Intl. Symp. Formal Methods (FM 2012)},
-  editor = {Dimitra Giannakopoulou and Dominique M{\'e}ry},
-  year =      2012,
-  volume =    {7436},
-  series =    {LNCS},
-  publisher = {Springer},
-  pages = {`47-154},
-  address = {Paris, France},
-}
-
-@inproceedings{smtcoq,
-  TITLE = {{A Modular Integration of SAT/SMT Solvers to Coq through Proof Witnesses}},
-  AUTHOR = {Armand, Micha{\"e}l and Faure, Germain and Gr{\'e}goire, Benjamin and Keller, Chantal and Thery, Laurent and Werner, Benjamin},
-  BOOKTITLE = {First Intl. Conf. Certified Programs and Proofs (CPP 2011)},
-  year = {2011},
-  EDITOR = {Jouannaud and Jean-Pierre and Shao and Zhong},
-address = {Lenting, Taiwan},
-  PUBLISHER = {Springer},
-  SERIES = {LNCS},
-  VOLUME = {7086},
-pages = {135-150},
-  DOI = {10.1007/978-3-642-25379-9\_12},
-}
 
 @misc{alethespec,
 	title = {The {Alethe} {Proof} {Format} {An} {Evolving} {Specification} and {Reference}},
@@ -165,17 +179,7 @@ pages="102--117",
   doi          = {10.1016/J.SCICO.2017.09.004},
 }
 
-@inproceedings{ABZrosalie,
-  author       = {Rosalie Defourn{\'{e}}},
-  title        = {Encoding {TLA}\textsuperscript{+} Proof Obligations Safely for {SMT}},
-  booktitle    = {9th Intl. Conf. Rigorous State-Based Methods (ABZ 2023)},
-  address      = {Nancy, France},
-  series       = {LNCS},
-  volume       = {14010},
-  pages        = {88--106},
-  publisher    = {Springer},
-  year         = {2023},
-}
+
 
 
 @inproceedings{coqhammer2,
@@ -465,21 +469,6 @@ address="Berlin, Heidelberg",
   url = { https://apps.dtic.mil/sti/tr/pdf/ADA087641.pdf }
 }
 
-@inproceedings{bouton:verit,
-  author       = {Thomas Bouton and
-                  Diego Caminha Barbosa De Oliveira and
-                  David D{\'{e}}harbe and
-                  Pascal Fontaine},
-  editor       = {Renate A. Schmidt},
-  title        = {{veriT}: An Open, Trustable and Efficient {SMT}-Solver},
-  booktitle    = {22nd Intl. Conf. Automated Deduction (CADE-22)},
-  address      = {Montreal, Canada},
-  series       = {Lecture Notes in Computer Science},
-  volume       = {5663},
-  pages        = {151--156},
-  publisher    = {Springer},
-  year         = {2009},
-}
 
 @book{Baader_Nipkow_1998,
   place = {Cambridge},
@@ -794,4 +783,173 @@ pages="489--495",
                        without changing them.}},
       publisher    = {Zenodo},
       url          = {https://doi.org/10.5281/zenodo.15071920}
+}
+
+
+
+% ======== TLA+ =======================================
+
+@inproceedings{new-encoding-tlaps,
+  TITLE = {{Encoding TLA$^{+}$ Proof Obligations Safely for SMT}},
+  AUTHOR = {Defourn{\'e}, Rosalie},
+  BOOKTITLE = {{Lecture Notes in Computer Science}},
+  ADDRESS = {Nancy, France},
+  PUBLISHER = {{Springer Nature Switzerland}},
+  SERIES = {Lecture Notes in Computer Science},
+  VOLUME = {14010},
+  PAGES = {88-106},
+  YEAR = {2023},
+  MONTH = May
+}
+
+@book{tlabook,
+  author = {Lamport, Leslie},
+  title = {Specifying Systems: The TLA+ Language and Tools for Hardware and Software Engineers},
+  year = {2002},
+  isbn = {032114306X},
+  publisher = {Addison-Wesley Longman Publishing Co., Inc.},
+  address = {USA},
+}
+
+@article{tla-ref,
+  author = {Lamport, Leslie},
+  title = {The temporal logic of actions},
+  year = {1994},
+  issue_date = {May 1994},
+  publisher = {Association for Computing Machinery},
+  address = {New York, NY, USA},
+  volume = {16},
+  number = {3},
+  issn = {0164-0925},
+  journal = {ACM Trans. Program. Lang. Syst.},
+  month = may,
+  pages = {872–923},
+  numpages = {52}
+}
+
+@InCollection{allocator,
+  author = 	 {Stephan Merz},
+  title = 	 {The Specification Language {TLA}\textsuperscript{+}},
+  booktitle = 	 {Logics of Specification Languages},
+  pages = 	 {401--451},
+  publisher = {Springer},
+  year = 	 2008,
+  editor = 	 {Dines Bjørner and Martin C. Henson},
+  series = 	 {Monographs in Theoretical Computer Science},
+  address = 	 {Berlin-Heidelberg}
+}
+
+@misc{ewd840,
+  author =   {Stephan Merz},
+  title =    {Termination detection in a ring},
+  howpublished = {\url{https://github.com/tlaplus/Examples/tree/master/specifications/ewd840}}
+}
+
+@inproceedings{smttlaps,
+  author       = {Stephan Merz and 
+                  Hern{\'{a}}n Vanzetto},
+  title        = {Automatic Verification of {TLA}\textsuperscript{+} Proof Obligations with {SMT} Solvers},
+  booktitle    = {18th Intl. Conf. Logic for Programming, Artificial Intelligence, and Reasoning},
+  series       = {LNCS},
+  volume       = {7180},
+  pages        = {289--303},
+  publisher    = {Springer},
+  year         = {2012},
+  address =   {M{\'{e}}rida, Venezuela},
+}
+
+@InProceedings{tla-proofs,
+  author =       {Denis Cousineau and Damien Doligez and Leslie Lamport and Stephan Merz and Daniel Ricketts and Hern{\'a}n Vanzetto},
+  title = {{TLA}\textsuperscript{+} Proofs},
+  booktitle = {18th Intl. Symp. Formal Methods (FM 2012)},
+  editor = {Dimitra Giannakopoulou and Dominique M{\'e}ry},
+  year =      2012,
+  volume =    {7436},
+  series =    {LNCS},
+  publisher = {Springer},
+  pages = {`47-154},
+  address = {Paris, France},
+}
+
+% ======== Misc =======================================
+
+@book{isabelle-hol-ref,
+  author = {Nipkow, Tobias and Wenzel, Markus and Paulson, Lawrence C.},
+  title = {Isabelle/HOL: a proof assistant for higher-order logic},
+  year = {2002},
+  isbn = {3540433767},
+  publisher = {Springer-Verlag},
+  address = {Berlin, Heidelberg}
+}
+
+@inproceedings{smtcoq,
+  TITLE = {{A Modular Integration of SAT/SMT Solvers to Coq through Proof Witnesses}},
+  AUTHOR = {Armand, Micha{\"e}l and Faure, Germain and Gr{\'e}goire, Benjamin and Keller, Chantal and Thery, Laurent and Werner, Benjamin},
+  BOOKTITLE = {First Intl. Conf. Certified Programs and Proofs (CPP 2011)},
+  year = {2011},
+  EDITOR = {Jouannaud and Jean-Pierre and Shao and Zhong},
+address = {Lenting, Taiwan},
+  PUBLISHER = {Springer},
+  SERIES = {LNCS},
+  VOLUME = {7086},
+pages = {135-150},
+  DOI = {10.1007/978-3-642-25379-9\_12},
+}
+
+@inproceedings{eventb2lp,
+  author       = {Anne Grieu},
+  editor       = {Silvia Bonfanti and
+                  Angelo Gargantini and
+                  Michael Leuschel and
+                  Elvinia Riccobene and
+                  Patrizia Scandurra},
+  title        = {From Event-B to Lambdapi},
+  booktitle    = {Rigorous State-Based Methods - 10th International Conference, {ABZ}
+                  2024, Bergamo, Italy, June 25-28, 2024, Proceedings},
+  series       = {Lecture Notes in Computer Science},
+  volume       = {14759},
+  pages        = {387--391},
+  publisher    = {Springer},
+  year         = {2024}
+}
+
+@inproceedings{desko,
+  AUTHOR = {Rosain, Johann and Bonichon, Richard and Cailler, Julie and Hermant, Olivier},
+  TITLE = {{A Generic Deskolemization Strategy}},
+  BOOKTITLE = {{Proceedings of 25th Conference on Logic for Programming, Artificial Intelligence and Reasoning}},
+  VOLUME = {100},
+  PAGES = {246-263},
+  YEAR = {2024},
+  MONTH = May,
+}
+
+@inproceedings{parametricity-lp,
+  TITLE = {{Proofs for Free in the $\lambda$$\Pi$-Calculus Modulo Theory}},
+  AUTHOR = {Traversi{\'e}, Thomas},
+  BOOKTITLE = {{Electronic Proceedings in Theoretical Computer Science}},
+  ADDRESS = {Tallinn, Estonia},
+  VOLUME = {404},
+  PAGES = {49 - 63},
+  YEAR = {2024},
+  MONTH = Jul,
+}
+
+@inproceedings{theorem-for-free,
+author = {Wadler, Philip},
+title = {Theorems for free!},
+year = {1989},
+isbn = {0897913280},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+booktitle = {Proceedings of the Fourth International Conference on Functional Programming Languages and Computer Architecture},
+pages = {347–359},
+numpages = {13},
+series = {FPCA '89}
+}
+
+@inproceedings{parametricity,
+  title={Types, Abstraction and Parametric Polymorphism},
+  author={John C. Reynolds},
+  booktitle={IFIP Congress},
+  year={1983},
 }
