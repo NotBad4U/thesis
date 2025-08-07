@@ -1,0 +1,662 @@
+%*****************************************
+\chapter{Reconstructing Linear Arithmetic proofs}\label{ch:reconstruction-la}
+%*****************************************
+
+
+\section{Reconstruction of Linear Integer Arithmetic}
+\label{sec:lia-reconstruction}
+
+\todo{Review also this section when Rational will be introduce. Maybe LRA will be introduce before LIA if LA is finished and well tested.}
+
+In this section, we address the challenge of reconstructing the rule $\kw{la\_generic}$, as detailed in \cref{sssect:la-in-alethe} when it is use in \textbf{LIA} logic.
+This rule corresponds to a proof step in which a set of linear inequalities is shown to be contradictory such as — that is, it leads to $\bot$ (falsehood).
+The Alethe specification guaranteed that the contradiction has to reduce to a normal form: $0 \bowtie k$ where $k$ is constant with $k > 0$, and $\bowtie \in \{ \geq, > \}$.
+
+\smallskip
+
+\begin{lstlisting}[language=SMT]
+(step t11 (cl (not (<= f 0)) (<= (+ 1 (* 4 f)) 1))
+  :rule la_generic :args (1/1 1/4))
+\end{lstlisting} 
+
+\smallskip
+
+Unlike most of the other arithmetic rules described in \cref{table:linear-arith-rules}, reconstructing $\kw{la\_generic}$ poses a distinct challenge.
+It often requires reasoning about algebraic identities that hold modulo the axioms of algebraic structures such as groups.
+These identities are typically derived through elementary combinations of canonical equalities. Other rules are just encoded as regular lemma
+following the previous method we described in previous sections.
+
+We reconstruct steps using the $\kw{la\_generic}$ rule through a second-kind proof by reflection.
+The goal is to implement an automated procedure that computes the final sum of inequalities, as described in the Alethe algorithm, by combining implicit rewriting steps to normalize and simplify expressions.
+Our approach relies on a normalization function along with a proof of its correctness.
+In this work, we support two proof-generation strategies. The first uses \lpinline{associative commutative} modifiers to normalize terms directly within the Lambdapi kernel.
+This makes the approach efficient but relies on a meta-level correctness argument for normalization.
+The second encodes the normalization function in Lambdapi and performs symbolic execution to compute the result. While slower, this method provides a fully internal correctness proof within Lambdapi.
+We will denote the first strategy as the \emph{inner normalization} and the second strategy as the \emph{outer normalization}.
+
+\section{General scheme of the reflective reconstruction}
+
+The procedure operates on a group structure $\bb{G}$ that will differ between two strategy. It includes a base type for its elements and constructors to reflect $\Z$, together with the usual axioms defining a
+commutative group structure. The goal is to prove the contradiction of an inequality between two terms $g1 \bowtie g2$  of type $\bb{G}$ modulo the group axioms.
+Working by reflection means that we build a semi decision procedure, which will take $t1$ and $t2$ of type $\bb{Z}$ as arguments and compare them (i.e. returns a term of type $\kw{Comp}$ ) modulo associative-commutative rewriting in the group structure.
+
+Once we have built the two $\bb{G}$, $g1$ and $g2$ with a reification $\reify{()}$, corresponding to $t1$ and $t2$,
+the idea is to check the equality of the normal forms of $g1$ and $g2$ denoted by the function $[\_]$ and to prove
+that this implies the same comparison of $t1$ and $t2$ in $\Z$ through a denotation function $\den{()}$. For this purpose, we should ensure the correctness of the following diagram:
+
+\begin{center}
+% % https://q.uiver.app/#q=WzAsOCxbMSwyLCJcXGJ1bGxldCJdLFsxLDAsIlxcYnVsbGV0Il0sWzMsMiwiXFxidWxsZXQiXSxbMywwLCJcXGJ1bGxldCJdLFswLDIsInRfMSA9X1xcbWF0aGJie1p9IHRfMiJdLFswLDAsIlxcRG93bmFycm93KFxcVXBhcnJvdyh0XzEpKSA9X1xcbWF0aGJie1p9IFxcRG93bmFycm93KFxcVXBhcnJvdyh0XzIpKSJdLFs0LDAsIlxcRG93bmFycm93KFtnXzFdKSA9X1xcbWF0aGJie1p9IFxcRG93bmFycm93KFtnXzJdKSJdLFs0LDIsImdfMSA9X1xcbWF0aGJie1p9IGdfMiJdLFswLDEsIlxcRG93bmFycm93KFxcVXBhcnJvdyhcXF8pKSJdLFswLDIsIlxcaWZmIiwxLHsic3R5bGUiOnsiYm9keSI6eyJuYW1lIjoiZG90dGVkIn0sImhlYWQiOnsibmFtZSI6Im5vbmUifX19XSxbMSwzLCJbXFxfXSIsMCx7InN0eWxlIjp7ImJvZHkiOnsibmFtZSI6ImRhc2hlZCJ9fX1dLFszLDIsIlxcRG93bmFycm93KFxcXykiXSxbMSwyLCIiLDAseyJzdHlsZSI6eyJuYW1lIjoiY29ybmVyIn19XV0=
+\(\begin{tikzcd}[ampersand replacement=\&,column sep=small]
+	{\Uparrow(t_1) \bowtie_\bb{G} (\Uparrow(t_2)} \& \bb{G} \&\& \bb{G} \& {[g_1] \bowtie_\bb{G} [g_2]} \\
+	\\
+	{t_1 \bowtie_\Z t_2} \& \Z \&\& \Z \& {(\den{[g_1]}) \bowtie_\Z (\den{[g_2]}}
+	\arrow["{[\_]}", dashed, from=1-2, to=1-4]
+	\arrow["\lrcorner"{anchor=center, pos=0.125}, draw=none, from=1-2, to=3-4]
+	\arrow["{\Downarrow(\_)}", from=1-4, to=3-4]
+	\arrow["{\Uparrow(\_)}", from=3-2, to=1-2]
+	\arrow["\iff"{description}, dotted, no head, from=3-2, to=3-4]
+\end{tikzcd}\)
+with $\bowtie \in \{ \geq, > \}$.
+\end{center}
+
+\section{Reflection with inner normalization}
+
+We start by presenting the first strategy based on a reflection with inner normalization.
+
+\subsection{Representation of integers}
+\label{ssec:representation}
+
+\begin{figure}
+\begin{align*}
+& \bb{G}: \type \\
+&|~\add{}{}: \bb{G} \ra \bb{G} \ra \bb{G} \\
+&|~\tt{var}: \Z \ra \Z \ra \bb{G} \\
+&|~\tt{mul}: \Z \ra \bb{G} \ra \bb{G} \\
+&|~\tt{opp}: \bb{G} \ra \bb{G} \\
+&|~\tt{cst}: \Z \ra \bb{G} \\
+&\tt{grp}: \set \\
+&\el~\tt{grp} \re \bb{G}
+\end{align*}
+
+\begin{align*}
+& \reify{} : \Z \ra \bb{G} & & \den{}: \bb{G} \ra \Z \\
+& \reify{\ZO} \re \cst{\ZO} & & \den{\cst{c}} \re c \\
+& \mathop{\reify{\ZPos}} c \re \cst{(\ZPos c)} & & \den{\opp{x}} \mathrel{\re}  \mathop{\sim (\den{x})} \\
+& \mathop{\reify{\ZNeg}} c \re \cst{(\ZNeg c)} & & \den{\mul{c}{x}} \re  c \times (\den{x}) \\
+& \reify{(x + y)} \re \add{(\reify{x})}{(\reify{y})} & & \den{\add{x}{y}} \re (\den{x}) + (\den{y}) \\
+& \reify{(\sim x)} \re \opp{\reify{x}} & & \den{\var{c}{x}} \re  c \times x \\
+& \mathop{\reify{((\mathop{\ZPos} c) * x})} \re \mul{c}{(\reify{x})} & & \\
+& \mathop{\reify{((\mathop{\ZNeg} c) * x)}} \re \mul{c}{(\reify{x})} & & \\
+& \mathop{\reify{(x * (\mathop{\ZPos} c))}} \re \mul{c}{(\reify{x})} & & \\
+& \mathop{\reify{(x * (\mathop{\ZNeg} c))}} \re \mul{c}{(\reify{x})} & & \\
+& \mathop{\reify{x}} \re \var{1}{x} & &
+\end{align*}
+\caption{Definition of $\bb{G}$ Algebra and its reification ($\reify{}$) and denotation ($\den{}$) functions.}
+\label{fig:grp}
+\end{figure}
+
+The procedure is based on an algebraic group structure, denoted as  $\bb{G}$ defined in \cref{fig:grp}, which represents linear polynomials.
+The base type for its elements is $\bb{G}: \type$. The unary operator $\tt{cst}$ injects constants from $\Z$ into $\bb{G}$.
+The term $\tt{var}~c~x$ is intended for representing expressions $c \times x$ that appear as constituents of linear inequalities, where $c$ is an integer coefficient and $x$ a $\Z$ term, in particular a variable.
+The constructor $\tt{mul}$  represents the multiplication of an element of $\bb{G}$ by a constant. The constructor $\tt{opp}$ corresponds to unary minus.
+Lastly, the constructor $\add{}{}$ represents the addition between two elements of $\bb{G}$ and it has the \lpinline{associative commutative} modifiers.
+
+\subsection{Associative Commutative Inner Normalization}
+\label{ssec:normalization}
+
+\begin{figure}[t]
+\begin{align}
+&\add{\var{c_1}{x}}{\var{c_2}{x}} \re \var{(c_1 + c_2)}{x} \\
+&\add{\var{c_1}{x}}{(\add{\var{c_2}{x}}{y})} \re \add{\var{(c_1 + c_2)}{x}}{y} \\
+&\add{\cst{c_1}}{\cst{c_2}} \re \cst{c_1 + c_2} \\
+&\add{\cst{c_1}}{(\add{\cst{c_2}}{y})} \re \add{\cst{c_1 + c_2}}{y} \\
+&\add{\cst{0}}{x} \re x \\
+&\add{x}{\cst{0}} \re x \\
+&\opp{\var{c}{x}} \re \var{(-c)}{x} \\
+&\opp{\cst{c}} \re \cst{(-c)} \\
+&\opp{(\opp{x})} \re x \\
+&\opp{(\add{x}{y})} \re \add{(\opp{x})}{(\opp{y})} \\
+&\opp{(\mul{k}{x})} \re \mul{(-k)}{x} \\
+&\mul{k}{\var{c}{x}} \re \var{(k * c)}{x} \\
+&\mul{k}{(\opp{x})} \re \mul{(-k)}{x} \\
+&\mul{k}{(\add{x}{y})} \re \add{(\mul{k}{x})}{(\mul{k}{y})} \\
+&\mul{k}{\cst{c}} \re \cst{(k * c)} \\
+&\mul{c_1}{(\mul{c_2}{x})} \re \mul{(c_1 * c_2)}{x}
+\end{align}
+\caption{Rewrite system on canonical forms.}
+\label{fig:grp-rw}
+\end{figure}
+
+The transformation to canonical form implemented in Lambdapi ensures that sum expressions of the form $\var{c_1}{x_1} \oplus \cst{k_1} \oplus \var{c_2}{x_2} \oplus \dots \oplus \cst{k_m} \oplus \dots \oplus \var{c_n}{x_n}$
+will be normalized such that any pair of terms $\var{p}{x}$ and $\var{q}{x}$ involving the same variable $x$ are placed next to each other,
+and all $\cst{k_i}$ will be placed at the left before the first variable $\var{c_j}{x_j}$.
+
+\begin{example}
+Consider the term below not in normal form:
+\begin{small}
+\[ \var{c_1}{x} \oplus \cst{k_1} \oplus \var{c_2}{y} \oplus \cst{k_m} \oplus \var{c_3}{x} \oplus \var{c_4}{y} \]  
+\end{small}
+
+We would like to have this normal form to reduce after the term:
+\begin{small}
+\[ \cst{k_1} \oplus \cst{k_2} \oplus \var{c_1}{x}  \oplus \var{c_3}{x} \oplus \var{c_2}{y} \oplus \var{c_4}{y} \]  
+\end{small}
+\end{example}
+
+We will use the rewriting rules shown in \cref{fig:grp-rw} for reducing $\bb{G}$ expressions. Notably, the resulting normal forms do not contain the constructors $\tt{mul}$ and $\tt{opp}$, as the associated rewrite rules eliminate them in favor of $\tt{var}, \tt{add}$ and $\tt{cst}$.
+
+\begin{definition}%[AC-canonical form]
+The $\leq$ builtin total order on $\bb{G}$-terms is defined as follows:
+Terms are ordered such that $\tt{cst}(c_1) \leq \tt{cst}(c_2) < \var{p}{x}$ for any constants $c_1, c_2$ and any variable term $\var{p}{x}$, with $c_1 \leq c_2$.
+For variable terms, $\var{p}{x} \leq \var{q}{y}$ if either $x < y$, or $x = y$ and $p \leq q$.
+Let $\twoheadrightarrow^{AC}$ be the relation mapping every term t to its unique AC-canonical form denoted $[t]$.
+\end{definition}
+
+Two terms $t$ and $u$ are AC-equivalent (written $t \simeq_{AC} u$) iff their AC-canonical forms are equal.
+
+\begin{definition}%[Rewriting modulo AC-canonization]
+The relation $\ACcanon$ is defined as $\re_\Sigma\,\twoheadrightarrow^{AC}$, where $\Sigma$ contains the rewrite rules of \cref{fig:arith-ops,fig:grp-rw}. 
+\end{definition}
+
+An $\ACcanon$ step is a standard $\re_\Sigma$ step with syntactic matching followed by AC-canonicalization. We now prove that the relation $\ACcanon$ terminates and is confluent.
+
+\begin{lemma} 
+	The relation $\mathop{\rwModAC} \mathrel{=} \mathop{\simeq_{AC} \, \re_\Sigma \, \simeq_{AC}}$ of matching modulo AC, which contains $\ACcanon$, terminates.
+\end{lemma}
+\begin{proof} 
+AProVE \cite{aprove} proves the termination of $\rwModAC$. 
+\end{proof}
+
+
+\begin{lemma} 
+	$\ACcanon$ is locally confluent on AC-canonical terms.
+\end{lemma}
+\begin{proof}
+We show that every critical pair is joinable using $\ACcanon$ and confluence of $\ra_\Z$ and $\ra_\bb{P}$ from \cref{lemma:confluenceZP}.
+We use the notation $\MRAC$ to denote a multistep rewriting with AC-canonical form.
+
+% t ≔ opp (add (var $k $x) (var $c $x))
+% t ↪[] add (opp (var $k $x)) (opp (var $c $x)) ↪* var (— $k + — $c) $x
+%   with opp (add $x' $y') ↪ add (opp $0') (opp $1')
+% t ↪[1] opp (var ($0 + $2) $1) ↪* var (— ($0 + $2)) $1
+%   with add (var $k $x) (var $c $x) ↪ var ($0 + $2) $1
+\begin{center}
+\cp
+{
+  \opp{(\underline{\var{c_1}{x} \oplus \var{c_2}{x}})}
+}
+{
+  \opp{\var{c_1}{x}} \oplus \opp{\var{c_2}{x}}
+}
+{
+  \opp{\var{(c_1 + c_2)}{x}}
+}
+{11}{2}
+\end{center}
+
+But $\opp{\var{c_1}{x}} \oplus \opp{\var{c_2}{x}} \MRAC \var{(\sim c_1 + \sim c_2)}{x}$
+and $\opp{\var{(c_1 + c_2)}{x}} \MRAC \var{\sim (c_1 + c_2)}{x}$ converge by the confluence of $\ra_\Z$.
+
+% t ≔ opp (add (var $k $x) (add (var $l $x) $y))
+% t ↪[] add (opp (var $k $x)) (opp (add (var $l $x) $y)) ↪* add (var (— $k + — $l) $x) (opp $y)
+%   with opp (add $x' $y') ↪ add (opp $0') (opp $1')
+% t ↪[1] opp (add (var ($0 + $2) $1) $3) ↪* add (var (— ($0 + $2)) $1) (opp $3)
+%   with add (var $k $x) (add (var $l $x) $y) ↪ add (var ($0 + $2) $1) $3
+\cp
+{
+  \opp{\underline{(\var{c_1}{x} \oplus (\var{c_2}{x} \oplus y))}}
+}
+{
+  \opp{\var{c_1}{x}} \oplus \opp{(\var{c_2}{x} \oplus y)}
+}
+{
+  \opp{\var{(c_1 + c_2)}{x} \oplus y)}
+}
+{11}{3}
+
+We note that $\opp{\var{c_1}{x}} \oplus \opp{(\var{c_2}{x} \oplus y)} \MRAC \add{\var{(\sim c_1 + \sim c_2)}{x}}{(\opp{y})}$
+and $\opp{\var{(c_1 + c_2)}{x} \oplus y} \MRAC \add{\var{(\sim (c_1 + c_2))}{x}}{(\opp{y})}$
+both reduce to the same term, as guaranteed by the confluence of $\ra_\Z$.
+
+% t ≔ opp (add (cst $k) (cst $l))
+% t ↪[] add (opp (cst $k)) (opp (cst $l)) ↪* cst (— $k + — $l)
+%   with opp (add $x' $y') ↪ add (opp $0') (opp $1')
+% t ↪[1] opp (cst ($0 + $1)) ↪* cst (— ($0 + $1))
+%   with add (cst $k) (cst $l) ↪ cst ($0 + $1)
+\cp{
+  \opp{(\underline{\cst{c_1} \oplus \cst{c_2}})}
+}
+{
+  \opp{\cst{c_1}} \oplus \opp{\cst{c_2}}
+}
+{
+  \opp{\cst{(c_1 + c_2)}}
+}
+{11}{4}
+
+We observe that $\opp{\cst{c_1}} \oplus \opp{\cst{c_2}} \MRAC \cst{(\sim c_1) + (\sim c_2)}$
+and $\opp{\cst{(c_1 + c_2)}} \MRAC \cst{\sim (c_1 + c_2)}$ reduce to the same result due to the confluence of $\ra_\Z$.
+
+
+% t ≔ opp (add (cst $k) (add (cst $l) $y))
+% t ↪[] add (opp (cst $k)) (opp (add (cst $l) $y)) ↪* add (cst (— $k + — $l)) (opp $y)
+%   with opp (add $x' $y') ↪ add (opp $0') (opp $1')
+% t ↪[1] opp (add (cst ($0 + $1)) $2) ↪* add (cst (— ($0 + $1))) (opp $2)
+%   with add (cst $k) (add (cst $l) $y) ↪ add (cst ($0 + $1)) $2
+\cp
+{
+  \opp{(\underline{\cst{c_1} \oplus (\cst{c_2} \oplus y)})}
+}
+{
+  \opp{\cst{c_1}} \oplus \opp{(\cst{c_2} \oplus y)}
+}
+{
+  \opp{(\cst{c_1 + c_2} \oplus y)}
+}
+{11}{5}
+
+The expressions $\opp{\cst{c_1}} \oplus \opp{(\cst{c_2} \oplus y)} \MRAC \cst{(\sim c_1) + (\sim c_2)} \oplus \opp{y}$
+and $ \opp{(\cst{c_1 + c_2} \oplus y)} \MRAC \add{ \cst{\sim (c_1 + c_2)} }{\opp{y}}$
+both reduce to a common term, which follows from the confluence property of $\ra_\Z$.
+
+% t ≔ add (var $k' $x) (add (var $k $x) (add (var $l $x) $y))
+% t ↪[] add (var ($0' + $k) $x) (add (var $l $x) $y) ↪* add (var (($0' + $k) + $l) $x) $y
+%   with add (var $k' $x') (add (var $l' $x') $y') ↪ add (var ($0' + $2') $1') $3'
+% t ↪[1] add (var $k' $x) (add (var ($0 + $2) $1) $3) ↪* add (var ($k' + ($0 + $2)) $x) $3
+%   with add (var $k $x) (add (var $l $x) $y) ↪ add (var ($0 + $2) $1) $3
+
+\cp
+{
+  \var{c_1}{x} \oplus \underline{(\var{c_2}{x} \oplus (\var{c_3}{x} \oplus y))}
+}
+{
+  \var{(c_1 + c_2)}{x} \oplus ((\var{c_3}{x} \oplus y))
+}
+{
+  \var{c_1}{x} \oplus (\var{(c_2 + c_3)}{x} \oplus y))
+}{3}{3}
+
+The terms $\var{(c_1 + c_2)}{x} \oplus ((\var{c_3}{x} \oplus y)) \MRAC \add{\var{(c_1 + (c_2 + c_3))}{x}}{y}$
+and $\var{c_1}{x} \oplus (\var{(c_2 + c_3)}{x} \oplus y)) \MRAC \add{\var{((c_1 + c_2) + c_3)}{x}}{y}$
+both reduce to the same result due to the confluence of $\ra_\Z$.
+
+% t ≔ add (cst $k') (add (cst $k) (add (cst $l) $y))
+% t ↪[] add (cst ($0' + $k)) (add (cst $l) $y) ↪* add (cst (($0' + $k) + $l)) $y
+%   with add (cst $k') (add (cst $l') $y') ↪ add (cst ($0' + $1')) $2'
+% t ↪[1] add (cst $k') (add (cst ($0 + $1)) $2) ↪* add (cst ($k' + ($0 + $1))) $2
+%   with add (cst $k) (add (cst $l) $y) ↪ add (cst ($0 + $1)) $2
+
+\cp
+{\cst{c_1} \oplus \underline{(\cst{c_2} \oplus (\cst{c_3} \oplus y))}}
+{\cst{(c_1 + c_2)} \oplus (\cst{c_3} \oplus y) }
+{\cst{c_1} \oplus (\cst{(c_2 + c_3)} \oplus y) }
+{5}{5}
+
+We observe that $\cst{c_1 + c_2} \oplus (\cst{c_3} \oplus y) \MRAC \add{\cst{((c_1 + c_2) + c_3)}}{y}$
+and $\cst{c_1} \oplus (\cst{(c_2 + c_3)} \oplus y) \MRAC \add{\cst{(c_1 + (c_2 + c_3)}}{y}$
+both reduce to the same expression due to the confluence property of $\ra_\Z$.
+
+% t ≔ mul $k' (mul $k (mul $l $z))
+% t ↪[] mul ($0' * $k) (mul $l $z) ↪* mul (($0' * $k) * $l) $z
+%   with mul $k' (mul $l' $z') ↪ mul ($0' * $1') $2'
+% t ↪[1] mul $k' (mul ($0 * $1) $2) ↪* mul ($k' * ($0 * $1)) $2
+%   with mul $k (mul $l $z) ↪ mul ($0 * $1) $2
+\cp
+{ \mul{c_1}{\underline{(\mul{c_2}{(\mul{c_3}{z})})}} } 
+{ \mul{(c_1)}{ (\mul{(c_2 * c_3)}{z}) } }
+{ \mul{(c_1 * c_2)}{(\mul{c_3}{z}})} 
+{16}{16}
+
+Finally, we have $\mul{(c_1)}{(\mul{(c_2 * l)}{z})} \MRAC \mul{((c_1 * c_2) * c_3)}{z})$
+and $\mul{(c_1 * c_2)}{(\mul{c_3}{z}}) \MRAC \mul{(c_1 * (c_2 * c_3))}{z})$ that converge by the confluence of $\ra_\Z$.
+
+\end{proof}
+
+We compare two $\Z$-terms $t_1$ and $t_2$ wrt $\ACcanon$ by reifying them into their corresponding $\bb{G}$-terms, denoted $[g_1]$ and $[g_2]$, using the reification function $\reify{}$,
+and normalizing them using $\twoheadrightarrow^{AC}$. Following the reduction rules specified in \cref{fig:grp-rw}, we can then compare their corresponding $\Z$-terms by applying the denotation function $\den{}$.
+To validate this procedure, it is necessary to establish the correctness of the following diagram, formally expressed by \cref{thm:normalization}.
+
+
+\begin{theorem}[Correctness of normalization]\label{thm:normalization}
+For all $\bb{G}$-terms $t$, we have $(\den{[t]}) = (\den{t})$ where $[t]$ is the AC-canonical form of $t$ with respect to $\longrightarrow^{AC}_\Sigma$.
+\end{theorem}
+\begin{proof}
+  The proof proceeds by induction on $t$, and the key case is the one where $t = t_1 \oplus t_2$.
+% This is a meta-level proof, proceeding by structural induction on $t$.
+% Assume that the normalization function $[\_]$ is implemented using a merge sort algorithm over the multiset of subterms $\bb{G}$, with respect to the associative-commutative operator $\oplus$.
+% We focus on the inductive case where $t = t_1 \oplus t_2$.
+We have to show that $\mathop{\den{[t_1 \oplus t_2]}} = \mathop{(\den{t_1}) + (\den{t_2})}$.
+By the induction hypothesis, we have
+$\mathop{\den{[t_1]}} = \mathop{\den{t_1}}$ and $\mathop{\den{[t_2]}} = \mathop{\den{t_2}}$.
+Hence,
+\[
+  (\den{t_1}) + (\den{t_2})
+  = (\den{[t_1]}) + (\den{[t_2]})
+  = \mathop{\den{([t_1] \oplus [t_2])}}
+\]
+It remains to show that
+$\mathop{\den{([t_1] \oplus [t_2])}} = \mathop{\den{[t_1 \oplus t_2]}}$.
+Now, $[t_1]$, $[t_2]$, and $[t_1 \oplus t_2]$ are terms built solely from \tt{cst}, \tt{var}, and $\oplus$ since the remaining operators have been eliminated by applying the rules in \cref{fig:grp-rw}, and the terms on both sides of the equation contain the same multisets of subterms. The two terms are therefore identified by AC-canonicalization.
+%
+% $[t_1 \oplus t_2]$ is the canonical (i.e., sorted) form of the multiset of subterms in $t_1$ and $t_2$,
+% and that merge-sorting two normalized (i.e., already sorted) linear polynomials yields the same result as normalizing (i.e sorting) their merge.
+% Therefore, since the normalization preserves denotation, we conclude that $\den{[t]} = \mathop{\den{t}}$ for all $\bb{G}$-terms $t$.
+\qed
+\end{proof}
+
+We make use of \cref{lem:conv} to embed $\Z$-terms into $\bb{G}$ to normalize and subsequent comparison.
+In addition, we leverage this normalization process to support the \tt{arith-poly-norm} rule.
+
+\begin{lemma}[Conversion]\label{lem:conv}
+For all $x: \Z$, we have $x = (\mathop{\den{(\reify{x})}})$.
+\end{lemma}
+\begin{proof}
+By induction on $x$. We consider the three cases: $x = \ZPos(n)$, $x = \ZNeg(n)$, and $x = \ZO$.  
+In each case, $\reify{(x)}$ yields the corresponding constant $\cst{x}$, and by definition of the denotation function, $x = \mathop{\den{(\cst{x})}}$.
+Hence, $x = (\mathop{\den{(\reify{x})}})$ in all cases.
+\end{proof}
+
+\lstinputlisting[language=Lambdapi,mathescape=true,label={lst:inner-recon-example},caption={Lambdapi proof of List. \ref{lst:smtexampleproof}}]{Assets/short_lia.lp}
+
+We present in List. \ref{lst:inner-recon-example} the translation of Step \tt{t2} from List. \ref{lst:smtexampleproof} using our Carcara module.
+The \lstinline[language=Lambdapi,basicstyle=\ttfamily\footnotesize\upshape]|rewrite Zinv_lt_eq| step at line 3 performs the normalization from Step 1, rewriting $\neg (3 < x)$ as $\neg (\sim 3 > \sim x)$.
+The lemmas \lstinline[language=Lambdapi,basicstyle=\ttfamily\footnotesize\upshape]|Z_diff_gt_Z0| and \lstinline[language=Lambdapi,basicstyle=\ttfamily\footnotesize\upshape]|Z_diff_eq_Z0_eq| (lines 4–5) implement Step 2.
+Since the goal involves a $>$ inequality, Step 3 applies with the lemma \lstinline[language=Lambdapi,basicstyle=\ttfamily\footnotesize\upshape]|Zgt_le_succ_r_eq| (line 6).
+The coefficients $[\frac{1}{1}, -\frac{1}{1}]$ from Step 4 are trivially cast to $\bb{Z}$ and applied in lines 7–8.
+To express all inequalities uniformly, remaining equalities are rewritten as $\geq$ using \tt{Z\_eq\_implies\_ge} (line 12).
+Finally, Step 6 derives the contradiction by summing inequalities from lines 13 to 17.
+
+\section{Reflection with outer normalization}
+\info{ac}{this work is still in development compared to inner.}
+
+We now describe the second strategy, which implements the normalization function entirely within Lambdapi.
+This approach benefits from a fully internal correctness proof, but it typically results in slower performance compared to the first strategy.
+As in the first approach, an inductive type $\bb{G}$ (\cref{outer-g-def}) reflect the syntactic representation of arithmetic expressions over $\Z$.
+
+\subsection{Reflecting integers}
+
+\renewcommand\reify[2]{ (\Uparrow #1~#2)  }
+\newcommand\Cst[1]{\kw{cst} #1}
+\newcommand\Add[2]{\kw{add}~#1~#2}
+
+\begin{figure}[h]
+\begin{align*}
+& \bb{G}: \type &\kw{mul}(k, \cst{l}) \re \cst{(k \cdot l)} \\
+&|~\kw{add}: \bb{G} \ra \bb{G} \ra \bb{G} &\kw{mul}(k, \var{i}{l}) \re \var{i}{(k \cdot l)} \\
+&|~\tt{var}: \N \ra \Z \ra \bb{G} &\kw{mul}(k, \add{x}{y}) \re \add{\kw{mul}(k, x)}{\kw{mul}(k, y)} \\
+&|~\tt{cst}: \Z \ra \bb{G} & \\
+&|~\tt{mul}: \Z \ra \bb{G} \ra \bb{G} & \\
+&\tt{grp}: \set & \\
+&\el~\tt{grp} \re \bb{G} 
+\end{align*}
+\caption{Outer group structure $\bb{G}$ reflecting $\bb{Z}$.}
+\label{outer-g-def}
+\end{figure}
+\todo{fix layout}
+
+The \tt{reify} function $\Uparrow : \bb{L}~\kw{int} \ra \Z \ra (\bb{G} \times \bb{L}~\kw{int})$ performs reification of arithmetic expressions from $\bb{Z}$ into the abstract type $\bb{G}$, producing a pair consisting of a reified term of type $\bb{G}$, and a list of variable values called the \emph{context map}
+that represents uninterpreted terms in domain of $\bb{G}$ such as variable.
+It is defined recursively over the structure of $\bb{Z}$ expressions.
+Below are the defining equations of \texttt{reify}:
+
+\begin{scriptsize}
+\begin{align*}
+&\Uparrow: \bb{L}~\kw{int} \ra \Z \ra (\bb{G} \times \bb{L}~\kw{int}) \\
+&\reify{l}{(x + y)} \re \text{let } (g_1, l_1) = \reify{l}{x} \text{ in let } (g_2, l_2) = \reify{l_1}{y} \text{ in } (\Add(g_1, g_2), l_2) \\
+&\reify{l}{(-x)} \re \text{let } (g, l') = \reify{l}{x} \text{ in } (\opp(g), l') \\
+&\reify{l}{(x - y)} \re \reify{l}{x + (-y)} \\
+&\reify{l}{0} \re (\Cst(0), l) \\
+&\reify{l}{\ZPos(c)} \re (\Cst(\ZPos(c)), l) \\
+&\reify{l}{\ZNeg(c)} \re (\Cst(\ZNeg(c)), l) \\
+&\reify{l}{(0 * x)} \re (\Cst(0), l) \\
+&\reify{l}{(\ZPos(c) * x)} \re \text{let } (g, l') = \reify{l}{x} \text{ in } (\mul(\ZPos(c), g), l') \\
+&\reify{l}{(\ZNeg(c) * x)} \re \text{let } (g, l') = \reify{l}{x} \text{ in } (\mul(\ZNeg(c), g), l') \\
+&\reify{l}{(x * \ZPos(c))} \re \text{let } (g, l') = \reify{l}{x} \text{ in } (\mul(\ZPos(c), g), l') \\
+&\reify{l}{(x * \ZNeg(c))} \re \text{let } (g, l') = \reify{l}{x} \text{ in } (\mul(\ZNeg(c), g), l') \\
+&\reify{l}{x} \re 
+  \begin{cases}
+    (\Var{i}{1}, l) & \text{if } x \text{ is definitionally equal to some } l_i \text{ at index } i \\
+    (\Var{i}{1}, l \mathbin{++} [x]) & \text{otherwise, with } i = \text{length}(l)
+  \end{cases}
+\end{align*}
+\end{scriptsize}
+
+The function $\den{\_}: (\bb{G} \times \bb{L}~\kw{int}) \ra \Z$ defines the semantic interpretation of reified arithmetic expressions of type $\bb{G}$.
+Given a pair $(g, \ell)$ consisting of a term $g : \bb{G}$ and a context map $\ell$ of integer values corresponding to uninterpreted expression (e.g. variable), the function computes the resulting value in $\mathbb{Z}$.
+Variables are interpreted via lookup in the context map $\ell$ with the function \kw{nth}, defaulting to zero if the index is out of bounds. The defining equations of the denotation function $\den{\_}$ are as follows:
+
+\begin{align*}
+&\den: (\bb{G} \times \bb{L}~\kw{int}) \ra \Z\\
+&\den{(\Cst(k), \ell)} \re k \\
+&\den{(\Var{i}{k}, \ell)} \re \kw{nth}(\ell, i) \cdot k \\
+&\den{(\Add(x, y), \ell)} \re \den{(x, \ell)} + \den{(y, \ell)}
+\end{align*}
+
+
+\begin{example}
+Consider the arithmetic expression $x + y + x + 1$, where $x$ and $y$ are $\Z$ variables. 
+When reifying this expression, we start with an empty list $\Box$ of previously seen values and apply the $\reify{}$ function recursively.
+Let us denote the final context map $l = [x, y]$, so that $x$ has index $0$ and $y$ has index $1$. The reification and denotation steps are shown below:
+
+\begin{scriptsize}
+\begin{align*}
+&\reify{\Box}{(x + (y + (x + 1)))}\\
+&\re (
+  \mathsf{Add}(
+    \mathsf{Var}(0, 1),\ 
+    \mathsf{Add}(
+      \mathsf{Var}(1, 1),\ 
+      \mathsf{Add}(
+        \mathsf{Var}(0, 1),\ 
+        \mathsf{cst}(1)
+      )
+    )
+  ),\ 
+  [x, y]
+)
+\end{align*}
+\end{scriptsize}
+\end{example}
+
+\subsection{Outer normalisation procedure}
+
+Normalization consists of converting an expression $x : \bb{G}$ into a canonical form through a composition of functions:
+
+\begin{equation}
+\mathop{\mathtt{norm}} x \is \mathop{\mathtt{sum}} (\mathop{\mathtt{remove0}} (\mathop{\mathtt{sort}} (\mathop{\mathtt{aliens}} x)))
+\label{eq:norm-outer-grp}
+\end{equation}
+Where shortly:
+\begin{itemize}
+  \item $\kw{aliens}: \bb{G} \ra \bb{L}~\kw{grp}$, flattens $x$ into a list of atomic terms.
+  \item $\kw{sort}: \bb{L}~\kw{grp} \ra \bb{L}~\kw{grp}$, sort aliens variables by insertion sort and combines similar terms. For example:\\ $\Add{\Var{0}{1}}{\Var{0}{1}}$.
+  \item $\kw{remove0}: \bb{L}~\kw{grp} \ra \bb{L}~\kw{grp}$, eliminates neutral elements like $\kw{cst}~0$ or $\kw{var}~\_~0$.
+  \item $\kw{sum}: \bb{L}~\kw{grp} \ra \bb{G}$, rebuilds the term as a sum.
+\end{itemize}
+
+We first give the definition of $\mathop{\mathtt{aliens}}$. The function \kw{aliens} extracts the list of atomic (non-\kw{add}) subterms from an expression $x : \bb{G}$.
+It recursively traverses the structure and flattens it into a list of constants and variable terms, discarding the additive structure. The defining equations are:
+
+\begin{align*}
+&\kw{aliens} \cst{k} \re [\cst{k}] \\
+&\kw{aliens} \var{i}{k} \re [\var{i}{k}] \\
+&\kw{aliens}(\Add{x}{y}) \re \kw{aliens}(x) \mathbin{++} \kw{aliens}(y)
+\end{align*}
+
+The function \kw{remove0} eliminates neutral elements from a list of atomic expressions in $\bb{G}$, namely constants equal to $0$ and variables with coefficient $0$.
+This cleanup step ensures that the normalized form contains only meaningful terms. The function is defined recursively as follows:
+
+\begin{align*}
+&\kw{remove0}~\Box \re \Box \\
+&\kw{remove0}~(\cst{0} \colon\colon l) \re \kw{remove0}(l) \\
+&\kw{remove0}~(\cst{(\ZPos{k})} \colon\colon l) \re \cst{(\ZPos{k})} \colon\colon \kw{remove0}(l) \\
+&\kw{remove0}~(\cst{(\ZNeg{k})} \colon\colon l) \re \cst{(\ZNeg{k})} \colon\colon \kw{remove0}(l) \\
+&\kw{remove0}~(\var{i}{0} \colon\colon l) \re \kw{remove0}(l) \\
+&\kw{remove0}~(\var{i}{\ZPos{k}} \colon\colon l) \re \var{i}{\ZPos{k}} \colon\colon \kw{remove0}(l) \\
+&\kw{remove0}~(\var{i}{\ZNeg{k}} \colon\colon l) \re \var{i}{\ZNeg{k}} \colon\colon \kw{remove0}(l)
+\end{align*}
+
+The function \kw{sum} reconstructs a syntactic expression of type $\bb{G}$ from a list of atomic terms by folding them with the \kw{add} constructor.
+This operation reassembles a flat list into a right nested addition tree. It is defined recursively as follows:
+
+\begin{align*}
+&\kw{sum}~\Box \re \cst{0} \\
+&\kw{sum}~(x \colon\colon l) \re \Add{x}{\kw{sum}(l)}
+\end{align*}
+
+The function \kw{sort} takes a list of atomic expressions of type $\bb{G}$ and returns a normalized list in which:
+\begin{itemize}
+  \item constants and variable terms are ordered canonically (constants first, then variables in increasing index),
+  \item constants are merged into a single term via addition,
+  \item variable terms with the same index are merged by summing their coefficients.
+\end{itemize}
+
+It is defined by recursive insertion sort, where each term is inserted into the sorted tail using an auxiliary function \kw{insert}:
+
+\begin{align*}
+&\kw{sort}~\Box \re \Box \\
+&\kw{sort}~(x :: xs) \re \kw{insert}~x~(\kw{sort}~xs)
+\end{align*}
+
+The auxiliary function \kw{insert} maintains the sorting invariant and merges terms when necessary. Its behavior is defined as follows:
+
+\begin{align*}
+&\kw{insert}~x~\Box \re [x] \\
+&\kw{insert}~\cst{k}~(\cst{k'} :: l) \re \cst{(k + k')} :: l \\
+&\kw{insert}~\cst{k}~(\var{i}{k'} :: l) \re \cst{k} :: \var{i}{k'} :: l \\
+&\kw{insert}~\var{i}{k}~(\cst{k'} :: l) \re \\
+&  \qquad\cst{k'} :: \kw{insert}~(\var{i}{k})~l \\
+&\kw{insert}~\var{i}{k_i}~(\var{j}{k_j} :: l) \re\\
+&\qquad\begin{cases}
+  \var{i}{(k_i + k_j)} :: l & \text{if } i = j \\
+  \var{i}{k_i} :: \var{j}{k_j} :: l & \text{if } i < j \\
+  \var{j}{k_j} :: \kw{insert}~(\var{i}{k_i})~l & \text{if } i > j
+\end{cases}
+\end{align*}
+
+
+\subsection{Correctness of Reified Normalization}
+
+Several helper lemmas establish the soundness of the normalization pipeline, by verifying that each transformation step preserves the semantic interpretation of the term.
+In the following, we omit the proof modality symbol $\prf$ to simplify the notation.
+
+The \cref{lem:no-add-inv} asserts that the list of atomic terms produced by the function \kw{aliens} contains no nested additions. This structural invariant is crucial for the correctness of subsequent normalization steps such as sorting and eliminating neutral element, which assume a flat list of atomic expressions.
+To enforce this invariant, one defines a predicate \kw{isNotAdd} that holds only for atomic terms, namely constants and variables, and a recursive predicate \kw{no\_Add} over lists that ensures all elements satisfy \kw{isNotAdd}.
+\begin{align*}
+&\kw{no\_Add}~\Box \re \top \\
+&\kw{no\_Add}~(g :: l) \re \kw{isNotAdd}(g) \land \kw{no\_Add}(l)
+\end{align*}
+with:
+\begin{align*}
+&\kw{isNotAdd} \cst{k} \re \top \\
+&\kw{isNotAdd} \var{i}{k} \re \top \\
+&\kw{isNotAdd}(\add{x}{y}) \re \bot
+\end{align*}
+
+% \begin{align*}
+% \texttt{no\_Add\_aliens}~x : \quad &\kw{no\_Add}(\kw{aliens}(x))
+% \end{align*}
+\begin{lemma}[No Add aliens invariant]\label{lem:no-add-inv}
+For any $(x: \bb{G})$
+\[
+    \kw{no\_Add}(\kw{aliens}(x))
+\]
+
+\begin{proof}
+The proof proceeds by structural induction on $x$:
+\begin{itemize}
+  \item If $x = \cst{k}$ or $x = \var{i}{k}$, then \kw{aliens}$(x) = [x]$ and \kw{isNotAdd}$(x)$ holds.
+  \item If $x = \Add{x_1}{x_2}$, then \kw{aliens}$(x) = \kw{aliens}(x_1) \mathbin{++} \kw{aliens}(x_2)$, and the result follows by applying the inductive hypotheses to $x_1$ and $x_2$ and proving that \kw{no\_Add} is preserved under list concatenation.
+\end{itemize}
+\end{proof}
+\end{lemma}
+
+The \cref{lem:aliens-correct} establishes that flattening a syntactic expression into its atomic components via \kw{aliens} and then summing them with \kw{sum} yields the same semantic value as interpreting the original expression directly:
+
+\begin{lemma}[\tt{aliens\_correct}] \label{lem:aliens-correct}
+For any expression $x : \bb{G}$ and any environment $\ell$, flattening $x$ with \kw{aliens} and summing the result with \kw{sum} yields the same denotation as interpreting $x$ directly:
+\[
+  \den{(\kw{sum}(\kw{aliens}(x)),\, \ell)} =~ \den{(x,\, \ell)})
+\]
+\begin{proof} add it \end{proof}
+\end{lemma}
+
+
+The \cref{lem:remove0-correct} guarantees that eliminating zero-valued constants and variables with zero coefficients from the list leaves the evaluation unchanged:
+
+\begin{lemma}[\tt{remove0\_correct}] \label{lem:remove0-correct}
+If a list $l: \bb{L}~\kw{grp}$ contains no additions, then removing all neutral elements with \kw{remove0} does not affect its semantic value:
+\[
+  \kw{no\_Add}(l) \ra (\den{\kw{sum}(\kw{remove0}(l)),\, \ell}) = (\den{\kw{sum}(l),\, \ell}).
+\]
+\begin{proof} add it \end{proof}
+\end{lemma}
+
+The lemma \texttt{sort\_correct} establishes that the \kw{sort} function, which globally reorders and merges atomic terms in a list, preserves the overall semantic value of the list when reconstructed with \kw{sum}.
+The key idea is that sorting does not change the meaning of the expression it merely brings structurally equivalent but syntactically different lists into a canonical form.
+This lemma is crucial for ensuring that two expressions with different syntactic layouts but equal denotations will normalize to the same form.
+
+\begin{lemma}[\tt{sort\_correct}] \label{lem:sort-correct}
+If a list $l$ of terms contains no nested additions, then sorting it with \kw{sort} preserves its denotation:
+\[
+  \kw{no\_Add}(l) \ra (\den{\kw{sum}(\kw{sort}(l)),\, \ell}) = (\den{\kw{sum}(l),\, \ell}).
+\]
+\begin{proof} add it \end{proof}
+\end{lemma}
+
+The lemma \cref{lem:insert-correct} ensures that inserting a new atomic term into a sorted list produces a denotation equal to the sum of the inserted term and the evaluation of the original list, again assuming the list contains no additions:
+
+\begin{lemma}[\texttt{insert\_correct}] \label{lem:insert-correct}
+If the list $g :: l$ contains no additions, then inserting $g$ into $l$ preserves denotation up to addition. So if $\kw{no\_Add}(g :: l)$ then
+\[
+    (\den{\kw{sum}(\kw{insert}(g, l)),\, \ell}) = ((\den{g,\, \ell}) + \den{\kw{sum}(l),\, \ell}).
+\]
+\end{lemma}
+
+The main correctness \cref{theorem:norm-correct} ensures that the normalization procedure preserves the semantic meaning of a syntactic arithmetic expression.
+Specifically, the function \kw{norm}, which transforms an expression into a canonical form by flattening, sorting, and simplifying the expression, does not change its denotation.
+The theorem holds under the assumption that all variables occurring in the expression are bound within the given environment.
+
+\begin{theorem}[norm correct]\label{theorem:norm-correct}
+Let $x : \bb{G}$ be a syntactic arithmetic expression and let $\ell$ be a list of integers representing variable assignments. If the maximum variable index in $x$ is bounded by the length of $\ell$, then the normalization function \kw{norm} preserves the denotation of $x$. That is, if
+\[
+    \kw{varmax}(x) \leq \mathsf{length}(\ell)
+\]
+then
+\[
+  \den{\kw{norm}(x),\, \ell} = \den{x,\, \ell}
+\]
+\begin{proof}add it\end{proof}
+\end{theorem}
+
+In addition, the correctness of reification is captured by the following \cref{thm:reify-correct}, which states that converting a ground-level integer expression into its syntactic representation and then evaluating it semantically recovers the original value.
+This ensures that \tt{reify} acts as a faithful bridge between the semantic and syntactic domains.
+
+\begin{theorem}[\tt{reify\_correct}]\label{thm:reify-correct}
+Let $x : \Z$ be an arithmetic expression. Then reifying $x$ yields a pair $(t, l)$ such that the denotation of $t$ under the context $l$ is equal to $x$ itself:
+\[
+  \den{\reify{x}} = x.
+\]
+\begin{proof} The proof is direct by structural induction on $x$. \end{proof}
+\end{theorem}
+
+
+\subsection{Application of outer normalisation}
+
+\lstinputlisting[language=Lambdapi,mathescape=true,label={lst:outer-recon-example},caption={Lambdapi proof of List. \ref{lst:smtexampleproof} with outer normalisation}]{Assets/outer_lia.lp}
+
+The normalisation of inequalities of steps 1-4 from $\kw{la\_generic}$ algorithm is done simmilarly than \cref{lst:inner-recon-example}.
+To conclude the proof using reflection, both $l$ and $r$ are reified using the $\reify{}$ function at line 20-21, yielding a pair consisting of a syntactic term and a list of variable values. 
+The correctness of this reification step is ensured by the \cref{thm:reify-correct} (\texttt{reify\_correct}).
+The lemma \texttt{eta\_prod} expresses the $\eta$-equivalence principle for dependent pairs. It states that any pair $x : a \times b$ is equal to the pair formed by projecting its first and second components:
+\[
+  x = (x_1,\, x_2) \text{with } {\_}_1 \text{ and } {\_}_2 \text{ left and right projection }
+\]
+This principle allows one to destruct a pair syntactically into its components while preserving definitional equality.
+In the context of reification, where a reified expression is represented as a pair $(t, \ell)$ of a $\bb{G}$-term and a context map, \texttt{eta\_prod} is used to explicitly access the components of the result of $\reify{x}$.
+Hence we can apply the \cref{theorem:norm-correct} (\texttt{norm\_correct}) at line 26.
+The final inequality is then reduced to a comparison between the normalized syntactic forms of $l$ and $r$, using the theorem \texttt{norm\_correct}, which guarantees that normalization preserves semantic equivalence.
+This enables the proof to conclude by purely syntactic comparison of the normalized forms, reducing $\den{[\reify{l}]} \geq \den{[\reify{r}]}$ to a contradiction.
+
+\section{Reconstruction of Linear Real Arithmetic}
+\label{sec:bv-reconstruction}

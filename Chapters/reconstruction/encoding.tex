@@ -1,13 +1,14 @@
 
-\section{Encoding the logic of SMT in Lambdapi}
-\label{sect:encoding}
+%*****************************************
+\chapter{Encoding the logic of SMT in Lambdapi} \label{ch:encoding}
+%*****************************************
 
 We describe our embedding of the logic of SMT and Alethe into Lambdapi.
-Our work applies to input problems expressed in the logics \texttt{UF}, \texttt{LIA} and \texttt{QF} or their sub-logics.
+Our work applies to input problems expressed in the logics \texttt{UF}, \texttt{LIA} and \texttt{BV} or their sub-logics.
 We begin by detailing the encoding of the SMT-LIB sorts used in these logics, which is necessary for reconstructing their corresponding Alethe proofs.
 We then present our method for translating these proofs.
 
-\subsection{A Prelude Encoding for Alethe}
+\section{A Prelude Encoding for Alethe}
 \label{sec:encoding-prelude}
 
 \begin{definition}[Prelude Encoding]
@@ -22,25 +23,25 @@ The signature $\Sigma$ of our encoding contains the following definitions and re
 \end{definition}
 
 The notions of term, proposition, and proof are not primitive in \lpm.
-We ﬁrst deﬁne a notion analogousto the Predicate logic notion of term, to express the objects the theory speaks about, such as the natural number.
-The constants \set{} and \prop{} (lines 1 and 6) are type universes ``à la Tarski'' \cite[\S Universes]{intuitype} in \lpm.
+We ﬁrst deﬁne a notion analogous to the predicate logic notion of term, to express the objects the theory speaks about, such as the natural number.
+The constants \set{} and \prop{} in \cref{def:defuniv} are type universes ``à la Tarski'' \cite[\S Universes]{intuitype} in \lpm.
 The type \set{} represents the universe of \textit{small types}, i.e.\ a subclass of types for which we can define equality.
 SMT sorts are represented in \lpm{} as elements of type \set{}. Since elements of type \set{} are not types themselves, 
-we also introduce a decoding function $\el: \set \rightarrow \type$ that  embed the terms of type \set{} into terms of type \type.
+we also introduce a function $\el: \set \rightarrow \type$ that embeds the terms of type \set{} into terms of type \type.
 Therefore, our function \el{} interprets SMT sorts as \type.
 Thus, we represent the terms of sort \lstinline[language=SMT,basicstyle=\ttfamily\normalsize]|Bool| of SMT by elements of type $\el{}\,o$.
 The constructor $\leadsto$ (written infix) is used to encode SMT functions and predicates.
 
-Jus as like \lpm{} does not contain a primitive notion for expressing the objects of the theory, it does not contain a primitive notion of proposition.
-The constant \prop{} represents the universe of propositions. Predicates symbols are represented as constants of type $\set{} \ra \dots \ra \prop$ .
-Similar to \set{}, elements of type \prop{} are not types themselves; they are mapped to types by the decoding function $\prf{}: \prop \rightarrow \type$.
-Drawing an analogy with the Curry-de-Brujin-Howard isomorphism \cite{curryhoward}, this function embeds propositions into types by mapping each proposition $A$ to the type $\prf{}~A$, which represents its proofs.
+Jus as \lpm{} does not contain a primitive notion for expressing the objects of the theory, it does not contain a primitive notion of proposition.
+The constant \prop{} represents the universe of propositions. Predicate symbols are represented as constants of type $\set{} \ra \dots \ra \prop$ .
+Similar to \set{}, elements of type \prop{} are not types themselves; they are mapped to types by the function $\prf{}: \prop \rightarrow \type$.
+Drawing an analogy with the Curry-de-Brujin-Howard isomorphism \cite{curryhoward}, this function embeds propositions into types by mapping each proposition $A$ to the type $\prf\,A$, which represents its proofs.
 However, the analogy is only partial in two important ways. First, the propositions themselves are not the types of their proofs: if $t$ is a proof of $A$, then it does not have the type $A$,
-but the type $\prf{}A$.Second, the embedding is not surjective—meaning not all types correspond to proofs. For instance, neither \set{} nor \prop{} are themselves types of proofs. 
+but the type $\prf\,A$. Second, the embedding is not surjective—meaning not all types correspond to proofs. For instance, neither \set{} nor \prop{} are themselves types of proofs. 
 
-Consequently, a \emph{step} in an Alethe proof trace is represented as an inhabitant of type $\prf{}\,p$.
+Consequently, a \emph{step} in an Alethe proof trace is represented as an inhabitants of type $\prf{}\,p$, for a suitable proposition $p$.
 
-\subsection{Constructive connectives, quantifiers and classical facts}
+\section{Constructive connectives, quantifiers and classical facts}
 \label{ssec:encoding-prop}
 
 Given that SMT solvers operate under classical logic, we employ the constructive connectives and quantifiers,
@@ -55,25 +56,25 @@ while explicitly introducing the classical principles of the Law of the Excluded
 & \Rightarrow : \prop \ra \prop \ra \prop \qquad \text{(written inﬁx)} \\
 &  \prf (a \Rightarrow\,b) \re \prf a \ra \prf b \label{eq:imp}\\
 & \neg a \is a \Rightarrow \bot \\
-& \mathop{\mathrm{xor}}~a~b \is (\neg a \land b) \lor (a \land \neg b) \\
+% & \mathop{\mathrm{xor}}~a~b \is (\neg a \land b) \lor (a \land \neg b) \\
 & \forall : \Pi {[a: \set]}, (\el\, a \ra \prop) \ra \prop \label{eq:forall}\\
-& \prf{}(\forall\,p) \re \Pi x, \prf{p~x}\\
+& \prf{}(\forall\,p) \re \Pi x, \prf{(p~x)}\\
 & \exists : \Pi {[a: \set]}, (\el\, a \ra \prop) \ra \prop \\
 & {=} : \Pi [a : \set], \el\, a \ra \el\, a \ra \prop \qquad \text{(written inﬁx)} \\
 & \epsilon: \Pi {[a: \set]}, (\el\,a \ra \prop) \ra \el\,a \\
-& \epsilon_i: \Pi {[a: \set]}, \Pi (x : \el\,a), \Pi (P : \el\,a \ra \prop) \\
-& \quad \ra \prf P\,x \ra \prf P\,(\epsilon\,P) \\
-& \epsilon_{d}: \Pi {[a: \set]}, \Pi (P\,Q : \el\,a \ra \prop) \\
-& \quad \ra \Pi x : \el\,a, \prf (P\,x = Q\,x) \ra (\epsilon \, P = \epsilon \, Q)
+% & \epsilon_i: \Pi {[a: \set]}, \Pi (x : \el\,a), \Pi (P : \el\,a \ra \prop) \\
+% & \quad \ra \prf P\,x \ra \prf P\,(\epsilon\,P) \\
+% & \epsilon_{d}: \Pi {[a: \set]}, \Pi (P\,Q : \el\,a \ra \prop) \\
+% & \quad \ra \Pi x : \el\,a, \prf (P\,x = Q\,x) \ra (\epsilon \, P = \epsilon \, Q)
 \end{align}
 \end{definition}
 
-Accordingto the Curry-de Bruijn-Howard correspondence, a proof of $A \Rightarrow B$ should have the type $\prf (A \Rightarrow B)$.
+According to the Curry-de Bruijn-Howard correspondence, a proof of $A \Rightarrow B$ should have the type $\prf (A \Rightarrow B)$.
 However, such a proof actually has type $\prf\,A \ra \prf\,B$. This means that the types $\prf (A \Rightarrow B)$ and $\prf\,A \ra \prf\,B$ must be identiﬁed.
 To achieve this, we introduce the rewriting rule \cref{eq:imp}, allowing $\prf (A \Rightarrow B)$ to be rewritten as $\prf\,A \ra \prf\,B$.
 
-We cannot assign the type $\Pi : \type, (X \ra \prop) \ra \prop$ to the universal quantifier, because in \lpm{} there is no mechanism to
-for quantifying over variables of type \type. Instead, we assign the type $\Pi\,x:\set{},(\el\,x \ra \prop) \ra \prop$ to the generic universal quantiﬁer $(\forall)$ \cref{eq:forall}.
+We cannot assign the type $\Pi : \type, (X \ra \prop) \ra \prop$ to the universal quantifier, because in \lpm{} there is no mechanism for quantifying over variables of type \type.
+Instead, we assign the type $\Pi\,x:\set{},(\el\,x \ra \prop) \ra \prop$ to the generic universal quantiﬁer $(\forall)$ \cref{eq:forall}.
 Thus, we will be able to quantify over SMT sorts that will be encoded as inhabit of type \set. Furthermore, the previously defined term $o: Set$, together with the rewrite rule $\el\,o\index{o}  \hookrightarrow \prop$
 , enables quantification over propositions, rendering the universal quantifier impredicative.
 
@@ -98,7 +99,7 @@ Moreover, propositionally equivalent formulas are equal. We thus introduce the a
 \label{def:classical-facts}
 \end{definition}
 
-\subsection{Representing Linear Integer Arithmetic (\textbf{LIA})}
+\section{Representing Linear Integer Arithmetic (\textbf{LIA})}
 \label{ssec:encoding-lia}
 
 \begin{figure}
@@ -307,146 +308,114 @@ CSI \cite{CSI} automatically proves the confluence of $\ra_\bb{Z}$ and $\ra_\bb{
 \end{lemma}
 
 
-\subsection{Representing Linear Arithmetic (\textbf{LA})}
+\section{Representing Linear Arithmetic (\textbf{LA})}
 \label{ssec:encoding-la}
 
-\begin{figure}
-\begin{framed}
+
+% Rational numbers are formalized using a datatype called rat. This datatype is designed to represent rational numbers as fractions in their reduced form, ensuring mathematical precision and efficiency in proofs.
+% The rat type is defined using a single constructor, Rat, which takes two arguments: an integer numerator and a positive integer denominator.
+% The key aspect of this construction is the enforcement of the invariant that the denominator must always be positive and coprime with the numerator.
+% This invariant guarantees that each rational number is represented uniquely, which simplifies comparisons and arithmetic operations.
+
+% We define the rat type in Lambdapi is as follows:
+
+SMT solver define the sort \smtinline{Real}, but in practice the reconstruction of Alethe proof with the logic \textbf{LA} only require the rational number (\Q) for most of the case.
+In \cref{def:rat}, we follows the encoding of rational from Rocq \cite{Rocq-refman} \textsc{MathComp} library \cite{mathcomp}.
+Rational numbers are represented as an inductive type with a single constructor $\kw{Rat}$, containing a pair of integers and a proof that they are coprime and that the second one is positive:
+
+\begin{definition}[Rational]\label{def:rat}
 \begin{align*}
+&\textbf{Definition:}\\
+& \kw{coprime} (a~b: \el\,\kw{int}): \B \is  \kw{isEq}~(\kw{Zgcd}~|a|~|b| \doteq 1) \\
+&\textbf{Inductive type:}\\
 & \Q: \type \\
-& |~\tt{\#}: \Z \ra \bb{P} \ra \Q{} \quad \text{(written infix)}\\
-&\\
-& rational: \set \\
-& \el{}\,\tt{rational} \re \Q
+& |~\kw{Rat}: \Pi\,[a~b: \el\,\kw{int}],\\
+& \quad \prf\, (\kw{istrue} (\kw{isLt} (0 \doteq b) \mathbin{and} \kw{coprime}\,a\,b)) \ra \Q \\[1em]
+&\kw{rat}: \set{} \\
+&\el~\kw{rat} \re \Q \\
 \end{align*}
-
-\noindent
-
-\begin{align*}
-&\tt{Qnum}(n \,\#\, d) \ra n \\
-&\tt{Qden}(n \,\#\, d) \ra d \\
-&\tt{QDen}(q : \Q) \coloneq \ZPos(\tt{Qden}(q)) \\
-&(n_1 \,\#\, d_1) \doteq_\Q (n_2 \,\#\, d_2) \ra (n_1 * d_2)~\doteq~(n_2 * d_1) \quad \text{(infix)} \\
-&(n_1 \,\#\, d_1) =_\Q (n_2 \,\#\, d_2) \ra (n_1 * d_2) = (n_2 * d_1) \quad \text{(infix)} \\
-&(n_1 \,\#\, d_1) \le_\Q (n_2 \,\#\, d_2) \ra (n_1 * d_2) \le (n_2 * d_1) \quad \text{(infix)} \\
-&(n_1 \,\#\, d_1) <_\Q (n_2 \,\#\, d_2) \ra (n_1 * d_2) < (n_2 * d_1) \quad \text{(infix)} \\
-&(n_1 \,\#\, d_1) \ge_\Q (n_2 \,\#\, d_2) \ra (n_1 * d_2) \ge (n_2 * d_1) \quad \text{(infix)} \\
-&(n_1 \,\#\, d_1)  >_\Q (n_2 \,\#\, d_2) \ra (n_1 * d_2) > (n_2 * d_1) \quad \text{(infix)} \\
-\\
-&(n_1 \,\#\, d_1)~q+~(n_2 \,\#\, d_2) \ra \\
-& \quad (n_1 * d_2 + n_2 * d_1) \,\#\, \text{mul}(d_1, d_2) \quad \text{(infix)}. \\
-\end{align*}
-\end{framed}
-\caption{Encoding rational}
-\label{fig:rational-sort}
-\end{figure}
-
-
-SMT solver define the sort \smtinline{Real}, but in practice the reconstruction of Alethe proof with the logic \textbf{\tt{LA}}
-only require the rational number (\Q) for most of the case. We then only define the rational number \cref{fig:rational-sort} and we will translate SMT
-term of sort \smtinline{Real} as lambdapi term of sort {\Q}. We follows the encoding of rational from Rocq \cite{Rocq-refman} that are constructed with a numerator of type {\Z} and a denominator of type {\PP} to prevent
-to have zero as a denominator even if SMT-LIB allows in its format the denominator to be null. The immediate problem with this representation is the lack of canonicity.
-In particular, from the Lambdapi point of view, $1 \# 2 \neq 2 \# 4$. We implemented a normalisation functions for rational numbers based on the a generalized GCD.
-The function \tt{Zggcd} takes two integer $a$ and $b$ returns a triple $(g, (u, v))$ where $g = \tt{gcd}(a, b)$, and the integers $u$ and $v$ satisfy the \emph{Bézout identity}: $g = u \times a + v \times b$.
-The complete auxiliary function (e.g. $\tt{ggcd}_\PP$) can be found in \cref{app:complete-gcd}. The function $|\_|$ compute the absolute value.
-
-\begin{definition}[Zggcd]
-\begin{align*}
-&\tt{Zggcd}~\ZO~b \ra (|b|,~(\ZO,~\tt{sgn}~b)) \\
-&\tt{Zggcd}~a~\ZO \ra (|a|,~(\tt{sgn}~a,~\ZO)) \\
-&\tt{Zggcd}~(\ZPos~a)~(\ZPos~b) \ra \tt{let } (g,(u,v)) \coloneqq \tt{ggcd}_\PP~a~b~ \\
-&\quad \tt{ in} (\ZPos(g),~(\ZPos(u),~\ZPos(v))) \\
-&\tt{Zggcd}~(\ZPos~a)~(\ZNeg~b) \ra \tt{let } (g,(u,v)) \coloneqq \tt{ggcd}_\PP~a~b~ \\
-&\quad \tt{ in} (\ZPos(g),~(\ZPos(u),~\ZNeg(v)) \\
-&\tt{Zggcd}~(\ZNeg~a)~(\ZPos~b) \ra \tt{let } g,(u,v)) \coloneqq \tt{ggcd}_\PP~a~b~ \\
-&\quad \tt{ in} (\ZPos(g),~(\ZNeg(u),~\ZPos(v))) \\
-&\tt{Zggcd}~(\ZNeg~a)~(\ZNeg~b) \ra \tt{let } g,(u,v)) \coloneqq \tt{ggcd}_\PP~a~b~\\
-&\quad \tt{ in} (\ZPos(g),~(\ZNeg(u),~\ZNeg(v))).
-\end{align*}
-
-with:
-
-\[
-\mathop{sgn}(z: \Z) = 
-\left\{
-\begin{array}{ll}
-\phantom{-}1 & \text{if } z > 0, \\
-\phantom{-}0 & \text{if } z = 0, \\
--1 & \text{if } z < 0.
-\end{array}
-\right.
-\]
+In the Following, we will use the notation $\frac{n}{d}$ to denotes a fractional pair of integers.
 \end{definition}
 
-\begin{lemma}[Correctness of \texttt{Zggcd}]
-Let $a, b \in \Z$ be arbitrary integers. If 
-\[
-\texttt{Zggcd}(a, b) = (g, (a', b')),
-\]
-then the following equalities hold:
-\[
-a = g \cdot a' \quad \text{and} \quad b = g \cdot b'.
-\]
-\begin{proof}
-TODO
-\end{proof}
-\end{lemma}
+\begin{example}
+We can define $\frac{0}{1}$ as $\kw{Rat}~0~1~\top_i$.
+\end{example}
 
-We can define the function  $\operatorname{Qred} :\Q \ra \Q$ \index{Qred} reduces a rational number to a canonical form by dividing both the numerator and the denominator by their greatest common divisor.
-This canonical representative is unique for each rational equivalence class.
+Two integers a and b are coprime (with $|\_|$ the absolute value function), if the only positive integer that is a divisor of both of them is $1$.
+The function $\kw{Zgcd}$ returns the Greatest Common Divisor $(\mathop{GCD})$ between two terms of type $\Z$.
+This \emph{canonical representation} ensures uniqueness of representation (no two different pairs represent the same rational) and yields a decidable equality.
 
-\begin{definition}[Qred]
-\[
-\operatorname{Qred}(q : \Q) \coloneqq 
-\begin{aligned}[t]
-  &\text{let } q_1 \coloneqq \operatorname{Qnum}(q), \\
-  &\text{let } q_2 \coloneqq \operatorname{Qden}(q), \\
-  &\text{let } (\_,(u,v)) \coloneqq \left( \operatorname{Zggcd}(q_1, \ZPos(q_2)) \right) \text{ in} \\
-  &\quad u \,\#\, \operatorname{to\_pos}(v).
-\end{aligned}
-\]
+Next, we will define a constructor function that will compute reduced fraction from a pair of integers.
+We first define the product type in \cref{def-product}, with the constant $\times: \set \ra \set \ra \set$ written infix.
 
-with:
-
-\[
-\operatorname{to\_pos}(z) = 
-\left\{
-\begin{array}{ll}
-p & \text{if } z = \operatorname{Zpos}~p, \\
-\texttt{H} & \text{if } z = \operatorname{Zneg}~\_, \\
-\texttt{H} & \text{if } z = \Z0.
-\end{array}
-\right.
-\]
+\begin{definition}[Product type]\label{def-product}
+\begin{align*}
+&\textbf{Non dependent product type:} \\
+&\quad \times : \text{Set} \to \text{Set} \to \text{Set} \\
+&\textbf{Pairing symbol:} \\
+&(\mathbin{‚}) [a~b] : \el a \ra \el b \ra \el (a \times b)\\[1em]
+&\textbf{Projections (written postfix):}  \\
+&\quad {}_1 : \el\, (a \times b) \ra \el\, a \quad \text{with rewrite rule } (x \mathbin{‚} \_)_1 \re x \\
+&\quad {}_2 : \el\, (a \times b) \ra \el\, b \quad \text{with rewrite rule } (\_ \mathbin{‚} y)_2 \re y
+\end{align*}
 \end{definition}
 
-We now establish two fundamental properties of $\operatorname{Qred}$: \emph{correctness}, which ensures that reduction preserves the value of a rational number,
-and \emph{completeness}, which guarantees that equivalent rational numbers are reduced to the same canonical form.
+The pairing constructor is denoted by $(‚)$ (a comma-like symbol), which takes two terms $x : \el\,a$ and $y : \el\, b$ and produces a term $x \mathbin{‚} y : \el (a \times b)$.
+Two projection symbols ${\_}_1$ and ${\_}_2$ extract the first and second components of a pair, respectively.
+The constructor function $\kw{fracq}$ ,in \cref{def:fracq-def}, normalizes any integer pair to this reduced form, so if two inputs represent the same rational number
+$\kw{fracq}$ returns exactly the same $\Q$ value (with identical numerator/denominator and proof).
 
-\begin{lemma}[Correctness of Qred]
-For any unreduced rational number $q: \Q$, we have $\operatorname{Qred}(q) =_{\Q} q$.
-\begin{proof}
-TODO
-\end{proof}
-\end{lemma}
+\question{ac}{Should I go so much into details or just mention fracq without giving its def?}
+\begin{definition}[fracq constructor]\label{def:fracq-def}
+\begin{align*}
+& \kw{fracq} : \Z \ra \Z \ra \Q \\
+& \kw{fracq}~\_~Z0 \re \kw{Rat}~0~1~(\kw{fracq\_subproof}~1~0) \\
+& \kw{fracq}~n~d \re \kw{Rat}~(\kw{fracq\_subdef }~(n, d)) \\
+\end{align*}
+The implementation involves several helper functions and lemmas:
+\begin{align*}
+&\kw{fracq\_subproof} (x~y : \el~int): \\
+& \quad \mathop{let} p \is (\kw{fracq\_subdef}~x~y)~ \mathbin{in}\\
+& \qquad \prf (\kw{istrue} (\kw{isLt} (0 \doteq p_2) \mathbin{and} \kw{coprime}\,p_1\,p_2)) \\
+&\text{and}\\
+& \kw{fracq\_subdef} (x : \el (\kw{int} \times \kw{int})): \el (\kw{int} \times \kw{int}) \\
+& \kw{fracq\_subdef}~(x, y) \re\\
+& \quad \kw{if}~(\kw{isLt} (0 \doteq y) \mathbin{and} \kw{coprime}\,x\,y)\\
+& \quad \mathop{then}~(x,y) \\
+& \quad \mathop{else}~\mathop{if}~\mathop{then}~(y \neq 0) \\
+& \qquad \mathop{else}~\mathop{let}~g \is \kw{Zgcd}(x,y)~ \mathbin{in}  \\
+& \qquad (-1^{(IsLt0(x) + IsLt0(y)))} * \mathop{div}~|x|~g‚ \mathop{div}~|y|~g) \\
+\end{align*}
+Where
+\begin{itemize}
+\item $\kw{fracq\_subproof}$ :  A lemma proving that the result of:\\
+  $\kw{fracq\_subdef}$ satisfies the required properties,
+\item $\kw{fracq\_subdef}$ : A helper function that computes the fractional part of a pair of integers.
+It returns a positive denominator, and a sign encoded in the numerator. If the numerator is zero, the pair is replaced by $(0, 1)$.
+Following the approach of \textsc{MathComp}, we imposes a computational normalization convention: whenever an invalid pair $(n, 0)$ is encountered, it is systematically mapped to a default rational $\frac{0}{1}$.
+This ensures the normalization operation is total, deterministic, and easily computable without special case-handling downstream.
 
-\begin{lemma}[Completeness of Qred]
-For any unreduced rational numbers $p\,q: \Q$, if $p =_\Q q$ then $\operatorname{Qred}(p) = \operatorname{Qred}(q)$. 
-\begin{proof}
-TODO
-\end{proof}
-\end{lemma}
+\item $\kw{IsLt0}: \Z \ra \Z$, a function that return $1$ if the argument is lower than $0$, and $0$ otherwise.
+\end{itemize}
+\end{definition}
 
-Therefore, we define auxiliary operations, shown in \cref{fig:rational-sort}, whose results are reduced to canonical form using $\operatorname{Qred}$.
+We can then define the regular arithmetic operator over $\Q$ by using the $\kw{fracq}$ function.
+For example, we define the addition as follows:
 
 \begin{align*}
-& p~+^r_\Q~q \is \operatorname{Qred}(p~+_\Q~q) \quad \text{(written infix)}, \\
-& p~q-^r_\Q~q \is \operatorname{Qred}(p~-_\Q~q) \quad \text{(written infix)}, \\
-& p~*_\Q~q \is \operatorname{Qred}(p~*_\Q~q) \quad \text{(written infix)}.
+&q+ : \Q \ra Q \ra \Q (\text{written infix})\\ 
+&(\kw{Rat}~n_1~d_1~\_) q+ (\kw{Rat}~n_2~d_2~\_) \re\\
+&\qquad \kw{fracq}~((n_1 * d_2) + (n_2 * d_1)) (d_1 * d_2) \\
 \end{align*}
 
+% symbol q+ : τ rat → τ rat → τ rat; notation q+ infix left 20 ; 
+% rule (Rat $n1 $d1 _) q+ (Rat $n2 $d2 _) ↪
+%     let u ≔ ($n1 * $d2) + ($n2 * $d1) in
+%     let d ≔ $d1 * $d2 in
+%     fracq u d;
 
-\subsection{Encoding bitvector (\textbf{BV})}
+
+\section{Encoding bitvectors (\textbf{BV})}
 \label{ssec:encoding-bv}
 
 \begin{figure}
@@ -459,14 +428,14 @@ Therefore, we define auxiliary operations, shown in \cref{fig:rational-sort}, wh
 %*************************************************
 \begin{align*}
 &\Sigma : \forall a : \set{}, (\el{}~a \ra \prop): \type \\
-&| exist : \Pi (a : \set{}), \prf (p~x) \ra \Sigma~p \\
+&|~exist : \Pi (a : \set{}), \prf (p~x) \ra \Sigma~p \\
 &\\
 & Sigma~[a: \set{}]: (\el{}~a \ra \prop) \ra \set{} \\
 & \el{}~Sigma~p \re \Sigma~p \\
 &\\
-& s_1~[a: \set{}] [p:(\el{}~a \ra \prop)] (e: \Sigma~a~p): \el{}~a \\
-& (exist~x~\_)~s_1 \re x\\
-& s_2~[a: \set{}] [p:(\el{}~a \ra \prop)] (e: \Sigma~a~p): \prf{}(p~(e~s_1)) \\
+& \textcolor{red}{s_1}~[a: \set{}] [p:(\el{}~a \ra \prop)] (e: \Sigma~a~p): \el{}~a \\
+& (exist~x~\_)~\textcolor{red}{s_1} \re x\\
+& s_2~[a: \set{}] [p:(\el{}~a \ra \prop)] (e: \Sigma~a~p): \prf{}(p~(e~\textcolor{red}{s_1})) \\
 & (exist~x~p)~s_2 \re p\\
 \end{align*}
 
@@ -499,12 +468,12 @@ Therefore, we define auxiliary operations, shown in \cref{fig:rational-sort}, wh
 &\,\mathop{to\_nat}\;n\;(\mathop{exist}(v,\_))\re v
 \end{align*}
 \end{framed}
-\caption{Encoding bitvector}
+\caption{Encoding bitvectors}
 \label{fig:bitvector-def}
 \end{figure}
 
-We interpret a bitvector $\mathop{BitVec}(w: \N)$ \index{$\mathop{BitVec}$} from the SMT logic \textbf{BV} as a number less than $2^w$  because we use the type $\mathop{Fin}$ as the internal representation of a bitvector as depicted in \cref{fig:bitvector-def}.
-In particular, a $\mathop{Fin} n$ is a natural number $i$ with the constraint that $i < n$. It is the canonical type with $n$ elements. In the \cref{fig:bitvector-def}, we provide the definitions of $\mathop{Fin}$
+We interpret the sort of bitvectors $\mathop{BitVec}(w: \N)$ \index{$\mathop{BitVec}$} from the SMT logic \textbf{BV} as a number less than $2^w$  because we use the type $\mathop{Fin}$ as the internal representation of a bitvector as depicted in \cref{fig:bitvector-def}.
+In particular, a $\mathop{Fin} n$ is the type of natural numbers $i$ with the constraint that $i < n$. It is the canonical type with $n$ elements. In \cref{fig:bitvector-def}, we provide the definitions of $\mathop{Fin}$
 which is a dependent pair type i.e. Sigma type ($\Sigma$), the definition of $\mathop{Fin} n$ and $\mathop{Bitvector} n$.
 
 Alternative representations could include a vector of \B{},
@@ -569,7 +538,7 @@ To construct a bitvector from a list of \smtinline{Bool}, we must provide a proo
 \end{definition}
 
 
-\subsubsection{Arithmetic}
+\subsection{Arithmetic}
 
 The SMT-LIB language offers arithmetic operations on bitvectors, such as $\mathop{bvadd}$ and $\mathop{bvadd}$. 
 Some of these operations are signed, while others are unsigned. In the implementation, bitvectors are represented as a wrapper around a Fin type with an appropriate bound.
@@ -593,7 +562,7 @@ Since $\mathop{Fin}$ itself wraps a natural number (\N), bitvector operations re
 \end{definition}
 
 
-\subsubsection{Bitwise Operators}
+\subsection{Bitwise Operators}
 
 
 SMT-LIB define bitwise operators such as $\mathop{bvand}$ or $\mathop{bvlshr}$  (which shifts a bitvector to the right) for manipulating the individual bits of one or more bitvectors. 
@@ -650,7 +619,7 @@ x \mathbin{\&\&} y < 2^n.
 \begin{proof} TODO \end{proof}
 \end{lemma}
 
-Finally, we can define the $\mathop{bvand}$ function.
+Representing Linear ArithmeticFinally, we can define the $\mathop{bvand}$ function.
 
 \begin{definition}[Bitwise \emph{and} for bitvectors]
 \begin{align*}
@@ -664,7 +633,7 @@ Finally, we can define the $\mathop{bvand}$ function.
 with $\mathop{and\_lt\_two\_pow}$ the constant for \cref{and_lt_two_pow}.
 \end{definition}
 
-\subsection{SMT-LIB helper operators distinct and ite}
+\section{SMT-LIB helper operators distinct and ite}
 \label{ssec:encoding-distinct-let-enc}
 
 The SMT-LIB provides the operator \smtinline{(par (A) (distinct A A Bool :pairwise))}  denotes the function that
@@ -720,7 +689,7 @@ We also define the dependent eliminator:
 \end{align*}
 \end{definition}
 
-\subsection{Encoding clauses}
+\section{Encoding clauses}
 
 Alethe distinguishes between clauses that appear in steps, such as \colorbox{green!30}{(cl~$l_1 \dots l_n$)} in \cref{eq:step}, and ordinary disjunction \cite[\S 4]{alethespec}.
 The syntax for clauses uses the \textcolor{purple}{\texttt{cl}} operator, while disjunction is represented as the standard SMT-LIB \textcolor{purple}{\texttt{or}}.

@@ -1,0 +1,13 @@
+\chapter{conclusion}
+
+These findings lay the groundwork for future investigations into:
+
+\begin{itemize}
+    \item[] \textbf{Sharing \tlaplus theorems}. The work presented in~\cite{eventb2lp} encodes the logic and set theory of Event-B in Lambdapi, enabling proof checking within a type-theoretic framework.
+Event-B is a formal method for system-level modeling and verification, based on sorted set theory and first-order logic.
+It shares key similarities with \tlaplus, particularly in its use of set-theoretic constructs, and its emphasis on proof obligations for correctness.
+Given this proximity, as \cref{fig:interop-tla} suggests, a promising direction for future work would be to explore translations between \tlaplus and Event-B, possibly via a common intermediate representation in Lambdapi.
+One possible approach to enable this transfer could build on the \emph{parametricity} \cite{theorem-for-free,parametricity} based methodology developed in \cite{parametricity-lp}, which provides a framework for connecting two theories encoded in Lambdapi. 
+Such a translation path could allow one to leverage verification tools from both ecosystems while maintaining a shared logical foundation.
+    \item[] \textbf{Lambdapi Hammer}. This work lays the foundation for a future \emph{hammer} in Lambdapi similar to CoqHammer or Sledgehammer, to benefit from automatic proof reconstruction, assuming proper encoding of Lambdapi symbols in SMT.
+\end{itemize}
