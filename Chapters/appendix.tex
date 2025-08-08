@@ -5,7 +5,7 @@
 %\markboth{\spacedlowsmallcaps{Appendix}}{\spacedlowsmallcaps{Appendix}}
 \chapter{Appendix Test}
 
-\subsection{The Alethe Syntax}
+\section{The Alethe Syntax}\label{app:alethe}
 
 \begin{figure}[htb]%[H]
     \[
@@ -36,7 +36,7 @@
       \label{fig:grammar}
 \end{figure}
 
-\subsection{Confluence of the rewriting rules of integers and positive binary number}
+\section{Confluence of the rewriting rules of integers and positive binary number}
 \label{app:confluence-int-pos}
 
 The rules presented below represent the relations $\ra_\bb{Z}$ and $\ra_\bb{P}$ encoded in the TRS\footnote{\url{http://www.lri.fr/~marche/tpdb/format.html}} format accepted by the \cite{CSI} tool.
@@ -121,8 +121,183 @@ These rules can be used to rerun the tool in order to verify the confluence prop
 )
 \end{lstlisting}
 
-\subsection{GCD}
-\label{app:complete-gcd}
+\section{Arithmetic definitions}\label{app:arith-def}
+\label{app:arith-defs}
 
-\subsection{Fin and List}
+\begin{definition}
+{\footnotesize
+% \centering
+% --- Integer Addition ---
+\begin{align*}
+&+: \bb{Z} \ra \bb{Z} \ra \bb{Z} \\
+& \ZO + y \re y \\
+& x + \ZO \re x \\
+& (\tt{Zpos x}) + (\tt{Zpos y}) \re (\ZPos~(\tt{add}~x~y))  \\
+& (\tt{Zpos x}) + (\tt{Zneg y}) \re (\tt{sub}~x~y)  \\
+& (\tt{Zneg x}) + (\tt{Zpos y}) \re (\tt{sub}~y~x)  \\
+& (\tt{Zneg x}) + (\tt{Zneg y}) \re \ZNeg~(\tt{add}~x~y)
+\end{align*}
+\noindent
+
+\begin{align*}
+& \kw{succ}: \bb{P} \ra \bb{P} \\
+& \kw{succ}~(I~x) \re O (\kw{succ}~x) \\
+& \kw{succ}~(O~x) \re I (\kw{succ}~x) \\
+& \kw{succ}~(H) \re O H
+\end{align*}
+
+% --- Positive Binary Arithmetic ---
+\[
+\begin{array}[t]{ll}
+\begin{aligned}
+&\tt{add} : \bb{P} \ra \bb{P} \ra \bb{P} \\
+& \tt{add}~(\tt{I}~x)~(\tt{I}~q) \re \tt{O}~(\tt{addc}~x~q) \\
+& \tt{add}~(\tt{I}~x)~(\tt{O}~q) \re \tt{I}~(\tt{add}~x~q) \\
+& \tt{add}~(\tt{O}~x)~(\tt{I}~q) \re \tt{I}~(\tt{add}~x~q) \\
+& \tt{add}~(\tt{O}~x)~(\tt{O}~q) \re \tt{O}~(\tt{add}~x~q) \\
+& \tt{add}~x~\tt{H} \re \tt{succ}~x \\
+& \tt{add}~\tt{H}~y \re \tt{succ}~y \\
+\end{aligned}
+&
+\begin{aligned}
+&\tt{mul} : \bb{P} \ra \bb{P} \ra \bb{P} \\
+& \tt{mul}~\tt{H}~y \re y \\
+& \tt{mul}~y~\tt{H} \re y \\
+& \tt{mul}~(\tt{O}~x)~y \re \tt{O}~(\tt{mul}~x~y) \\
+& \tt{mul}~(\tt{I}~x)~y \re \\
+& \quad \tt{add}~y~(\tt{O}~(\tt{mul}~x~y)) \\
+\end{aligned}
+\end{array}
+\]
+\noindent
+
+\begin{align*}
+&\tt{addc} : \bb{P} \ra \bb{P} \ra \bb{P} \\
+& \tt{addc}~(\tt{I}~x)~(\tt{I}~q) \re \tt{I}~(\tt{addc}~x~q) \\
+& \tt{addc}~(\tt{I}~x)~(\tt{O}~q) \re \tt{O}~(\tt{addc}~x~q) \\
+& \tt{addc}~(\tt{O}~x)~(\tt{I}~q) \re \tt{O}~(\tt{addc}~x~q) \\
+& \tt{addc}~(\tt{O}~x)~(\tt{O}~q) \re \tt{I}~(\tt{add}~x~q) \\
+& \tt{addc}~x~\tt{H} \re \tt{add}~x~(\tt{O}~\tt{H}) \\
+& \tt{addc}~\tt{H}~y \re \tt{add}~(\tt{O}~\tt{H})~y \\
+\end{align*}
+\noindent
+
+% --- Multiplication ---
+\begin{align*}
+&\tt{*} : \bb{Z} \ra \bb{Z} \ra \bb{Z} \\
+& \ZO *~\_ \re \ZO \\
+& \_ *~\ZO \re \ZO \\
+& \ZPos x *~\ZPos y \re \ZPos (\tt{mul}~x~y) \\
+& \ZPos x *~\ZNeg    y \re \ZNeg    (\tt{mul}~x~y) \\
+& \ZNeg    x *~\ZPos y \re \ZNeg    (\tt{mul}~x~y) \\
+& \ZNeg    x *~\ZNeg    y \re \ZPos (\tt{mul}~x~y) \\
+\end{align*}
+}%
+\end{definition}
+
+\begin{definition}[Complete definition of \tt{sub} function]
+\begin{align*}
+& \kw{sub} : \bb{P} \ra \bb{P} \ra \bb{Z} \\
+& \kw{sub}~(I~p)~(I~q) \re \kw{double}~(\kw{sub}~p~q) \\
+& \kw{sub}~(I~p)~(O~q) \re \kw{succ\_double}~(\kw{sub}~p~q) \\
+& \kw{sub}~(I~p)~H \re \kw{Zpos}~(O~p) \\
+& \kw{sub}~(O~p)~(I~q) \re \kw{pred\_double}~(\kw{sub}~p~q) \\
+& \kw{sub}~(O~p)~(O~q) \re \kw{double}~(\kw{sub}~p~q) \\
+& \kw{sub}~(O~p)~H \re \kw{Zpos}~(\kw{pos\_pred\_double}~p) \\
+& \kw{sub}~H~(I~q) \re \kw{Zneg}~(O~q) \\
+& \kw{sub}~H~(O~q) \re \kw{Zneg}~(\kw{pos\_pred\_double}~q) \\
+& \kw{sub}~H~H \re \kw{Z0} \\[1em]
+%
+& \kw{pos\_pred\_double} : \bb{P} \ra \bb{P} \\
+& \kw{pos\_pred\_double}~(I~x) \re I~(O~x) \\
+& \kw{pos\_pred\_double}~(O~x) \re I~(\kw{pos\_pred\_double}~x) \\
+& \kw{pos\_pred\_double}~H \re H \\[1em]
+%
+& \kw{double} : \bb{Z} \ra \bb{Z} \\
+& \kw{double}~Z0 \re Z0 \\
+& \kw{double}~(\kw{Zpos}~p) \re \kw{Zpos}~(O~p) \\
+& \kw{double}~(\kw{Zneg}~p) \re \kw{Zneg}~(O~p) \\[1em]
+%
+& \kw{succ\_double} : \bb{Z} \ra \bb{Z} \\
+& \kw{succ\_double}~Z0 \re \kw{Zpos}~H \\
+& \kw{succ\_double}~(\kw{Zpos}~p) \re \kw{Zpos}~(I~p) \\
+& \kw{succ\_double}~(\kw{Zneg}~p) \re \kw{Zneg}~(\kw{pos\_pred\_double}~p) \\[1em]
+%
+& \kw{pred\_double} : \bb{Z} \ra \bb{Z} \\
+& \kw{pred\_double}~Z0 \re \kw{Zneg}~H \\
+& \kw{pred\_double}~(\kw{Zpos}~p) \re \kw{Zpos}~(\kw{pos\_pred\_double}~p) \\
+& \kw{pred\_double}~(\kw{Zneg}~p) \re \kw{Zneg}~(I~p)
+\end{align*}
+\end{definition}
+
+\section{Fin and List}
 \label{app:fin-and-list}
+
+\section{bitvectors definitions}\label{app:bf-defs}
+
+To illustrate the approach on bitwise operators, we focus on the $\mathop{bvand}$ operator.
+We begin by defining its natural number analogue, $\mathop{land}$ with its correctness \cref{lem:correct-land}.
+
+\begin{definition}[and operator for Nat]
+We define a higher-order function \( \mathop{\mathrm{bitwise}} : (\mathbb{B} \ra \mathbb{B} \ra \mathbb{B}) \ra \mathbb{N} \ra \mathbb{N} \ra \mathbb{N} \ra \mathbb{N} \) by the following rewrite rules:
+\begin{align*}
+&\mathop{\mathrm{bitwise}}\,op\, 0\, a\, b \re 0 \\
+&\mathop{\mathrm{bitwise}}\,op\, n{+}1\, a\, b \re \\
+&\quad\left( \text{if } (\mathop{op}\,(\mathop{\mathrm{odd}}a)\, (\mathop{\mathrm{odd}}\,b)) 1\,0 \right) \\
+&\quad+ 2 * \mathop{\mathrm{bitwise}}\,op\, n\, (\mathop{\mathrm{div2}}\,a)\,(\mathop{\mathrm{div2}}\,b)
+\end{align*}
+The auxiliaries functions \( \mathop{\mathrm{div2}} : \mathbb{N} \ra \mathbb{N} \) and the boolean \( \mathop{\mathrm{and}_\B} : \B \ra \B \ra \B \) are defined recursively as:
+\begin{align*}
+&\mathop{\mathrm{div2}}\,0 \re 0 \\
+&\mathop{\mathrm{div2}}\,1 \re 0 \\
+&\mathop{\mathrm{div2}}\,x{+}2 \re \mathop{\mathrm{div2}}\,x + 1 \\
+&\\
+&\mathop{\mathrm{and}_\B}(\mathrm{true},\, b) \re b \\
+&\mathop{\mathrm{and}_\B}(b,\, \mathrm{true}) \re b \\
+&\mathop{\mathrm{and}_\B}(\mathrm{false},\, \_) \re \mathrm{false} \\
+&\mathop{\mathrm{and}_\B}(\_,\, \mathrm{false}) \re \mathrm{false}
+\end{align*}
+Then, we can define the natural number bolean and i.e. (\&\&) as:
+\begin{equation*}
+\&\&~(a\,b: \N): \N \is \mathop{bitwise}\,(and_\B)\,a\,a\,b \quad \text{(written infix)}
+\end{equation*}
+\end{definition}
+
+
+\begin{lemma}[Correctness of Bitwise \&\&]
+Let $n, m, i \in \N$. Then the $i$-th bit of the bitwise $\mathbin{\&\&}$ of $n$ and $m$ equals the conjunction of the $i$-th bits of $n$ and $m$, that is:
+\[
+\mathop{testbit} (n \mathbin{\&\&} m)~i = \mathop{andb}~(\mathop{testbit} n~i) (\mathop{testbit} m~i).
+\]
+with:
+\begin{align*}
+&\mathop{\mathrm{testbit}} : \N \ra \N \ra \B \\
+&\mathop{\mathrm{testbit}}\,a,\,0 \re \mathop{\mathrm{odd}}\,a \\
+&\mathop{\mathrm{testbit}}\,a,\,n{+}1 \re \mathop{\mathrm{testbit}}\,\mathop{\mathrm{div2}}(a),\, n
+\end{align*}
+\begin{proof}TODO\end{proof}
+\label{lem:correct-land}
+\end{lemma}
+
+\begin{lemma}[Bitwise $\mathbin{\&\&}$ upper bound]
+Let \( x, y, n : \N \), and suppose \( y < 2 \,\hat{}\, n \). Then:
+\[
+x \mathbin{\&\&} y < 2^n.
+\]
+\label{and_lt_two_pow}
+\begin{proof} TODO \end{proof}
+\end{lemma}
+
+Representing Linear ArithmeticFinally, we can define the $\mathop{bvand}$ function.
+
+\begin{definition}[Bitwise \emph{and} for bitvectors]
+\begin{align*}
+&\mathop{\mathrm{Fin.and}}~[n: \N]: \mathop{Fin} n \ra \mathop{Fin} n \ra \mathop{Fin} n\\
+&\quad\is \lambda f1,\, \lambda f2,\, \mathop{\mathrm{FinMk}}~n~((\mathop{val} f1) \mathbin{\&\&} (\mathop{val} f2)) \\
+&\quad (\mathop{and\_lt\_two\_pow}~(\mathop{val} f1)~(\mathop{val} f2)~n~(\mathop{isLt} f2)) \\
+&\\
+&\mathop{\mathrm{bvand}}~[n: \N]: \mathop{BitVec} n \ra \mathop{BitVec} n \ra \mathop{BitVec} n\\
+&\quad\is \lambda x, \lambda y, \mathop{Fin.and}~(2~\hat{}~n)~x~y
+\end{align*}
+with $\mathop{and\_lt\_two\_pow}$ the constant for \cref{and_lt_two_pow}.
+\end{definition}
