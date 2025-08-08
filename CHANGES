@@ -1,3 +1,13 @@
+### (0.0.1) (08-07-2025):
+
+* Change the Rational number construction
+* Remove TLA+ chapter and fusion it into different other chapters.
+
+### (0.0.1) (30-07-2025):
+
+* Split chapter 5 into 3 chapters
+* Add TLA+ chapter
+
 ### (0.0.1) (30-06-2025):
 
 * Add encoding of Real and BV

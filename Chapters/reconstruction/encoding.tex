@@ -321,37 +321,44 @@ CSI \cite{CSI} automatically proves the confluence of $\ra_\bb{Z}$ and $\ra_\bb{
 
 SMT solver define the sort \smtinline{Real}, but in practice the reconstruction of Alethe proof with the logic \textbf{LA} only require the rational number (\Q) for most of the case.
 In \cref{def:rat}, we follows the encoding of rational from Rocq \cite{Rocq-refman} \textsc{MathComp} library \cite{mathcomp}.
-Rational numbers are represented as an inductive type with a single constructor $\kw{Rat}$, containing a pair of integers and a proof that they are coprime and that the second one is positive:
+Rational numbers are represented as an inductive type with a single constructor $\kw{Rat}$, containing a pair of integers and a proof that they are coprime and that the second one is positive.
+This invariant guarantees that each rational number is represented uniquely, which simplifies comparisons and arithmetic operations.
 
 \begin{definition}[Rational]\label{def:rat}
+We first define the boolean predicate of being \kw{coprime}. Two integers a and b are coprime if the only positive integer that is a divisor of both of them is $1$.
+\begin{equation*}
+\kw{coprime} (a~b: \el\,\kw{int}): \B \is  \kw{isEq}~(\kw{Zgcd}~|a|~|b| \doteq 1)
+\end{equation*}
+The function $\kw{Zgcd}$ returns the Greatest Common Divisor $(\mathop{GCD})$ between two terms of type $\Z$, and $|\_|$ is the absolute value function.
+We then defines the inductive type:
 \begin{align*}
-&\textbf{Definition:}\\
-& \kw{coprime} (a~b: \el\,\kw{int}): \B \is  \kw{isEq}~(\kw{Zgcd}~|a|~|b| \doteq 1) \\
-&\textbf{Inductive type:}\\
 & \Q: \type \\
 & |~\kw{Rat}: \Pi\,[a~b: \el\,\kw{int}],\\
 & \quad \prf\, (\kw{istrue} (\kw{isLt} (0 \doteq b) \mathbin{and} \kw{coprime}\,a\,b)) \ra \Q \\[1em]
 &\kw{rat}: \set{} \\
-&\el~\kw{rat} \re \Q \\
+&\el~\kw{rat} \re \Q
 \end{align*}
-In the Following, we will use the notation $\frac{n}{d}$ to denotes a fractional pair of integers.
 \end{definition}
 
+In the Following, we will use the notation $\frac{n}{d}$ to denotes a fractional pair of integers.
+
+
 \begin{example}
-We can define $\frac{0}{1}$ as $\kw{Rat}~0~1~\top_i$.
+We can define $\frac{0}{1}$ as $(\kw{Rat}~0~1~\top_i)$ since:
+\[
+\prf\, \kw{istrue} (\kw{isLt} (0 \doteq 1) \mathbin{and} \kw{coprime}\,0\,1) \equivL \prf \top 
+\]
+with $\top_i : \prf\,\top$.
 \end{example}
 
-Two integers a and b are coprime (with $|\_|$ the absolute value function), if the only positive integer that is a divisor of both of them is $1$.
-The function $\kw{Zgcd}$ returns the Greatest Common Divisor $(\mathop{GCD})$ between two terms of type $\Z$.
 This \emph{canonical representation} ensures uniqueness of representation (no two different pairs represent the same rational) and yields a decidable equality.
-
 Next, we will define a constructor function that will compute reduced fraction from a pair of integers.
-We first define the product type in \cref{def-product}, with the constant $\times: \set \ra \set \ra \set$ written infix.
+We first define the product type in \cref{def-product}, with the constant $\times: \set \ra \set \ra \set$.
 
 \begin{definition}[Product type]\label{def-product}
 \begin{align*}
 &\textbf{Non dependent product type:} \\
-&\quad \times : \text{Set} \to \text{Set} \to \text{Set} \\
+&\quad \times : \text{Set} \to \text{Set} \to \text{Set} \quad \textit{(written infix)} \\
 &\textbf{Pairing symbol:} \\
 &(\mathbin{‚}) [a~b] : \el a \ra \el b \ra \el (a \times b)\\[1em]
 &\textbf{Projections (written postfix):}  \\
@@ -362,34 +369,37 @@ We first define the product type in \cref{def-product}, with the constant $\time
 
 The pairing constructor is denoted by $(‚)$ (a comma-like symbol), which takes two terms $x : \el\,a$ and $y : \el\, b$ and produces a term $x \mathbin{‚} y : \el (a \times b)$.
 Two projection symbols ${\_}_1$ and ${\_}_2$ extract the first and second components of a pair, respectively.
-The constructor function $\kw{fracq}$ ,in \cref{def:fracq-def}, normalizes any integer pair to this reduced form, so if two inputs represent the same rational number
-$\kw{fracq}$ returns exactly the same $\Q$ value (with identical numerator/denominator and proof).
+
+The constructor function $\kw{fracq}$, in \cref{def:fracq-def}, normalizes any integer pair to its reduced form and a proof that the invariant holds, so if two inputs represent the same rational number, 
+the function $\kw{fracq}$ returns exactly the same $\Q$ value (with identical numerator/denominator and proof) e.g. $\kw{fracq} (2,4) \equivL \kw{fracq} (3,6)$.
 
 \question{ac}{Should I go so much into details or just mention fracq without giving its def?}
 \begin{definition}[fracq constructor]\label{def:fracq-def}
 \begin{align*}
 & \kw{fracq} : \Z \ra \Z \ra \Q \\
 & \kw{fracq}~\_~Z0 \re \kw{Rat}~0~1~(\kw{fracq\_subproof}~1~0) \\
-& \kw{fracq}~n~d \re \kw{Rat}~(\kw{fracq\_subdef }~(n, d)) \\
+& \kw{fracq}~n~d \re \mathop{let} r \is \kw{fracq\_subdef}~(n, d)~\mathbin{in}\\
+& \qquad \qquad \kw{Rat}~r_1~r_2~(\kw{fracq\_subproof}~n~d) \\
 \end{align*}
 The implementation involves several helper functions and lemmas:
 \begin{align*}
 &\kw{fracq\_subproof} (x~y : \el~int): \\
 & \quad \mathop{let} p \is (\kw{fracq\_subdef}~x~y)~ \mathbin{in}\\
-& \qquad \prf (\kw{istrue} (\kw{isLt} (0 \doteq p_2) \mathbin{and} \kw{coprime}\,p_1\,p_2)) \\
+& \qquad \prf (\kw{istrue} (\kw{isLt} (0 \doteq p\,{}_2) \mathbin{and} \kw{coprime}\,p\,{}_1\,p\,{}_2)) \\
 &\text{and}\\
 & \kw{fracq\_subdef} (x : \el (\kw{int} \times \kw{int})): \el (\kw{int} \times \kw{int}) \\
 & \kw{fracq\_subdef}~(x, y) \re\\
 & \quad \kw{if}~(\kw{isLt} (0 \doteq y) \mathbin{and} \kw{coprime}\,x\,y)\\
 & \quad \mathop{then}~(x,y) \\
-& \quad \mathop{else}~\mathop{if}~\mathop{then}~(y \neq 0) \\
-& \qquad \mathop{else}~\mathop{let}~g \is \kw{Zgcd}(x,y)~ \mathbin{in}  \\
-& \qquad (-1^{(IsLt0(x) + IsLt0(y)))} * \mathop{div}~|x|~g‚ \mathop{div}~|y|~g) \\
+& \quad \mathop{else}~\mathop{if}~(y \neq 0)~\mathop{then} \\
+& \qquad \mathop{let}~g \is \kw{Zgcd}(x,y)~ \mathbin{in}  \\
+& \qquad\qquad (-1^{(IsLt0(x) + IsLt0(y)))} * \mathop{div}~|x|~g‚ \mathop{div}~|y|~g) \\
+& \qquad \mathop{else}~(0,1) \\
 \end{align*}
 Where
 \begin{itemize}
 \item $\kw{fracq\_subproof}$ :  A lemma proving that the result of:\\
-  $\kw{fracq\_subdef}$ satisfies the required properties,
+  $\kw{fracq\_subdef}$ satisfies the required invariant,
 \item $\kw{fracq\_subdef}$ : A helper function that computes the fractional part of a pair of integers.
 It returns a positive denominator, and a sign encoded in the numerator. If the numerator is zero, the pair is replaced by $(0, 1)$.
 Following the approach of \textsc{MathComp}, we imposes a computational normalization convention: whenever an invalid pair $(n, 0)$ is encountered, it is systematically mapped to a default rational $\frac{0}{1}$.
@@ -399,20 +409,14 @@ This ensures the normalization operation is total, deterministic, and easily com
 \end{itemize}
 \end{definition}
 
-We can then define the regular arithmetic operator over $\Q$ by using the $\kw{fracq}$ function.
-For example, we define the addition as follows:
+Finally, we can then define the regular arithmetic operator over $\Q$ by using the $\kw{fracq}$ function.
+For example, we define the addition $+_\Q$ symbol as follows:
 
 \begin{align*}
-&q+ : \Q \ra Q \ra \Q (\text{written infix})\\ 
-&(\kw{Rat}~n_1~d_1~\_) q+ (\kw{Rat}~n_2~d_2~\_) \re\\
-&\qquad \kw{fracq}~((n_1 * d_2) + (n_2 * d_1)) (d_1 * d_2) \\
+&+_\Q : \Q \ra \Q \ra \Q \quad (\textit{written infix})\\ 
+&(\kw{Rat}~n_1~d_1~\_) +_\Q (\kw{Rat}~n_2~d_2~\_) \re\\
+&\qquad \kw{fracq}~(n_1 *_\Z d_2 +_\Z n_2 *_\Z d_1) (d_1 *_\Z d_2) \\
 \end{align*}
-
-% symbol q+ : τ rat → τ rat → τ rat; notation q+ infix left 20 ; 
-% rule (Rat $n1 $d1 _) q+ (Rat $n2 $d2 _) ↪
-%     let u ≔ ($n1 * $d2) + ($n2 * $d1) in
-%     let d ≔ $d1 * $d2 in
-%     fracq u d;
 
 
 \section{Encoding bitvectors (\textbf{BV})}
