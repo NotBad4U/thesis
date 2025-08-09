@@ -54,7 +54,7 @@ However, in order to interface with SMT solvers—whose reasoning are based on c
 & \land : \prop \ra \prop \ra \prop \qquad \text{(written inﬁx)} \\
 & \lor : \prop \ra \prop \ra \prop \qquad \text{(written inﬁx)} \\
 & \Rightarrow : \prop \ra \prop \ra \prop \qquad \text{(written inﬁx)} \\
-&  \prf (a \Rightarrow\,b) \re \prf\, a \ra \prf \,b \label{eq:imp}\\
+&  \prf\,(a \Rightarrow\,b) \re \prf\, a \ra \prf\,\,b \label{eq:imp}\\
 & \neg a \is a \Rightarrow \bot \\
 % & \mathop{\mathrm{xor}}~a~b \is (\neg a \land b) \lor (a \land \neg b) \\
 & \forall : \Pi {[a: \set]}, (\el\, a \ra \prop) \ra \prop \label{eq:forall}\\
@@ -64,9 +64,9 @@ However, in order to interface with SMT solvers—whose reasoning are based on c
 \end{align}
 \end{definition}
 
-According to the Curry-de Bruijn-Howard correspondence, a proof of $A \Rightarrow B$ should have the type $\prf (A \Rightarrow B)$.
-However, such a proof actually has type $\prf\,A \ra \prf\,B$. This means that the types $\prf (A \Rightarrow B)$ and $\prf\,A \ra \prf\,B$ must be identiﬁed.
-To achieve this, we introduce the rewriting rule \cref{eq:imp}, allowing $\prf (A \Rightarrow B)$ to be rewritten as $\prf\,A \ra \prf\,B$.
+According to the Curry-de Bruijn-Howard correspondence, a proof of $A \Rightarrow B$ should have the type $\prf\,(A \Rightarrow B)$.
+However, such a proof actually has type $\prf\,A \ra \prf\,B$. This means that the types $\prf\,(A \Rightarrow B)$ and $\prf\,A \ra \prf\,B$ must be identiﬁed.
+To achieve this, we introduce the rewriting rule \cref{eq:imp}, allowing $\prf\,(A \Rightarrow B)$ to be rewritten as $\prf\,A \ra \prf\,B$.
 
 We cannot assign the type $\Pi : \type, (X \ra \prop) \ra \prop$ to the universal quantifier, because in \lpm{} there is no mechanism for quantifying over variables of type \type.
 Instead, we assign the type $\Pi\,x:\set{},(\el\,x \ra \prop) \ra \prop$ to the generic universal quantiﬁer $(\forall)$ \cref{eq:forall}.
@@ -75,7 +75,7 @@ Thus, we will be able to quantify over SMT sorts that will be encoded as inhabit
 
 \begin{example}[quantification over $\prop$ with $o$]
 The eliminator for bottom can be formalized as:
-\[ \bot_e : \prf (\bot \Rightarrow \forall (p: \el\,o), p) \]
+\[ \bot_e : \prf\,(\bot \Rightarrow \forall (p: \el\,o), p) \]
 \end{example}
 
 Equality (=) over small types is parameterized over types $\el\,a$ for the type parameter $a : \set{}$.
@@ -88,7 +88,7 @@ We define the choice operator $\epsilon$ (\cite[\S 2.1]{alethespec}).
 & \epsilon_i: \Pi\, {[a: \set]}, \Pi (x : \el\,a), \Pi (P : \el\,a \ra \prop) \\
 & \quad \ra \prf\,(P\,x) \ra \prf\, P\,(\epsilon\,P) \\
 & \epsilon_{d}: \Pi\, {[a: \set]}, \Pi (P\,Q : \el\,a \ra \prop) \\
-& \quad \ra \Pi\, x : \el\,a, \prf (P\,x = Q\,x) \ra (\epsilon \, P = \epsilon \, Q)
+& \quad \ra \Pi\, x : \el\,a, \prf\,(P\,x = Q\,x) \ra (\epsilon \, P = \epsilon \, Q)
 \end{align}
 The intended interpretation for the $\epsilon$ operator is that $(\epsilon\,x,\, P~x)$ denotes some $x$ satisfying the predicate $P$, if there is one.
 The characteristic proof rules for the $\epsilon$ operator are represented by the constants $\epsilon_i$ for proving a predicate $P\,(\epsilon\,P)$ by exhibiting a witness $x$ such that $P\,x$ is provable,
@@ -105,8 +105,8 @@ Moreover, propositionally equivalent formulas are equal.
 \begin{definition}[Classical facts]
 We introduce the classical axioms:
 \begin{align*}
-\texttt{em}:\ & \Pi\, [p: \prop], \prf (p \lor \neg p) \\
-\texttt{prop\_ext}:\ & \Pi\, [p\,q: \prop], \prf (p \Leftrightarrow q ) \rightarrow \prf (p = q)
+\texttt{em}:\ & \Pi\, [p: \prop], \prf\,(p \lor \neg p) \\
+\texttt{prop\_ext}:\ & \Pi\, [p\,q: \prop], \prf\,(p \Leftrightarrow q ) \rightarrow \prf\,(p = q)
 \end{align*}
 \label{def:classical-facts}
 \end{definition}
@@ -314,7 +314,7 @@ In the Following, we will use the notation $\frac{n}{d}$ to denotes a fractional
 \begin{example}
 We can define $\frac{0}{1}$ as $(\kw{Rat}~0~1~\top_i)$ since:
 \[
-\prf\, \kw{istrue} (\kw{isLt} (0 \doteq 1) \mathbin{and} \kw{coprime}\,0\,1) \equivL \prf \top 
+\prf\, \kw{istrue} (\kw{isLt} (0 \doteq 1) \mathbin{and} \kw{coprime}\,0\,1) \equivL \prf\,\top 
 \]
 with $\top_i : \prf\,\top$.
 \end{example}
@@ -580,7 +580,7 @@ We also define the induction principle:
 
 Alethe distinguishes between clauses that appear in steps, such as \colorbox{green!30}{(cl~$l_1 \dots l_n$)} in \cref{eq:step}, and ordinary disjunction \cite[\S 4]{alethespec}.
 The syntax for clauses uses the \textcolor{purple}{\texttt{cl}} operator, while disjunction is represented as the standard SMT-LIB \textcolor{purple}{\texttt{or}}.
-Alethe identifies clause as a set of literals. As mentioned in \cref{ch:alethe}, Alethe identifies clauses that differ only in the order of literals. In particular, note that the ``literals'' appearing in clauses may actually be arbitrary formulas in Alethe.
+Alethe identifies a clause as a set of literals. As mentioned in \cref{ch:alethe}, Alethe identifies clauses that differ only in the order of literals. In particular, note that the ``literals'' appearing in clauses may actually be arbitrary formulas in Alethe.
 It provides the \kw{or} rule for converting disjunctions into clauses:
 \[
 \begin{matrix*}[l]
@@ -590,15 +590,15 @@ It provides the \kw{or} rule for converting disjunctions into clauses:
 \]
 
 \begin{remark}[Lack of Structural Canonical Form in Disjunctive Clauses]
-Interpreting a clause as a disjunction, we obtain a concatenated form such as $cl~(l_1~l_2~l_3~l_4)$ will be then translated into $l_1 \lor (l_2 \lor (l_3 \lor l_4))$.
+By interpreting a clause as a disjunction, a clause $cl~(l_1~l_2~l_3~l_4)$ will be then translated into $l_1 \lor (l_2 \lor (l_3 \lor l_4))$.
  Therefore, the concatenation of two clauses (what is happening in the conclusion of \texttt{resolution}) need not unify with the translated clause of the step. For example, taking 3 arbitrary steps:
 
 \begin{itemize}
     \setlength{\itemsep}{5pt}
     \setlength{\parskip}{0pt}
-    \item[] $A.~\triangleright~(\text{cl}~\textcolor{purple}{x_1}, \textcolor{blue}{x_2, x_3}) \quad (..)[..]$
-    \item[] $B.~\triangleright~ (\text{cl}~\textcolor{orange}{y_2}, \textcolor{purple}{\neg x_1}, \quad \textcolor{orange}{y_3}) (..)[..]$
-    \item[] $C.~\triangleright~(\text{cl}~\textcolor{blue}{x_2, x_3}, \textcolor{orange}{y_2, y_3}) \quad (\texttt{resolution A B})[(\textcolor{purple}{x_1}~\texttt{true})]$  % Maybe the argument could be removed but it makes an echo with Carcara elaborated proof
+    \item[] $A.~\triangleright~(\text{cl}~\textcolor{purple}{x_1}~\textcolor{blue}{x_2~x_3}) \quad (\dots)[\dots]$
+    \item[] $B.~\triangleright~ (\text{cl}~\textcolor{purple}{\neg x_1}~\textcolor{orange}{y_2}~\textcolor{orange}{y_3}) \quad  (\dots)[\dots]$
+    \item[] $C.~\triangleright~(\text{cl}~\textcolor{blue}{x_2~x_3}~\textcolor{orange}{y_2~y_3}) \quad (\texttt{resolution A B})[(\textcolor{purple}{x_1}~\texttt{true})]$
 \end{itemize}
 
 Interpreting a clause as a disjunction, we obtain a concatenated form such as $((\textcolor{blue}{x_2} \lor \textcolor{blue}{x_3}) \lor (\textcolor{orange}{y_2} \lor \textcolor{orange}{y_3}))$.
@@ -606,31 +606,41 @@ This aligns with the classical formulation of the \texttt{resolution} inference 
 However, in {\lpm} $((\textcolor{blue}{x_2} \lor \textcolor{blue}{x_3}) \lor (\textcolor{orange}{y_2} \lor \textcolor{orange}{y_3})) \nequiv_{\beta\Sigma} (\textcolor{blue}{x_2} \lor (\textcolor{blue}{x_3} \lor (\textcolor{orange}{y_2} \lor \textcolor{orange}{y_3})))
 \nequiv_{\beta\Sigma} (((\textcolor{blue}{x_2} \lor \textcolor{blue}{x_3}) \lor \textcolor{orange}{y_2}) \lor \textcolor{orange}{y_3})$ , even though these forms are semantically identical.
 
-Additionally, in step \emph{B}, the pivot \textcolor{purple}{$\neg x_1$} does not occur at the head of the clause, contrary to the expectation of the resolution rule,
+Additionally, if the pivot does not occur at the head of the clause, contrary to the expectation of the resolution rule,
 which requires the pivot to be in the leading position. As a result, resolving clauses requires reasoning modulo associativity and commutativity.
 To address the associativity issue, we propose a canonical representation for clauses.
+For commutativity, we will show in \cref{ssec:refl-reso} that permuting two clauses preserves their semantics, and thus they can be regarded as identical.
 
-Accordingly, in \cref{fig:encoding-clause}, we define the type $\kw{Clause}$ to represent an Alethe clause as a list of propositions, thereby ensuring a canonical form.
-The constructor $\veedot$ prepends an element to a list, and $\nil$ denotes the empty list. The operator $\pp$ is used to concatenate lists. 
-Clauses are logically interpreted as disjunctions via the function $\cal{F}$, defined through rewriting rules. For convenience, we also introduce the predicate $\pid$, which asserts the provability of a clause.
 \end{remark}
 
-\begin{figure}
-  \begin{align*}
-  &\texttt{Clause}: \type \\
-  &\nil: \texttt{Clause} \\
-  &\veedot: \prop \ra \texttt{Clause}  \ra \texttt{Clause} \\
-  & \pp: \texttt{Clause} \ra \texttt{Clause} \ra \texttt{Clause} \\
-  & \nil \mathop{\pp} x \re x \\
-  & (x \veedot y) \mathop{\pp} z \re x \veedot (y \mathop{\pp} z) \\
-  & \cal{F}: \texttt{Clause} \ra \prop \\
-  & \cal{F}~\nil \re \bot\\
-  & \cal{F}~x \veedot y \re x \lor (\cal{F}~y)\\
-  & \pid (c : \texttt{Clause}) \coloneqq \prf (\cal{F}~c)
-  \end{align*}
-  \caption{The \texttt{Clause} type and operations on clauses.}
-  \label{fig:encoding-clause}
-\end{figure}
+\begin{definition}[Clause encoding]\label{def:encoding-clause}
+We define the type $\kw{Clause}$ to represent an Alethe clause as a list of propositions, thereby ensuring a canonical form.
+\begin{align*}
+&\texttt{Clause}: \type \\
+&\nil: \texttt{Clause} \\
+&\veedot: \prop \ra \texttt{Clause}  \ra \texttt{Clause}
+\end{align*}
+The constructor $\veedot$ prepends an element to a list, and $\nil$ denotes the empty list.
+\end{definition}
+
+\begin{definition}[Concatenation of clause]
+The operator $\pp$ is used to concatenate lists. 
+\begin{align*}
+& \pp: \texttt{Clause} \ra \texttt{Clause} \ra \texttt{Clause} \\
+& \nil \mathop{\pp} x \re x \\
+& (x \veedot y) \mathop{\pp} z \re x \veedot (y \mathop{\pp} z)
+\end{align*}
+\end{definition}
+
+\begin{definition}[Proof on \kw{Clause}]
+Clauses are logically interpreted as disjunctions via the function $\cal{F}$, defined through rewriting rules. For convenience, we also introduce the predicate $\pid$, which asserts the provability of a clause.
+\begin{align*}
+& \cal{F}: \texttt{Clause} \ra \prop \\
+& \cal{F}~\nil \re \bot\\
+& \cal{F}~(x \veedot y) \re x \lor (\cal{F}~y) \\
+& \pid (c : \texttt{Clause}) \coloneqq \prf\,(\cal{F}~c)
+\end{align*}
+\end{definition}
 
 We can now prove the equivalence between clause and disjunction.
 
@@ -638,15 +648,15 @@ We can now prove the equivalence between clause and disjunction.
 For any $p \colon \prop$ and $q,r \colon \texttt{Clause}$, If $\pid (p \veedot q)$ and $(\pid (p \veedot \nil) \ra  \pid r)$ and $(\pid q \ra  \pid r)$ then $\pid r$.
 \end{lemma}
 \begin{proof}
-Since the hypothesis $\pid (p \veedot q)$ is equivalent to $\prf (p \lor \cal{F}\,q)$, we apply the classic disjunction elimination rule.
-Then we can conclude $\prf p \ra \prf (\cal{F}\,r)$ wih the hypothesis $\pid (p \veedot \nil) \ra  \pid r$, and we can conclude $\prf (\cal{F}\,q) \ra \prf (\cal{F}\,r)$
+Since the hypothesis $\pid (p \veedot q)$ is equivalent to $\prf\,(p \lor \cal{F}\,q)$, we apply the classic disjunction elimination rule.
+Then we can conclude $\prf\,p \ra \prf\,(\cal{F}\,r)$ wih the hypothesis $\pid (p \veedot \nil) \ra  \pid r$, and we can conclude $\prf\,(\cal{F}\,q) \ra \prf\,(\cal{F}\,r)$
 with the hypothesis $\pid q \ra  \pid r$.
 \end{proof}
 
 \smallskip
 
 \begin{lemma}[Concatenation is disjunction]\label{lemma:clause-equiv-disj}
-For any two clauses $a\,b$, the equivalence $\prf (\cal{F}(a~\pp~b)) \Leftrightarrow \prf (\cal{F}\,a \lor \cal{F}\,b)$ holds.
+For any two clauses $a\,b$, the equivalence $\prf\,(\cal{F}(a~\pp~b)) \Leftrightarrow \prf\,(\cal{F}\,a \lor \cal{F}\,b)$ holds.
 \end{lemma}
 \begin{proof} By induction on $a$.
   \begin{itemize}
