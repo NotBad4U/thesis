@@ -5,25 +5,7 @@
 \section{Tautologous rules and simple deduction}
 \label{sec:elem-rules}
 
-Many Alethe rules introduce tautologies or derive their conclusion from a single premise.
-%
-These rules are primarily used for clausification and to simplify Boolean connectives during
-preprocessing.
-%
-\cref{fig:fun-c} illustrate the definition of $\cal{C}$ for the rules \kw{assume}, \kw{equiv\_pos2} and \kw{cong} from the running example of \cref{lst:smtexampleinput}.
-The definitions use the following lemmas proved in our Lambdapi encoding:
-\begin{itemize}
-\item $\kw{cong}_1 :
-    \begin{array}[t]{@{}l@{}}
-        \Pi (a\,b \colon \set),\ \Pi f \colon \el\,a \ra \el\,b, \\
-        \Pi x\,x',\ \prf (x = x') \ra \prf (f\,x = f\,x'),
-    \end{array}$
-\item $\kw{equiv\_pos2} : \Pi (\varphi_1~\varphi_2: \prop),\ \pid (\neg (\varphi_1 = \varphi_2) \veedot \neg \varphi_1 \veedot \varphi_2 \veedot \nil )$,
-\item $\pid_l : \Pi [a : \set],\ \pid (a \cons \nil) \ra \prf a$.
-\end{itemize}
-
-
-\begin{figure}[bt]
+\begin{figure}
   \scriptsize
   \begin{tabular}{@{}l|l@{}}
   \hline
@@ -61,41 +43,58 @@ The definitions use the following lemmas proved in our Lambdapi encoding:
   \label{fig:fun-c}
 \end{figure}
 
+
+Many Alethe rules introduce tautologies or derive their conclusion from a single premise.
+%
+These rules are primarily used for clausification and to simplify Boolean connectives during
+preprocessing.
+%
+\cref{fig:fun-c} illustrates the definition of $\cal{C}$ for the rules \kw{assume}, \kw{equiv\_pos2} and \kw{cong} from the running example of \cref{lst:smtexampleinput-fol}.
+The definitions use the following lemmas proved in our Lambdapi encoding:
+\begin{itemize}
+\item $\kw{cong}_1 :
+    \begin{array}[t]{@{}l@{}}
+        \Pi (a\,b \colon \set),\ \Pi f \colon \el\,a \ra \el\,b, \\
+        \Pi x\,x',\ \prf (x = x') \ra \prf (f\,x = f\,x'),
+    \end{array}$
+\item $\kw{equiv\_pos2} : \Pi (\varphi_1~\varphi_2: \prop),\ \pid (\neg (\varphi_1 = \varphi_2) \veedot \neg \varphi_1 \veedot \varphi_2 \veedot \nil )$,
+% \item $\pid_l : \Pi [a : \set],\ \pid (a \cons \nil) \ra \prf a$.
+\end{itemize}\todo{cong might move due to nary-function, so no more details here}
+
+
 \begin{example}
-  \cref{lst:smtexamplelambdapi} illustrates the result of our main function $\mathcal{C}$ applied to the first steps in the running example of \cref{lst:smtexampleinput}.
+  \cref{lst:smtexamplelambdapi} illustrates the result of our main function $\mathcal{C}$ applied to the first steps in the running example of \cref{lst:smtexampleinput-fol}.
   In the code below, all the \texttt{assume} commands (corresponding to the \texttt{assert}s of the input problem) are transformed into constants by~$\mathcal{C}$. A symbol without a definition is considered as an axiom.
   Each step is encoded as an \lpinline{opaque symbol} that represents a lemma. Splitting the proof into multiple lemmas is beneficial for larger proofs because it reduces Lambdapi's checking time for the proof.
 \end{example}
 
-% \begin{minipage}{0.95\linewidth}
 \begin{lstlisting}[mathescape=true, caption={Trace from \cref{lst:smtexampleinput} encoded in Lambdapi.}, label={lst:smtexamplelambdapi}, language=Lambdapi]
-symbol p2 ≔ (p b); 
-symbol p4 ≔ ((p a) = (p b));
-symbol p5 ≔ (p a);
+symbol p2 ≔ p b;
+symbol p4 ≔ p a = p b;
+symbol p5 ≔ p a;
 symbol a0 : Prf$\textcolor{purple}{\smash{^\bullet}}$ (p5 ⟇ ▩);
-symbol a1 : Prf$\textcolor{purple}{\smash{^\bullet}}$ ((a = b) ⟇ ▩);
-symbol a2 : Prf$\textcolor{purple}{\smash{^\bullet}}$ ((¬ ((p b))) ⟇ ▩);
-opaque symbol t0 : Prf$\textcolor{purple}{\smash{^\bullet}}$ ((¬ ((p5 = p2))) ⟇ (¬ (p5)) ⟇ p2 ⟇ ▩) ≔
+symbol a1 : Prf$\textcolor{purple}{\smash{^\bullet}}$ (a = b ⟇ ▩);
+symbol a2 : Prf$\textcolor{purple}{\smash{^\bullet}}$ (¬ p b ⟇ ▩);
+opaque symbol t1 : Prf$\textcolor{purple}{\smash{^\bullet}}$ (¬ p4 ⟇ ¬ p5 ⟇ p2 ⟇ ▩) ≔
   begin apply equiv_pos2; end;
-opaque symbol t1 : Prf$\textcolor{purple}{\smash{^\bullet}}$ (p4 ⟇ ▩) ≔
+opaque symbol t2 : Prf$\textcolor{purple}{\smash{^\bullet}}$ (p4 ⟇ ▩) ≔
   begin apply $\smash{\lor_{i1}}$; apply cong$_1$ p ($\smash{\dot{\pi}_l}$ a1); end;
 
-opaque symbol t2 : Prf$\textcolor{purple}{\smash{^\bullet}}$ (p_4 ⟇ ▩) ≔ 
+opaque symbol t3 : Prf$\textcolor{purple}{\smash{^\bullet}}$ (p4 ⟇ ▩) ≔
 begin
-  have t0_t1 : Prf$\textcolor{purple}{\smash{^\bullet}}$ ((¬ (p_1)) ⟇ p_4 ⟇ ▩) 
+  have t0_t1 : Prf$\textcolor{purple}{\smash{^\bullet}}$ (¬ p1 ⟇ p4 ⟇ ▩)
   { apply resolution t0 t1 };
-  have t0_t1_a0 : Prf$\textcolor{purple}{\smash{^\bullet}}$ (p_4 ⟇ ▩)
+  have t0_t1_a0 : Prf$\textcolor{purple}{\smash{^\bullet}}$ (p4 ⟇ ▩)
   { apply resolution t0_t1 a0 };
   refine t0_t1_a0;
 end;
 
-opaque symbol t3 : Prf$\textcolor{purple}{\smash{^\bullet}}$ ▩ ≔ 
+opaque symbol t4 : Prf$\textcolor{purple}{\smash{^\bullet}}$ ▩ ≔
 begin
   have a2_t2 : Prf$\textcolor{purple}{\smash{^\bullet}}$ ▩ { apply resolution a2 t2 };
   refine a2_t2;
 end;
 \end{lstlisting}
-% \end{minipage}
 
 
 \section{Resolution rule}
@@ -106,11 +105,10 @@ end;
 Binary resolution on ground clauses can be expressed as the following proof rule, which we have proved in Lambdapi.
 
 \begin{lemma}[Resolution]\label{lemma:resolution}
-Given $a,b: \texttt{Clause}$, and a pivot $x: \prop$, $\pid (x \veedot a)$ and $\pid (\neg x \veedot b)$ imply $\pid (a \cal{P} b)$.
+Given $a,b: \texttt{Clause}$, and a pivot $x: \prop$, $\pid (x \veedot a)$ and $\pid (\neg x \veedot b)$ implies $\pid (a \veedot b)$.
 \end{lemma}
 
-% FIXME: remove float?
-\begin{figure}[h]
+\begin{figure}[]
   \centering
   \begin{tabular}{l c r}
   $i_1.~\triangleright$  & \qquad $l_1^1,\, \dots,\, l_{k^1}^1$ \qquad & (\dots)  \\
@@ -133,34 +131,42 @@ In addition, pivots may appear anywhere in a clause rather than just as the head
 In \cite{ColtellacciMD24}, we simulated Alethe's \kw{resolution} rule as compositions of multiple binary resolution steps, combined with additional proof steps for justifying reasoning modulo AC used to move pivots to the heads of clauses.
 However, the practical application of this approach suffered from inefficiency and did not allow us to reconstruct proofs of some benchmarks in SMT-LIB that involved hundreds of clauses in a single resolution.
 In the following, we present an approach where we prove clause permutation through \emph{proof by reflection}\index{proof by reflection}, enabling more efficient pivot movement.
-Given the central role of \emph{proof by reflection} in our translation, we dedicate the following section to a more detailed introduction of this concept, which is key to reconstructing certain proof rules in the Alethe format. 
+Given the central role of \emph{proof by reflection} in our translation, we dedicate the following section to a more detailed introduction of this concept, which is key to reconstructing certain proof rules in the Alethe format.
 
 \section{Proof by reflection}
 \label{ssec:reflection-intro}
 
 Proof by reflection~\cite{reflection-origin-coq} is a technique for constructing certified procedures for automated reasoning by reducing the verification of a logical statement to a symbolic computation.
 This method is particularly applicable to two broad classes of problems. In the first class, we consider a predicate $P \colon T \to \prop$, where $T$ is a data type,
-together with a semi decision procedure $f: T \to \mathbb{B}$ (or $\tt{Comp}$) such that, whenever $f$ returns $\tt{true}$ on input $x$, the predicate $P(x)$ holds.
+together with a semi-decision procedure $f: T \ra \mathbb{B}$ (or $T \ra \tt{Comp}$) such that, whenever $f$ returns $\tt{true}$ on input $x$, the predicate $P(x)$ holds.
 Formally, this relationship is captured by the following correctness theorem:
 
 \begin{equation*}
 \mathop{f\_correct} \colon \Pi x \colon T, \prf (f~x = \tt{true}) \ra \prf (P~x).
 \end{equation*}
 
-Hence, to establish $P~y$ for a particular value $y$, it suffices to verify that $f(y)$ reduces to  $\tt{true}$.
-In that case, we can simply apply the lemma $\mathop{f\_correct}$ to $y$ along with a proof that $true = true$ i.e. $(\mathop{eq\_refl} \tt{true})$ with $eq\_refl: \Pi [a \colon \set], \Pi (x: \el\,a), \prf (x = x)$. 
+Hence, to establish $P~y$ for a particular value $y$, it suffices to verify that $f~y$ reduces to  $\tt{true}$.
+In that case, we can simply apply the lemma $\mathop{f\_correct}$ to $y$ along with a proof that $true = true$ i.e. $(\mathop{eq\_refl} \tt{true})$ with $eq\_refl: \Pi [a \colon \set], \Pi (x: \el\,a), \prf (x = x)$.
 The resulting proof of $P~y$ is thus given by:
 
 \begin{equation*}
-\mathop{f\_correct} ~y~ (\mathop{refl} \tt{true}) \colon P~y
+\mathop{f\_correct} ~y~ (\mathop{eq\_refl} \tt{true}) \colon \prf\,(P~y)
 \end{equation*}
 
 As an illustration, consider the property of a natural number being even. In Lambdapi, this can be expressed using a computable boolean function $\texttt{even} \colon \N \ra \B$ that checks whether a given number is even.
+\begin{definition}[Even decidable predicate]
+\begin{align*}
+& \kw{even} : \N \ra \B \\
+& \kw{even}~0 \re \true \\
+& \kw{even}~1 \re \false \\
+& \kw{even}~(x + 2) \re \kw{even}~x
+\end{align*}
+\end{definition}
 The connection between the boolean value and the logical property is established through a correctness lemma stating that if \texttt{even n = true}, then $n$ is even.
 Thus, to prove that a specific number, such as $4$, is even, one can reduce the goal to the boolean check \texttt{even 4 = true}, which is decidable by computation.
 Applying the correctness lemma then lifts this computational fact back into the logical framework to conclude that $4$ is even.
 This approach automates routine reasoning steps involving decidable predicates, allowing for concise and efficient proofs.
-This first class of reflection is particularly suited for properties such as arithmetic equalities, inequalities, and simple inductive predicates.
+This first class of proofs by reflection is particularly suited for properties such as arithmetic equalities, inequalities, and simple inductive predicates.
 
 The size of such a proof only depends on the size of a particular argument $y$ and does not depend on the number of implicit $\equivL$ steps: explicit rewriting steps have been replaced by implicit $\equivL$ reductions.
 The efficiency of this technique of course strongly depends on the efficiency of the system to reduce the application of the decision procedure $f(y)$, hence on the efficiency of the decision procedure ($f$) itself.
@@ -177,21 +183,19 @@ The function $g$ reasons on the abstract terms. The reflection process relies on
 term:
 
 \begin{equation*}
-  g\_ident : \Pi x: A, \prf (\mathop{denote}(g~x) = \mathop{denote} x)
+  g\_ident : \Pi\,x: A, \prf (\mathop{denote}~(g~x) = \mathop{denote} x)
 \end{equation*}
 
 Thus, to prove that two terms $t_1$ and $t_2$ are equal in $B$ , we only need to show that they are the images of two terms $a_1$ and $a_2$ in $A$ such that $g\,a_1 = g\,a_2$.
 As an illustration of this second class of proofs by reflection, consider the commutativity of disjunction: for any two propositions $P$ and $Q$, we wish to prove that $P \lor Q$ is logically equivalent to $Q \lor P$.
 To apply reflection, we first define an \emph{abstract} syntax for formulas, for instance, a type $\mathsf{Monoid}$ with constructors for atomic propositions and for disjunction.
-We then define an \emph{interpretation function} $\mathsf{denote} \colon \mathsf{Monoid} \to \prop$ that maps abstract formulas to their logical meaning. 
+We then define an \emph{interpretation function} $\mathsf{denote} \colon \mathsf{Monoid} \to \prop$ that maps abstract formulas to their logical meaning.
 Next, we define a normalization function $\mathop{norm}: \mathsf{Monoid} \to \mathsf{Monoid}$ that rewrites disjunctions into a canonical order, such as ordering operands lexicographically.
 The key theorem states that this normalization preserves meaning:
 \[
 \mathsf{norm\_mono} : \forall x : \mathsf{Monoid}, \mathsf{denote}(\mathop{norm} x) = \mathsf{denote}(x).
 \]
 Hence to prove that $P \lor Q$ and $Q \lor P$, are logically equivalent, it suffices to represent them as abstract expressions $m_1$ and $m_2$ of type $\mathsf{Monoid}$, apply the function $\mathop{norm}$ with the lemma $\mathsf{norm\_mono}$ to normalize both, and check that $\mathop{norm}(m_1) = \mathop{norm}(m_2)$.
-By correctness of the interpretation, their meanings must then coincide.
-
 
 In this thesis, we make use of both classes of reflection to encode certain \texttt{Alethe} rules. For example, the reconstruction of arithmetic steps (\textbf{LIA} and \textbf{LRA}) and bitvector (\textbf{BV}) Alethe rules primarily relies on the first class,
 while the permutation of clauses for the \texttt{resolution} rule relies on the second class.
@@ -229,9 +233,9 @@ We leverage the elaboration process in Carcara to avoid implementing a proof by 
 
 The \cref{fig:reflective-process} provides an overview of the realization of this technique in Lambdapi.
 It relies on \emph{reifying} clauses into terms of an algebra $\bb{C}$, using the operator $\reify{}$ defined in \cref{def:reify-def},
-and we denote by $[t]$ the normalization of term $t$ done from \lpinline{associative commutative} modifiers.
+and we denote by $[t]$ the normalization of term $t$ based on the \lpinline{associative commutative} modifiers.
 This normalization corresponds to the function $g$ introduced in \cref{ssec:reflection-intro}.
-Since we rely on the lambda modifiers, normalization is implicitly handled by $\lpm$, and thus the function $[_]$ is simply the identity: $[_]: \bb{C} \rightarrow \bb{C} \coloneq \lambda x., x$.
+Since we rely on the built-in Lambdapi modifiers, normalization is implicitly handled by $\lpm$, and thus the function $[\_]: \bb{C} \rightarrow \bb{C} \coloneq \lambda x., x$ is simply the identity.
 
 \begin{definition}[The abstract type $\bb{C}$]
 The \emph{abstract type} $\bb{C}$ is an inductive type defined as follows:
@@ -243,46 +247,44 @@ The \emph{abstract type} $\bb{C}$ is an inductive type defined as follows:
 &\kw{clauseAC} : \set \\
 &\el\, \kw{clauseAC} \re \bb{C} \\
 \end{align*}
-where the constructor $\eps: \bb{C}$ representing $\nil$ and the constructor $\sqcup$ is declared \lpinline{associative commutative}, which is the analogue of $\cons$.
+where the constructor $\eps: \bb{C}$ represents $\nil$ and the constructor $\sqcup$ is declared \lpinline{associative commutative}, which is the analogue of $\cons$.
 Propositions are injected into the algebra by the operator $\tt{P}$.
 \end{definition}
 
 \begin{definition}[reification function]
 \begin{align*}
 & \reify{}: \texttt{Clause} \ra \bb{C} \\
-&\reify{(x \cons y)} \re \reify{x} \,\sqcup \reify{y} \\
+&\reify{(x \cons y)} \re \kw{P}~x \,\sqcup \reify{y} \\
 &\reify{ \blacksquare } \re \epsilon \\
-&\reify{ x } \re \cal{P}(x)
 \end{align*}
-where the $\reify{}$ is defined with the modifier \lpinline{sequential}.
 \label{def:reify-def}
 \end{definition}
-\graffito{x}
+
 It then remains to decide the equality of two terms in $\bb{C}$, and this is accomplished using the operator $=_\bb{C}$ introduced in \cref{def:eqC}.
 Its definition relies on Boolean conjunction \kw{andb} (written infix), which is predefined in Lambdapi's standard library, as well as on the operator \kw{eq} that checks equality of two terms of type $\prop$.
 
 \begin{definition}[decidable equivalence relation]
-The operators $=_\bb{C} : \bb{C} \ra \bb{C} \ra \kw{bool}$ is defined by the following rewrite rules.
+The operator $=_\bb{C} : \bb{C} \ra \bb{C} \ra \kw{bool}$ is defined by the following rewrite rules.
 
 \begin{align*}
 &x_1 \sqcup y_1 =_\bb{C} x_2 \sqcup y_2 \re (x_1  =_\bb{C} x_2) ~\kw{andb}~ (y_1  =_\bb{C} y_2) \\
 &\_ \sqcup \_ =_\bb{C} \epsilon \re \false \\
-&\_ \sqcup \_ =_\bb{C} \cal{P}(\_) \re \false \\
-&\cal{P}(x) =_\bb{C} \cal{P}(y) \re (\kw{eq}~x~y) \\
-&\cal{P}(\_) =_\bb{C} \_ \sqcup \_ \re \false \\
-&\cal{P}(\_) =_\bb{C} \epsilon \re \false \\
+&\_ \sqcup \_ =_\bb{C} \kw{P}(\_) \re \false \\
+&\kw{P}(x) =_\bb{C} \kw{P}(y) \re (\kw{eq}~x~y) \\
+&\kw{P}(\_) =_\bb{C} \_ \sqcup \_ \re \false \\
+&\kw{P}(\_) =_\bb{C} \epsilon \re \false \\
 &\epsilon =_\bb{C} \epsilon \re \true \\
-&\epsilon =_\bb{C} \cal{P}(\_) \re \false \\
+&\epsilon =_\bb{C} \kw{P}(\_) \re \false \\
 &\epsilon =_\bb{C} \_ \sqcup \_ \re \false
 \end{align*}
 with:
 \begin{align*}
 &\eq~x~x~ \re \true  & \kw{andb}~\kw{true}~\kw{true} \re \kw{true} \\
 &\eq~x~y~ \re \false & \kw{andb}~\kw{false}~\_ \re \kw{false} \\
-& & \kw{andb}~\_ \kw{false} \re \kw{false} 
+& & \kw{andb}~\_~\kw{false} \re \kw{false}
 \end{align*}
 \label{def:eqC}
-The binary operator \kw{eq} is declared as \kw{sequential} so that the second rewrite rule will be applied only if the first one fails.
+The binary operator \kw{eq} is declared as \lpinline{sequential} so that the second rewrite rule will be applied only if the first one fails.
 Its definition ensures that $\kw{eq}~x~y$ holds if and only if the two propositions $x$ and $y$ are identical.
 \end{definition}
 
@@ -307,13 +309,13 @@ By induction on $c_1$ and $c_2$.
   \item Next, suppose $c_1 = \blacksquare$ and $c_2 = x \veedot xs$. Then it follows from the the rewriting rules of $=_{\bb{C}}$ that we have a contradiction since we supposed that $\tt{istrue}(\epsilon =_{\bb{C}} \cal{P}(x) \sqcup \reify{xs})$.
   \item The case where $c_1 = x \veedot xs$ and $c_2 = \blacksquare$ is symmetrical.
   \item Lastly, suppose $c_1 = x \veedot xs$ and $c_2 = y \veedot ys$, and
-  assume that $\tt{istrue}(\reify{c_1} =_{\bb{C}} \reify{c_2})$. 
-  Let $d_1 = \reify{(x \veedot xs)}$ and $d_2 = \reify{(y \veedot ys)}$, then $d_1$ must be of the form 
-  $\cal{P}(u) \sqcup \reify{u'}$ and $d_2$ must be of the form $\cal{P}(v) \sqcup \reify{v'}$ where 
-  the clauses $u'$ and $v'$ are shorter than $xs$ and $ys$, respectively, and such that 
+  assume that $\tt{istrue}(\reify{c_1} =_{\bb{C}} \reify{c_2})$.
+  Let $d_1 = \reify{(x \veedot xs)}$ and $d_2 = \reify{(y \veedot ys)}$, then $d_1$ must be of the form
+  $\cal{P}(u) \sqcup \reify{u'}$ and $d_2$ must be of the form $\cal{P}(v) \sqcup \reify{v'}$ where
+  the clauses $u'$ and $v'$ are shorter than $xs$ and $ys$, respectively, and such that
   $\cal{F}\,(u \veedot u') = \cal{F}\,(c_1)$ and similarly
   $\cal{F}\,(v \veedot v') = \cal{F}\,(c_2)$.
-  Moreover, from the assumption $\tt{istrue}(d_1 =_{\bb{C}} d_2)$ and \cref{lem:p-inj} it follows that 
+  Moreover, from the assumption $\tt{istrue}(d_1 =_{\bb{C}} d_2)$ and \cref{lem:p-inj} it follows that
   $u = v$, and by induction hypothesis we obtain that $\cal{F}\,u' = \cal{F}\,v'$. Taking everything
   together, we finally obtain that $\cal{F}\,c_1 = \cal{F}\,c_2$.
 \end{itemize}
@@ -331,7 +333,7 @@ opaque symbol t1 : Prf$\textcolor{purple}{\smash{^\bullet}}$ (a ⟇ b ⟇ p ⟇ 
 
 opaque symbol t2 : Prf$\textcolor{purple}{\smash{^\bullet}}$ ((¬ (p)) ⟇ c ⟇ d ⟇ ▩) ≔  begin ... end;
 
-opaque symbol t3 : Prf$\textcolor{purple}{\smash{^\bullet}}$ (a ⟇ b ⟇ c ⟇ d ⟇ ▩) ≔ 
+opaque symbol t3 : Prf$\textcolor{purple}{\smash{^\bullet}}$ (a ⟇ b ⟇ c ⟇ d ⟇ ▩) ≔
 begin
 have t1_t2 : Prf$\textcolor{purple}{\smash{^\bullet}}$ (a  ⟇ b  ⟇ c  ⟇ d ⟇ ▩) {
 have t1_perm : Prf$\textcolor{purple}{\smash{}}$ (($\cal{F}$ (a ⟇ b ⟇ p ⟇ ▩)) = ($\cal{F}$ (p ⟇ a ⟇ b ⟇ ▩))) {
@@ -349,7 +351,7 @@ end;
 \section{Simplification rules}
 
 The Alethe format includes rules that encode operator-level simplifications typically performed by SMT solvers. \info{ac}{The introduction of Alethe will contain the description of RARE, so we do not need to introduce it here anymore}
-A key challenge arises from the fact that the solver does not explicitly specify which transformations are applied, nor the order in which they are performed. This makes certain rules, such as \tt{or\_simplify}, difficult to certify. 
+A key challenge arises from the fact that the solver does not explicitly specify which transformations are applied, nor the order in which they are performed. This makes certain rules, such as \tt{or\_simplify}, difficult to certify.
 For instance, the rule \texttt{or\_simplify}, presented in \cref{eqn:or-simp}, simplifies disjunctions by applying equivalence-preserving transformations repeatedly until a fixpoint is reached. Its general form is:
 
 \begin{equation}\label{eqn:or-simp}
@@ -370,9 +372,9 @@ As detailed in \cref{sec:rare-intro}, RARE generates explicit proof terms on dem
 The RARE rule used and its arguments are made explicit in the \smtinline{:args} parameter of the rule $\kw{rare\_rewrite}$ in the proof trace.
 
 However, in some cases, cvc5 may emit proof traces using the legacy simplification rules instead of RARE. In such situations, we reconstruct the simplification steps using tactic scripts, as detailed in \cref{ch:intro-lambdapi}.
-These scripts allow us to interpret fixpoint-style transformations.
+These scripts enable us to approach a fixpoint-style interpretation.\question{ac}{is it enough to say "approach" the Fix?}
 
-To illustrate this process, we describe how we reconstruct a step involving the \kw{not\_simplify} rule, summarized in \cref{fig:not-simplify}.
+To illustrate this process, we describe how we reconstruct a step involving the \kw{not\_simplify} rule, summarized in \cref{fig:not-simplify} since it is simple than \kw{or\_simplify} rule.
 Each transformation associated with this rule is implemented by a separate lemma e.g., \kw{not\_simplify1}, \kw{not\_simplify2}, etc. which are then tried sequentially on the current goal.
 
 \begin{figure}
@@ -384,13 +386,13 @@ Each transformation associated with this rule is implemented by a separate lemma
   $i. \quad \Gamma~\triangleright \quad \neg \psi \approx \varphi \quad (\kw{not\_simplify})$ & $\C{i} = \pid (\neg \E{\psi} = \E{\varphi} \cons \nil) $ \\
   $(1) \neg \neg \varphi \Rightarrow \varphi$ &  $\is$ \lpinline{eval not_simplify} \\
   $(2) \neg \bot \Rightarrow \top$  &   \\
-  $(3) \neg \top \Rightarrow \bot$  & 
+  $(3) \neg \top \Rightarrow \bot$  &
   \end{tabular}
   \caption{Translating the command \kw{not\_simplify}.}
   \label{fig:not-simplify}
 \end{figure}
 
-To apply these tactics sequentially, we define a meta-tactic $\mathop{\mathtt{applyAny}}$ that attempts each tactic in the list until one succeeds: 
+To apply these tactics sequentially, we define a meta-tactic $\mathop{\mathtt{applyAny}}$ that attempts each tactic in the list until one succeeds:
 
 \begin{align*}
 &\mathop{\mathtt{all\_not\_simplify}} \is (\rewrite \kw{not\_simplify1}) \colon\colon  \\
@@ -402,13 +404,7 @@ The combinator $t_1 \orelse t_2$ tries $t_1$ on the current goal; if it fails to
 \begin{align*}
 &\mathop{\mathtt{applyAny}} : \bb{L} \, \kw{tactic} \ra \kw{Tactic} \\
 &\mathop{\mathtt{applyAny}} \Box \re \fail \\
-&\mathop{\mathtt{applyAny}} (\kw{t} \colon\colon \kw{ts}) \re t \orelse (\mathop{\mathtt{applyAny}} \kw{ts}) \\
-\end{align*}
-
-The $t_1 \orelse t_2$ are evaluated respectively to $t_1$ and $t_2$ which must be tactic values.
-The tactic value $t_1$ is applied in the current goal and if it fails to progress then $t_2$ is applied.
-
-\begin{align*}
+&\mathop{\mathtt{applyAny}} (\kw{t} \colon\colon \kw{ts}) \re t \orelse (\mathop{\mathtt{applyAny}} \kw{ts}) \\[1em]
 &\mathop{\mathtt{not\_simplify}} \is \repeatT (\mathop{\mathtt{applyAny}} \mathop{\mathtt{all\_not\_simplify}}) \\
 &\quad \andT \reflexivity
 \end{align*}
@@ -437,24 +433,20 @@ or\_neg [k] & $\triangleright \quad \neg (\varphi_1 \lor \dots \lor \varphi_n), 
 \label{table:nary-rules}
 \end{table}
 
-The Alethe format includes n-ary tautological rules—relying on arbitrary n-ary conjunctions and disjunction as outlined in \cref{table:nary-rules}.
+The Alethe format includes n-ary tautological rules—relying on arbitrary n-ary conjunctions and disjunctions as outlined in \cref{table:nary-rules}.
 A direct approach to reconstruct these rules would involve generating tactic scripts during the translation in Carcara.
 However, this could lead to proofs requiring hundreds of tactic applications.
 To address this, we adopt an alternative strategy: reconstructing these rules via a \emph{proof by reflection} of the first kind.
 We illustrate our approach by detailing the reconstruction of \tt{and\_pos}.
-In our encoding, n-ary conjunctions and disjunctions are interpreted as values of the abstract type $\kw{list},o$.
+In our encoding, n-ary conjunctions and disjunctions are interpreted as values of the abstract type $\bb{L}\,o$.
 We begin by introducing the following configuration:
 
 \begin{itemize}
-  \item We define the function $\kw{indexes}: \Pi [a: \set],\, \el\,\bb{L}~a, \ra \bb{L}~\kw{nat}$ that maps a list of elements
-  to a list of natural numbers representing the positions (or indices) of the elements in the original list.
-  The behavior of indexes is independent of the values of the elements - it is purely structural.
-  So, even if the list contains duplicated elements, the indexes function simply returns the list of their positions, not caring whether elements are equal or not.
-
+  \item The function $\kw{indexes}: \Pi [a: \set],\, \bb{L}~a \ra \bb{L}~\kw{nat}$  takes a list of propositions and returns a list where each proposition is replaced by its position in the list.
   \begin{example}[indexes]
-  \[
-  \mathop{\mathtt{indexes}} (x \colon\colon y \colon\colon x  \colon\colon z \colon\colon \Box) \equivL 0 \colon\colon 1 \colon\colon 2 \colon\colon 3 \colon\colon \Box
-  \]
+  \(
+    \mathop{\mathtt{indexes}} (x \mathbin{\colon\colon} y \mathbin{\colon\colon} x  \mathbin{\colon\colon} z \mathbin{\colon\colon} \Box) \equivL 0 \mathbin{\colon\colon} 1 \mathbin{\colon\colon} 2 \mathbin{\colon\colon} 3 \mathbin{\colon\colon} \Box
+  \)
   \end{example}
   \item The function $\in_k : \N \rightarrow \bb{L}~\kw{nat} \rightarrow \bb{B}$  determines whether a given index is present in a list.
   \item The denotation function $\kw{conj}: \bb{L}~o \ra \prop$ decodes a list of propositions into an n-ary conjunction.
@@ -464,21 +456,21 @@ We begin by introducing the following configuration:
 % ∈ₙ : τ nat → 𝕃 nat → 𝔹
 
 % select (id : τ nat) (cnf: 𝕃 o) : π (id ∈ₙ (indexes cnf)) → π (conj cnf) → π (literal cnf id) ≔
-\begin{lemma}[select]
-Let $k : \N$ be an index and $c : \bb{L}~o$ a reified conjunction, represented as a list of literals. If
-\[
-  \prf (\kw{istrue}~(k \in_k (\kw{indexes}~c))) \text{ and } \prf (\kw{conj}~c)
-\]
-then
-\[
-  \prf (\neg (\kw{conj}~c) \lor (\kw{literal}~k~c))
-\]
-That is, if a literal indexed by $k$ appears in the reified conjunction $c$ and the conjunction as a whole holds, then the corresponding literal must also hold.
-\label{lemma:select}
-\begin{proof}
-\question{ac}{Do I need to provide the proof}  
-\end{proof}
-\end{lemma}
+% \begin{lemma}[select]
+% Let $k : \N$ be an index and $c : \bb{L}~o$ a reified conjunction, represented as a list of literals. If
+% \[
+%   \prf (\kw{istrue}~(k \in_k (\kw{indexes}~c))) \text{ and } \prf (\kw{conj}~c)
+% \]
+% then
+% \[
+%   \prf (\neg (\kw{conj}~c) \lor (\kw{literal}~k~c))
+% \]
+% That is, if a literal indexed by $k$ appears in the reified conjunction $c$ and the conjunction as a whole holds, then the corresponding literal must also hold.
+% \label{lemma:select}
+% \begin{proof}
+% \question{ac}{Do I need to provide the proof}
+% \end{proof}
+% \end{lemma}
 
 % and_pos2 (id : τ nat) (cnf: 𝕃 o) : π (id ∈ₙ (indexes cnf)) → π (¬ (conj cnf) ∨ (literal cnf id)) ≔
 \begin{lemma}[and\_pos]
@@ -491,7 +483,7 @@ then
   \prf (\neg (\kw{conj}~c) \lor (\kw{literal}~k~c))
 \]
 \begin{proof}
-The proof is direct with \cref{lemma:select}.
+ADD PROOF
 \end{proof}
 \label{lem:and-pos}
 \end{lemma}
@@ -532,7 +524,7 @@ which should reduce to $\top$.
 \centering
 \begin{tabular}{|l|}
 \hline
-  R = \kw{sko\_forall} \\ \hline
+  R = \kw{forall\_inst} \\ \hline
   %
   \ruleAlethe{i}{(\neg \forall \bar{x},\, \varphi) \lor (\varphi[\bar{t}])}{forall\_inst} \\ \hline
   %
@@ -566,7 +558,7 @@ proof step by step.
 \begin{center}
 \begin{tabular}{ l l r}
 a0.& $\triangleright \quad \forall x, (P~x)$  & \kw{(assume)}[\,] \\
-a1.& $\triangleright \quad \neg(P~x)$  & \kw{(assume)}[\,] \\
+a1.& $\triangleright \quad \neg(P~a)$  & \kw{(assume)}[\,] \\
 t1.& $\triangleright \quad \neg(\forall\,x, P~x) \lor (P~a)$  & \kw{(forall\_inst)}[($x$,$a$)] \\
 t2.& $\triangleright \quad \neg(\forall\,x, P~x), (P~a)$  & \kw{(or t1)}[\,] \\
 t3.& $\triangleright \quad \bot$ & \kw{(resolution a0 a1 t2)}[\,] \\
@@ -575,7 +567,7 @@ t3.& $\triangleright \quad \bot$ & \kw{(resolution a0 a1 t2)}[\,] \\
 \end{example}
 
 As described \cref{ssec:encoding-prop}, we encode universal and existential quantifiers using a shallow embedding into Lambdapi's dependent function type $\Pi A, B$.
-This allows us to reconstruct the rule \tt{forall\_inst} directly, as shown in \cref{fig:forall-inst-recon}. \question{ac}{need more details?}
+This allows us to reconstruct the rule \tt{forall\_inst} directly, as shown in \cref{fig:forall-inst-recon}.
 
 \section{Skolemization}
 
@@ -701,7 +693,7 @@ $\C{k} = \pid (\E{Q~\overline{x}, \varphi \approx Q~\overline{y}, \psi} \cons \n
  begin
     \ \ \begin{tabular}[t]{@{}l}
           $\kw{apply}~\lor_{i1}; \kw{apply~bindQ};$ \\
-          $\kw{assume}~x_j; \kw{apply}~ (\pid{}_l~j);$ 
+          $\kw{assume}~x_j; \kw{apply}~ (\pid{}_l~j);$
         \end{tabular}\\
     end
     \\
@@ -938,7 +930,7 @@ in the case that $\kw{pFalse} \in \Gamma$, by using \cref{lemma:know_correct} an
 \end{theorem}
 
 \begin{lstlisting}[language=Lambdapi, caption={Usage of Tauto}, label={lst:tauto-ex}]
-symbol reify goal ≔ propReify □ goal; 
+symbol reify goal ≔ propReify □ goal;
 
 symbol tauto_aux [goal] ≔
   let res ≔ reify goal in provable_sound (res ₁) □ (res ₂);

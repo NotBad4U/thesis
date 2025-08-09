@@ -23,7 +23,7 @@ In the following, we designate the SMT-LIB problem as the \emph{input problem}.
 $\lightning$
 \end{center}
 
-\begin{lstlisting}[language=SMT,caption={Running example: an SMT problem and its Alethe proof found by cvc5.},label={lst:smtexampleinput}]
+\begin{lstlisting}[language=SMT,caption={Running example: an SMT problem and its Alethe proof found by cvc5.},label={lst:smtexampleinput-fol}]
 (assume a0 (p a))
 (assume a1 (= a b))
 (assume a2 (not (p b)))
@@ -37,7 +37,7 @@ $\lightning$
 % \caption{Running example: an SMT problem and its Alethe proof found by cvc5.}
 % \label{lst:smtexampleinput}
 
-We will use the input problem shown in the top part of \cref{lst:smtexampleinput} with its Alethe proof (found by cvc5) in the bottom part as a running example to provide an overview of Alethe concepts and to illustrate our embedding in Lambdapi.
+We will use the input problem shown in the top part of \cref{lst:smtexampleinput-fol} with its Alethe proof (found by cvc5) in the bottom part as a running example to provide an overview of Alethe concepts and to illustrate our embedding in Lambdapi.
 
 %\subsection{The Alethe Language}
 %\label{ssect:alethelang}
@@ -71,7 +71,7 @@ A step %\cref{eq:step}
 consists of an index \colorbox{indexClr!30}{$i$} $\in \mathbb{I}$ where $\mathbb{I}$ is a countable infinite set of indices (e.g. \kw{a0}, \kw{t1}), and a clause of formulae \colorbox{green!30}{$l_1, \dots, l_n$} representing an $n$-ary disjunction. Steps that are not assumptions are justified by a proof rule \colorbox{purple!30}{$\mathcal{R}$} that depends on a possibly empty set of premises $\{\colorbox{red!30}{$p_1 \dots  p_m$}\} \subseteq \mathbb{I}$ that only references earlier steps such that the proof forms
 a directed acyclic graph. A rule might also depend on a list of arguments \colorbox{orange!30}{$[a_1 \dots a_r]$} where each argument $a_i$ is either a term or a pair $(x_i, t_i)$ where $x_i$ is a variable and $t_i$ is a term. The interpretation of the arguments is rule specific. The context \colorbox{blue!30}{$\Gamma$} of a step is a list $c_1 \dots c_l $ where each element $c_j$ is either a variable or a variable-term tuple denoted $x_j \mapsto t_j$. Therefore, steps with a non-empty context contain variables $x_j$ that appear in \colorbox{green!30}{$l_i$} and will be substituted by $t_j$. Proof rules \colorbox{purple!30}{$\mathcal{R}$} include theory lemmas and \texttt{resolution}, which corresponds to hyper-resolution on ground first-order clauses. 
 
-We now have the key components to explain the guiding proof in the bottom part of \cref{lst:smtexampleinput} that consists of seven steps. The proof starts with three \texttt{assume} steps \texttt{a0}, \texttt{a1}, \texttt{a2} that restate the assertions from the input problem. 
+We now have the key components to explain the guiding proof in the bottom part of \cref{lst:smtexampleinput-fol} that consists of seven steps. The proof starts with three \texttt{assume} steps \texttt{a0}, \texttt{a1}, \texttt{a2} that restate the assertions from the input problem. 
 Step \texttt{t1} introduces a tautology of the form $\neg (\varphi_1 \approx \varphi_2) \lor \neg \varphi_1 \lor \varphi_2$, justified by the rule \colorbox{purple!30}{\texttt{equiv\_pos2}}. Steps \texttt{t2}, \texttt{t3}, \texttt{t4} use earlier premises that correspond to previous steps. Step \texttt{t2} proves $p(a) \approx p(b)$ by congruence (rule \colorbox{purple!30}{\texttt{cong}}) from the assumption \texttt{a1}.
 Step \texttt{t3} applies the \colorbox{purple!30}{\texttt{resolution}} rule of propositional logic to the premises \texttt{t1, t2, a0} to derive $p(b)$. Finally, the step \texttt{t4} concludes the proof by generating the empty clause $\bot$, concretely denoted as \kw{(cl)} in \cref{lst:smtexampleinput}. %(line 8) 
 Notice that the contexts \colorbox{blue!30}{$\Gamma$} of each step are all empty in this proof.
@@ -112,11 +112,11 @@ can be changed by cvc5 if RARE is enabled into:
 
 
 
-\lstinputlisting[language=SMT,label={lst:smtexampleinput},caption={Input problem.}]{Assets/example_lia.smt2}
+\lstinputlisting[language=SMT,label={lst:smtexampleinput-lia},caption={Input problem.}]{Assets/example_lia.smt2}
 
 \lstinputlisting[language=SMT,caption={Proof of unsatisfiability of the input problem of \protect{\cref{lst:smtexampleinput}}.},label={lst:smtexampleproof}]{Assets/example_lia.proof}
 
-We will use the input problem shown in \cref{lst:smtexampleinput} with its Alethe proof (found by cvc5) in \cref{lst:smtexampleproof} as a running example to introduce Alethe concepts and illustrate our reconstruction of linear arithmetic step in Lambdapi.
+We will use the input problem shown in \cref{lst:smtexampleinput-lia} with its Alethe proof (found by cvc5) in \cref{lst:smtexampleproof} as a running example to introduce Alethe concepts and illustrate our reconstruction of linear arithmetic step in Lambdapi.
 
 \subsubsection{Overview of the Alethe trace format.}
 \label{sssect:alethe-trace-overview}
