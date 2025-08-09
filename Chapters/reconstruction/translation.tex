@@ -2,14 +2,12 @@
 \chapter{Reconstructing SMT Proofs}\label{ch:reconstruction}
 %*****************************************
 
-\section{Translating the SMT input problem}
-
 We now describe how we encode input problems expressed in a given
 SMT-LIB signature \cite[\S 5.2.1]{smtlib}. In order to avoid a notational clash with the Lambdapi signature $\Sigma$, we denote the set of SMT-LIB sorts as $\Theta^\mathcal{S}$, the set of function symbols $\Theta^\cal{F}$, the set of natural numbers $\Theta^\cal{N}$, and the set of variables $\Theta^\cal{X}$.
 Alethe does not support the sorts \texttt{Array} and \texttt{String}. Our translation is based on the following functions:
 \begin{itemize}
-\item $\cal{D}$ translates declarations of sorts and functions in $\Theta^\cal{S}$ and $\Theta^\mathcal{F}$ into constants,
-\item $\cal{S}$ maps sorts to $\Sigma$ types,
+\item $\cal{D}$ translates declarations of SMT sorts and functions in $\Theta^\cal{S}$ and $\Theta^\mathcal{F}$ into declarations of constants,
+\item $\cal{S}$ maps SMT sorts to $\Sigma$ types,
 \item $\cal{E}$ translates SMT expression to $\lpm$ terms,
 \item $\cal{C}$ translates a list of commands  $c_1 \dots c_n$ of the form\\
   $i.~\Gamma \triangleright~\varphi~(\mathcal{R}~P)[A]$ to typing judgments $\Gamma \vdash_\Sigma i : N$ with $N$ the corresponding type of the clause $\varphi$.
@@ -18,8 +16,8 @@ Alethe does not support the sorts \texttt{Array} and \texttt{String}. Our transl
 \smallskip
 
 \begin{definition}[Function $\mathcal{D}$ translating SMT sort and function symbol declarations]
-For each sort symbol $s$ with arity $n$ in $\Theta^\cal{S}$ we create a constant $s: \set \ra \dots \ra \set$.
-For each function symbol $f~\sigma^+$ in $\Theta^\cal{F}$ we create a constant $f: \cal{S}(\sigma^+)$.
+For each sort symbol $s$ with arity $n$ in $\Theta^\cal{S}$ we create a constant $\cal{D}(s) : \set \ra \dots \ra \set$.
+For each function symbol $f~\sigma^+$ in $\Theta^\cal{F}$ we create a constant $\cal{D}(f) : \cal{S}(\sigma^+)$.
 \label{def:function-d}
 \end{definition}
 
@@ -30,7 +28,7 @@ For every function declared in the SMT prelude, we define a constant whose arity
 
 \smallskip
 
-\begin{definition}[Function $\mathcal{S}$ translating sorts of expression] 
+\begin{definition}[Function $\mathcal{S}$ translating sorts of expression]
   The definition of $\mathcal{S}$(s) is as follows.
   \begin{itemize}
     \item Case $s =$ \smtinline{Bool}, then $\Sort{s} = \el\,o$,
@@ -61,35 +59,30 @@ symbol p : El (U ⤳ o);
 The definition of $\E{e}$ is as follows.
 \begin{itemize}
 \setlength{\parskip}{0pt}
-\item Case $e = c$, with $c \in \cal{N}$ then $\E{c} = c$
+\item Case $e = c$, with $c \in \Theta^\cal{N}$ then $\E{e} = c$
 \item Case $e = (u \slash d)$, with $u,d \in \Theta^\cal{N}$ then $\E{c} = \E{u} \,\#\, \E{d}$
 \item Case $e =$ \smtinline{true}, then $\E{e} = \top$
 \item Case $e =$ \smtinline{false}, then $\E{e} = \bot$
-\item Case $e = (p~t_1~t_2\dots~t_n)$ and $p$ an logic operator, then $\E{e} = \E{t_1}~p~\dots~p~\E{t_n}$.
-\item Case $e = (p~t_1~t_2\dots~t_n)$ and $p$ an operator, then $\E{e} = \E{t_1}~p~\dots~p~\E{t_n}$.
+\item Case $e = (p~t_1~t_2\dots~t_n)$ and $p$ a logic operator, then $\E{e} = \E{t_1}~p~\dots~p~\E{t_n}$.
 \item Case $e = (f~t_1\dots~t_n)$ with $f \in \Theta^\cal{F}$,\\
   then $\E{e} = (\mathcal{D}(f)~\E{t_1}~\dots~\E{t_n})$.
 \item Case $e = (\approx~t_1~t_2)$ then $\E{e} = (\E{t_1} = \E{t_2})$.
 \item Case $e = (Q~x_1  \dots x_n ~t)$ and $Q\in \{\kw{forall}, \kw{exists}\}$\\
-  then $\E{e} = Q x_1, \dots, Q x_n, \E{t}$. 
+  then $\E{e} = Q x_1, \dots, Q x_n, \E{t}$.
 \item Case $e = (\kw{choice}~x : \sigma ~t)$ then $\E{e} = \epsilon~x: \cal{S}(\sigma),\, \E{t}$.
 \item Case $e = (x: \sigma )$ with $x \in \Theta^\mathcal{X}$ a sorted variable, then $\E{e} = x: \cal{S}(\sigma)$.
 \item Case $e = (\kw{ite}~c~t~e)$, then $\E{e} = \kw{ite}~\E{c}~\E{t}~\E{e}$.
 \item Case $e = (\kw{xor}~a~b)$, then $\E{e} = \kw{xor}~\E{a}~\E{b}$.
 \item Case $e = (\kw{distinct}~t_1 \dots t_n)$,\\
-  then $\E{e} = \kw{distinct}~(\E{t_1} \colon\colon_\bb{V} \dots\, \colon\colon_\bb{V} ~\E{b} \colon\colon_\bb{V} \Box_\bb{V})$.
-\item Case $e = (\kw{bbt}~x_1 \dots x_n)$, then $\E{e} = \mathop{bbt}~p~(\E{x_1} \mathbin{\colon\colon} \dots \mathbin{\colon\colon} \E{x_n} \mathbin{\colon\colon} \square)$
-with $p$ a proof that \((\E{x_1} \mathbin{\colon\colon} \dots \mathbin{\colon\colon} \E{x_n} \mathbin{\colon\colon} \square)\) is well-formed.
+  then $\E{e} = \kw{distinct}~(\E{t_1} \mathbin{\colon\colon_\bb{V}} \dots\, \mathbin{\colon\colon_\bb{V}} ~\E{b} \mathbin{\colon\colon_\bb{V}} \Box_\bb{V})$.
+\item Case $e = (\kw{bbt}~x_1 \dots x_n)$, \todo{WIP}
 \end{itemize}
 \label{def:function-e}
 \end{definition}
 
-We define the function $\cal{C}$ in \cref{def:function-c} that translates an Alethe step of the form $i.~\Gamma~\triangleright~l_1 \dots l_n\,(R\,P)[A]$ into a constant $i: \pid (\E{l_1}\cons\dots\cons\E{l_n}\cons \nil) \coloneq M$ where $M$ is a proof term of appropriate type.
-We recall that an Alethe proof trace is a list $c_1 \dots c_m$ of steps, where every step may only refer to previous steps by index in its justification. Therefore, we can translate each step independently.
-The function $\cal{C}$ is defined by cases on the rule $R$. In the case of an \texttt{assume} command, we do not provide a proof term $M$ so $i$ is considered as an axiom. Because a step can only refer to previous steps, each step $i$ can be translated separately. Its proof term may refer to constants representing steps that precede $i$ in the trace and that must therefore have been introduced when Lambdapi checks the definition of constant~$i$.
 
 \begin{definition}[Function $\cal{C}$ translating step]
-Given a step 
+We define the function $\cal{C}$ that translates an Alethe step. Given a step:
 \[
   i. \, \Gamma \, \triangleright\, l_1 \dots l_n\,(R\,P)[A]
 \]
@@ -97,6 +90,10 @@ the function $\cal{C}(i)$ produce a constant
 \[
   \cal{C}(i) = i: \pid (\E{l_1}\cons\dots\cons\E{l_n}\cons \nil) \coloneq M
 \]
+The function $\cal{C}$ is defined by cases on the rule $R$.
+In the case of an \texttt{assume} command, we do not provide a proof term $M$ so $i$ is considered as an axiom.
+Its proof term may refer to constants representing steps that precede $i$ in the trace and that must therefore have been introduced when Lambdapi checks the definition of constant~$i$.
+% We recall that an Alethe proof trace is a list $c_1 \dots c_m$ of steps, where every step may only refer to previous steps by index in its justification. Therefore, we can translate each step independently.
 \label{def:function-c}
 \end{definition}
 
