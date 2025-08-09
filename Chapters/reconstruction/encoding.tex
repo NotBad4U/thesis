@@ -497,35 +497,58 @@ show that for any $x * y$ and $x$, if $x * y < n$, then $x \mathbin{\%} n < n$.
 SMT-LIB define bitwise operators such as $\mathop{bvand}$ or $\mathop{bvlshr}$  (which shifts a bitvector to the right) for manipulating the individual bits of one or more bitvectors. 
 Following a similar strategy, we encoded these operations over $\N$ and wrap the bitvector operations on them. We details our approach in \cref{app:bf-defs}.
 
-\section{SMT-LIB helper operators distinct and ite}
-\label{ssec:encoding-distinct-let-enc}
+\section{SMT-LIB helper operators}
+\label{sec:encoding-helper-operator}
 
 SMT-LIB provides the operator \smtinline{(par (A) (distinct A A Bool :pairwise))} that denotes the function that
-returns true if its two arguments are not identical, and \smtinline{(par (A) (ite Bool A A A))} denotes the function that
+returns true if its two arguments are not identical as defined in \cref{tab:distinct-spec}, and \smtinline{(par (A) (ite Bool A A A))} denotes the function that
 returns its second argument or its third depending on whether its first argument is true or not.
 
-\begin{definition}[Distinctness Predicate]
+\begin{table}
+\caption{Specification of the \tt{distinct\_elim}rule in Alethe.}
+\begin{tabular}{@{}ll@{}}
+\multicolumn{2}{@{}l@{}}{\textbf{Rule 93:} R = \tt{distinct\_elim}} \\[0.5em]
+\multicolumn{2}{@{}l@{}}{This rule eliminates the \tt{distinct} predicate.} \\
+\multicolumn{2}{@{}l@{}}{When arguments are type \textbf{Bool}:} \\[0.5em]
+
+\textit{i.} $\Gamma \vdash \ (\mathsf{distinct}\ \varphi\ \psi) \approx \lnot(\varphi \approx \psi)$ & \tt{R} \\[0.3em]
+\textit{i.} $\Gamma \vdash \ (\mathsf{distinct}\ \varphi_1\ \varphi_2\ \varphi_3\ \ldots) \approx \bot$ & \tt{R} \\[0.8em]
+
+\multicolumn{2}{@{}l@{}}{For all other sorts the rule is} \\[0.5em]
+\textit{i.} $\Gamma \vdash \ (\mathsf{distinct}\ t_1 \ \ldots \ t_n) \approx \bigwedge_{i=1}^{n} \ \bigwedge_{j=i+1}^{n} \ t_i \neq t_j$ & \texttt{R}
+\end{tabular}
+\label{tab:distinct-spec}
+\end{table}
+
+\begin{definition}[Distinctness predicate]
 We encode the distinct parameter of SMT by introducing a predicate over dependent vectors,
 since both the size of the collection and the type of its elements influence how the predicate is computed.
-Let \( a : \mathop{\mathrm{Set}} \). We define the constant \( \mathop{\mathrm{Vec}}(a, n) \) inductively for \( n \in \N \) as:
+Let \( a : \set \), we define the constant \( \mathop{\mathrm{Vec}}~a~n \) inductively for \( n : \N \) as:
 \begin{align*}
 &[a: \set] \mathop{\mathrm{Vec}}: \N \ra \type \\
 &|~\Box_\bb{V} : \mathop{\mathrm{Vec}}\,a\, 0 \\
-&|~\mathbin{::}_\bb{V}\,[n:\N]: \el\,a \ra \mathop{\mathrm{Vec}}\,a\,n \ra  \mathop{\mathrm{Vec}}\,a\,(n{+}1) \quad (\text{infix})\\
-&\mathop{\mathrm{vector}}~(a: \set): \set \\
-&\el (\mathop{\mathrm{vector}} a) \re \type \\[1em]
+&|~\mathbin{::}_\bb{V}\,[n:\N]: \el\,a \ra \mathop{\mathrm{Vec}}\,a\,n \ra  \mathop{\mathrm{Vec}}\,a\,(n +1) \quad (\text{infix})\\
+&\mathop{\mathrm{vector}}: \set \ra \N \ra \set \\
+&\el~(\mathop{\mathrm{vector}}~a~(n: \N)) \re \mathop{\mathrm{Vec}}~a~n \\[1em]
 & \kw{distinct}~[a: Set] [n: \N] : \kw{Vec}~a~n \ra \prop 
 \end{align*}
+\end{definition}
 
-We chose Vector because the \kw{distinct\_elim} rule in Alethe \cite[(Rule 93)]{alethespec} behaves differently depending on the size and the sort of terms.
-We define the predicate \( \mathop{\mathrm{distinct}}: \Pi a,\, \Pi n \in \N,\, (\mathop{\mathrm{Vec}}\,a\,n) \ra \prop \) using the following rules:
+\begin{definition}[Distinctness eliminator]
+To implement the behavior specified in \cref{tab:distinct-spec}, we formalize the elimination of distinct through a series of rewriting rules.
 \begin{align*}
 &\mathop{\mathrm{distinct}}~ \mathbin{\_}~\Box_\bb{V} \re \bot \\
-&\mathop{\mathrm{distinct}}~\mathbin{\_}~ (\_ \mathbin{::}_\bb{V} \Box_\bb{V}) \re \top \\
+&\mathop{\mathrm{distinct}}~\mathbin{\_}~ (x \mathbin{::}_\bb{V} \Box_\bb{V}) \re \top \\
 &\mathop{\mathrm{distinct}}~\mathbin{\_}~ (x \mathbin{::}_\bb{V} y \mathbin{::}_\bb{V}  \Box_\bb{V}) \re \neg (x = y) \\
-&\mathop{\mathrm{distinct}}~o~(\_ \mathbin{::}_\bb{V} \_ \mathbin{::}_\bb{V} \_ \mathbin{::}_\bb{V} \_)))) \re \bot \\
-&\mathop{\mathrm{distinct}}~int~(x \mathbin{::}_\bb{V} y \mathbin{::}_\bb{V} tl \mathbin{::}_\bb{V})))) \re \neg (x = y) \land \kw{distinct}~tl
+&\mathop{\mathrm{distinct}}~o~(x \mathbin{::}_\bb{V} y \mathbin{::}_\bb{V} z \mathbin{::}_\bb{V} tl)))) \re \bot \\
+&\mathop{\mathrm{distinct}}~\_~(x \mathbin{::}_\bb{V} y \mathbin{::}_\bb{V} tl \mathbin{::}_\bb{V})))) \re \neg (x = y) \land \kw{distinct}~tl
 \end{align*}
+
+The first two rules capture the base cases: a \(\mathop{\mathrm{distinct}}\) check on an empty vector returns $\bot$, while a vector containing a single element trivially returns $T$.
+The third rule handles the case of two elements, reducing to the negation of their equality.
+For longer vectors, the fourth rule reflects the immediate elimination to  $\bot$ when parameter are type $\prop$ (\smtinline{Bool}),
+while the final rule encodes the recursive elimination for others type than $\prop$. It process by requiring that the head element differs from the second and that the 
+\(\mathop{\mathrm{distinct}}\) property holds for the remaining tail.
 \end{definition}
 
 \begin{example}
@@ -539,12 +562,12 @@ and
 \end{example}
 
 \begin{definition}[\texttt{ite}]
-Let \( a: \set \) be a \set. We define a conditional expression:
+We define a conditional expression:
 \begin{align*}
-\mathop{\mathrm{ite}} : \Pi [a: \set],\, \el\,o \ra \el\,a \ra \el\,a \ra \el\,a
+\mathop{\mathrm{ite}} : \Pi [a: \set],\, \prop \ra \el\,a \ra \el\,a \ra \el\,a
 \end{align*}
-
-We also define the dependent eliminator:
+This conditional expression has the particularity that its condition is of type $\prop$ and not in \B.
+We also define the induction principle:
 \begin{align*}
 &\mathop{\mathrm{ite\_ind}} : \Pi [a],\, \Pi (c : \el\,o)\, (t\, e : \el\,a)\, (p : \el\,a \ra \mathrm{Prop})\\
 &\quad\left( \prf\,c \ra \prf(p~t) \right) \ra \\
