@@ -56,6 +56,7 @@ These rules can be used to rerun the tool in order to verify the confluence prop
   ~(Zpos(p)) -> Zneg(p)
   ~(Zneg(p)) -> Zpos(p)
   ~(~(a)) -> a
+  ~(add(a,b)) -> add(~(a), ~(b))
 
   double(Z0) -> Z0
   double(Zpos(p)) -> Zpos(O(p))
