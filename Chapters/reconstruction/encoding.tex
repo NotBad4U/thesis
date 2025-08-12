@@ -11,78 +11,14 @@ We then present our method for translating these proofs.
 \section{A Prelude Encoding for Alethe}
 \label{sec:encoding-prelude}
 
-\begin{definition}[Prelude Encoding]
-\label{def:defuniv}
-The signature $\Sigma$ of our encoding contains the following definitions and rewrite rules that we use to encode Alethe proofs:
-\begin{align*}
-&\set\index{\set}: \type & &\prop\index{\prop}: \type \\
-&\index{\el{}} \el{}: \set \rightarrow \type  & &\index{\prf}\prf{} : \prop \rightarrow \type \\
-&\mathop{\leadsto}\index{$\leadsto$}: \set \rightarrow \set \rightarrow \set \quad \text{(infix)} & &o: \set \\
-&\el\,(x \leadsto y) \hookrightarrow \el\,x \rightarrow \el\,y & &\el\,o\index{o}  \hookrightarrow \prop
-\end{align*}
-\end{definition}
-
-The notions of term, proposition, and proof are not primitive in \lpm.
-We ﬁrst deﬁne a notion analogous to the predicate logic notion of term, to express the objects the theory speaks about, such as the natural number.
-The constants \set{} and \prop{} in \cref{def:defuniv} are type universes ``à la Tarski'' \cite[\S Universes]{intuitype} in \lpm.
-The type \set{} represents the universe of \textit{small types}, i.e.\ a subclass of types for which we can define equality.
-SMT sorts are represented in \lpm{} as elements of type \set{}. Since elements of type \set{} are not types themselves,
-we also introduce a function $\el: \set \rightarrow \type$ that embeds the terms of type \set{} into terms of type \type.
-Therefore, our function \el{} interprets SMT sorts as \type.
-Thus, we represent the terms of sort \lstinline[language=SMT,basicstyle=\ttfamily\normalsize]|Bool| of SMT by elements of type $\el{}\,o$.
+We based our following definitions on the prelude presented in \cref{sec:prelude-lp}.
+SMT sorts are represented in \lpm{} as elements of type \set{}. We represent the terms of sort \lstinline[language=SMT,basicstyle=\ttfamily\normalsize]|Bool| of SMT by elements of type $\el{}\,o$.
 The constructor $\leadsto$ (written infix) is used to encode SMT functions and predicates.
-
-Jus as \lpm{} does not contain a primitive notion for expressing the objects of the theory, it does not contain a primitive notion of proposition.
-The constant \prop{} represents the universe of propositions. Predicate symbols are represented as constants of type $\set{} \ra \dots \ra \prop$ .
-Similar to \set{}, elements of type \prop{} are not types themselves; they are mapped to types by the function $\prf{}: \prop \rightarrow \type$.
-Drawing an analogy with the Curry-de-Brujin-Howard isomorphism \cite{curryhoward}, this function embeds propositions into types by mapping each proposition $A$ to the type $\prf\,A$, which represents its proofs.
-However, the analogy is only partial in two important ways. First, the propositions themselves are not the types of their proofs: if $t$ is a proof of $A$, then it does not have the type $A$,
-but the type $\prf\,A$. Second, the embedding is not surjective—meaning not all types correspond to proofs. For instance, neither \set{} nor \prop{} are themselves types of proofs.
-
-Consequently, a \emph{step} in an Alethe proof trace is represented as an inhabitants of type $\prf{}\,p$, for a suitable proposition $p$.
-
-\section{Constructive connectives, quantifiers and classical facts}
-\label{ssec:encoding-prop}
-
-In our framework, we adopt the standard set of logical operators and axioms from intuitionistic logic.
-However, in order to interface with SMT solvers—whose reasoning are based on classical logic, we extend our system with the law of excluded middle and propositional extensionality as an additional axioms.
-
-\begin{definition}[Constructive connectives, quantifiers]
-\begin{align}
-& \top : \prop \\
-& \bot : \prop \\
-& \land : \prop \ra \prop \ra \prop \qquad \text{(written inﬁx)} \\
-& \lor : \prop \ra \prop \ra \prop \qquad \text{(written inﬁx)} \\
-& \Rightarrow : \prop \ra \prop \ra \prop \qquad \text{(written inﬁx)} \\
-&  \prf\,(a \Rightarrow\,b) \re \prf\, a \ra \prf\,\,b \label{eq:imp}\\
-& \neg a \is a \Rightarrow \bot \\
-% & \mathop{\mathrm{xor}}~a~b \is (\neg a \land b) \lor (a \land \neg b) \\
-& \forall : \Pi {[a: \set]}, (\el\, a \ra \prop) \ra \prop \label{eq:forall}\\
-& \prf{}(\forall\,p) \re \Pi\, x, \prf{(p~x)}\\
-& \exists : \Pi\, {[a: \set]}, (\el\, a \ra \prop) \ra \prop \\
-& {=} : \Pi [a : \set], \el\, a \ra \el\, a \ra \prop \qquad \text{(written inﬁx)}
-\end{align}
-\end{definition}
-
-According to the Curry-de Bruijn-Howard correspondence, a proof of $A \Rightarrow B$ should have the type $\prf\,(A \Rightarrow B)$.
-However, such a proof actually has type $\prf\,A \ra \prf\,B$. This means that the types $\prf\,(A \Rightarrow B)$ and $\prf\,A \ra \prf\,B$ must be identiﬁed.
-To achieve this, we introduce the rewriting rule \cref{eq:imp}, allowing $\prf\,(A \Rightarrow B)$ to be rewritten as $\prf\,A \ra \prf\,B$.
-
-We cannot assign the type $\Pi : \type, (X \ra \prop) \ra \prop$ to the universal quantifier, because in \lpm{} there is no mechanism for quantifying over variables of type \type.
-Instead, we assign the type $\Pi\,x:\set{},(\el\,x \ra \prop) \ra \prop$ to the generic universal quantiﬁer $(\forall)$ \cref{eq:forall}.
-Thus, we will be able to quantify over SMT sorts that will be encoded as inhabit of type \set. Furthermore, the previously defined term $o: Set$, together with the rewrite rule $\el\,o\index{o}  \hookrightarrow \prop$
-, enables quantification over propositions, rendering the universal quantifier impredicative.
-
-\begin{example}[quantification over $\prop$ with $o$]
-The eliminator for bottom can be formalized as:
-\[ \bot_e : \prf\,(\bot \Rightarrow \forall (p: \el\,o), p) \]
-\end{example}
-
-Equality (=) over small types is parameterized over types $\el\,a$ for the type parameter $a : \set{}$.
-
+Since Alethe extend the SMT format with the \smtinline{choice} operator (\cite[\S 2.1]{alethespec}), we add it to the prelude. 
+% Thus, we will be able to quantify over SMT sorts that will be encoded as inhabit of type \set. 
 
 \begin{definition} \label{def:eps}
-We define the choice operator $\epsilon$ (\cite[\S 2.1]{alethespec}).
+We define the choice operator named $\epsilon$.
 \begin{align}
 & \epsilon: \Pi\, {[a: \set]}, (\el\,a \ra \prop) \ra \el\,a \\
 & \epsilon_i: \Pi\, {[a: \set]}, \Pi (x : \el\,a), \Pi (P : \el\,a \ra \prop) \\
@@ -95,12 +31,17 @@ The characteristic proof rules for the $\epsilon$ operator are represented by th
 and $\epsilon_d$ that asserts that the epsilon operator assigns the same witness to equivalent predicates $P$ and $Q$.
 \end{definition}
 
+
 Overall, this corresponds to a shallow embedding, where the logical connectives in SMT are directly represented by their counterparts in Lambdapi.
 SMT logic enjoys the property of propositional completeness (also referred to as \emph{propositional degeneracy}) asserting that:
  \[
   \forall p,(p = \top) \lor (p = \bot)
 \]
 Moreover, propositionally equivalent formulas are equal.
+
+In order to interface with SMT solvers—whose reasoning are based on classical logic,
+we extend our system with the law of excluded middle and propositional extensionality as an additional axioms.
+
 
 \begin{definition}[Classical facts]
 We introduce the classical axioms:
@@ -323,21 +264,6 @@ This \emph{canonical representation} ensures uniqueness of representation (no tw
 Next, we will define a constructor function that will compute reduced fraction from a pair of integers.
 We first define the product type in \cref{def-product}, with the constant $\times: \set \ra \set \ra \set$.
 
-\begin{definition}[Product type]\label{def-product}
-\begin{align*}
-&\textbf{Non dependent product type:} \\
-&\quad \times : \text{Set} \to \text{Set} \to \text{Set} \quad \textit{(written infix)} \\
-&\textbf{Pairing symbol:} \\
-&(\mathbin{‚}) [a~b] : \el a \ra \el b \ra \el (a \times b)\\[1em]
-&\textbf{Projections (written postfix):}  \\
-&\quad {}_1 : \el\, (a \times b) \ra \el\, a \quad \text{with rewrite rule } (x \mathbin{‚} \_)_1 \re x \\
-&\quad {}_2 : \el\, (a \times b) \ra \el\, b \quad \text{with rewrite rule } (\_ \mathbin{‚} y)_2 \re y
-\end{align*}
-\end{definition}
-
-The pairing constructor is denoted by $(‚)$ (a comma-like symbol), which takes two terms $x : \el\,a$ and $y : \el\, b$ and produces a term $x \mathbin{‚} y : \el (a \times b)$.
-Two projection symbols ${\_}_1$ and ${\_}_2$ extract the first and second components of a pair, respectively.
-
 The constructor function $\kw{fracq}$, in \cref{def:fracq-def}, normalizes any integer pair to its reduced form and a proof that the invariant holds, so if two inputs represent the same rational number,
 the function $\kw{fracq}$ returns exactly the same $\Q$ value (with identical numerator/denominator and proof) e.g. $\kw{fracq} (2,4) \equivL \kw{fracq} (3,6)$.
 
@@ -391,26 +317,7 @@ For example, we define the addition $+_\Q$ symbol as follows:
 \label{ssec:encoding-bv}
 
 We interpret the sort of bitvectors \smtinline{ (_ BitVec w)} from the SMT logic \textbf{BV} as a number less than $2^w$. We use the type $\mathop{Fin}$ as the internal representation of a bitvector
-that represents the set of natural numbers less than an arbitrary $w$. We first define the dependent pair type in Lambdapi necessary to encode \kw{Fin} using an inductive encoding.
-
-\begin{definition}[Dependent pair]\label{dep-pair-def}
-The type $\Sigma~p$ parameterized by a predicate $p$ on a type $\el\,a$, represents a dependent pair consisting of an element $x : \el\,a$ and a proof that $p~x$ holds.
-
-\begin{align*}
-&\Sigma : \forall a : \set{}, (\el{}~a \ra \prop): \type \\
-&|~exist : \Pi (a : \set{}), \prf (p~x) \ra \Sigma~p \\
-&\\
-& Sigma~[a: \set{}]: (\el{}~a \ra \prop) \ra \set{} \\
-& \el{}~Sigma~p \re \Sigma~p \\
-&\\
-& \textcolor{red}{s_1}~[a: \set{}] [p:(\el{}~a \ra \prop)] (e: \Sigma~a~p): \el{}~a \\
-& (exist~x~\_)~\textcolor{red}{s_1} \re x\\
-& s_2~[a: \set{}] [p:(\el{}~a \ra \prop)] (e: \Sigma~a~p): \prf{}(p~(e~\textcolor{red}{s_1})) \\
-& (exist~x~p)~s_2 \re p\\
-\end{align*}
-The projections from this dependent pair are defined through the symbols $s_1$ and $s_2$, corresponding respectively to the first and second components of the pair.
-The rewrite rule for $s_1$ extracts the value $x$ from a term of the form $\kw{exist}~x~\_$, while the rule for $s_2$ retrieves the proof that $(p~x)$ holds.
-\end{definition}
+that represents the set of natural numbers less than an arbitrary $w$. We use a dependent pair type (\cref{dep-pair-def}) in Lambdapi necessary to encode \kw{Fin} using an inductive encoding.
 
 \begin{definition}[Fin]\label{def:fin-def}
 The type $\mathop{Fin} n$ is the type of natural numbers $i$ with the constraint that $i < n$.
@@ -521,17 +428,11 @@ returns its second argument or its third depending on whether its first argument
 \end{table}
 
 \begin{definition}[Distinctness predicate]
-We encode the distinct parameter of SMT by introducing a predicate over dependent vectors,
+We encode the distinct parameter of SMT by introducing a predicate over dependent vectors \cref{def:dependent-vector},
 since both the size of the collection and the type of its elements influence how the predicate is computed.
-Let \( a : \set \), we define the constant \( \mathop{\mathrm{Vec}}~a~n \) inductively for \( n : \N \) as:
-\begin{align*}
-&[a: \set] \mathop{\mathrm{Vec}}: \N \ra \type \\
-&|~\Box_\bb{V} : \mathop{\mathrm{Vec}}\,a\, 0 \\
-&|~\mathbin{::}_\bb{V}\,[n:\N]: \el\,a \ra \mathop{\mathrm{Vec}}\,a\,n \ra  \mathop{\mathrm{Vec}}\,a\,(n +1) \quad (\text{infix})\\
-&\mathop{\mathrm{vector}}: \set \ra \N \ra \set \\
-&\el~(\mathop{\mathrm{vector}}~a~(n: \N)) \re \mathop{\mathrm{Vec}}~a~n \\[1em]
-& \kw{distinct}~[a: Set] [n: \N] : \kw{Vec}~a~n \ra \prop
-\end{align*}
+\begin{equation*}
+\kw{distinct}~[a: Set] [n: \N] : \kw{Vec}~a~n \ra \prop
+\end{equation*}
 \end{definition}
 
 \begin{definition}[Distinctness eliminator]
