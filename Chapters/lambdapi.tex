@@ -55,7 +55,6 @@ The terms of the \lp-Calculus Modulo are the same as in \lp-Calculus (LF).
 The terms of \lpm{} are divided into three levels: objects (denoted by $M$ and $N$), types (denoted by $A$ and $B$), and kinds (denoted by $K$).
 The syntax of \lpm{} is given by the following grammars:
 
-\newcommand\pipe{\ensuremath{\mathrel{|}}}
 
 \begin{flalign*}
 &\text{Objects}  & M, N  &::= c \pipe x \pipe \lambda\,x : A, M \mathrel{|} M~N &\\
@@ -363,9 +362,27 @@ The eliminator for bottom can be formalized as:
 
 Equality (=) over small types is parameterized over types $\el\,a$ for the type parameter $a : \set{}$.
 
-\subsection{Data structure}
+\subsection{Inductive data structure}
+
+To illustrate how inductive types are expressed in Lambdapi, we present below some data structure.
+While this example is primarily intended to demonstrate the syntax and capabilities of the system, the same structure will later be employed in our encoding in \cref{ch:encoding}.
+Lambdapi extends the \lpm-Calculus Modulo by providing partial support for inductive types.
+An inductive type is declared by specifying its name, followed by a list of constructors, each describing one possible way of building an element of the type.
+The general form is:
+
+\begin{align*}
+&TypeName : \type\\
+&|~constructor1 : \dots : TypeName \\
+&|~constructor2 : \dots : TypeName\\
+&\dots
+\end{align*}
+
+This support is described as partial because Lambdapi currently does not enforce the positivity constraint on inductive definitions.
+From any inductive type declaration, Lambdapi automatically derives the corresponding induction principle along with its associated inference rules.
+
 
 \begin{definition}[Product type]\label{def-product}
+The product type, which pairs together values from two types, is constructed as follows:
 \begin{align*}
 &\textbf{Non dependent product type:} \\
 &\quad \times : \text{Set} \to \text{Set} \to \text{Set} \quad \textit{(written infix)} \\
@@ -378,7 +395,7 @@ Equality (=) over small types is parameterized over types $\el\,a$ for the type 
 \end{definition}
 
 \begin{definition}[List]\label{def:list}
-The data structure of list is defined with an inductive type as follows:
+The structure of a list is specified through the following inductive type definition:
 \begin{align*}
 &[a: \set]~ \bb{L}: \type \\
 &|~\Box : \bb{L}~a \\

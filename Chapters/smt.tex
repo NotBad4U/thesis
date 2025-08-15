@@ -1,0 +1,294 @@
+\chapter{Satisfiability Modulo Theories}\label{ch:smt}
+
+
+\section{Terms and Sorts}
+
+The term language of the SMT-LIB logic uses mutually disjoint sets of predefined symbols.
+Each such set is associated with a character that serves as a generic placeholder for the symbols in the set.
+
+
+
+
+SMT-LIB terms are constructed from the function symbols and variables taken from their respective sets together with the three binders \( \forall, \exists \) and \( \kw{let} \dots \kw{in} \dots \).
+
+\begin{definition}[Terms]
+The following grammar rule describes the construction of terms $t$
+\begin{equation*}
+t ::= t \pipe x \pipe f~x \pipe f^\sigma t^* \pipe \exists (x: \sigma)^+. t \pipe \forall (x: \sigma)^+. t \pipe \mathrel{\kw{let}} (x = t)^+ \mathrel{\kw{in}} t
+\end{equation*}
+The notation $()^*$ denotes a possibly empty and finite list, and $()^+$ a finite list with at least one member.
+\end{definition}
+
+Since the SMT-LIB logic is many-sorted, every term has an associated sort.
+To avoid ambiguous sorts, there is a syntax to concretize the sort of a function symbol $f^\sigma$.
+Third, this term language also encompasses terms with Boolean sort – there is no distinction between terms and formulas.
+Finally, symbols such as equality and the Boolean connectives are not part of the syntax. They are handled by the special theory $Core$.
+
+he sorting rules use a signature. The signature determines the concrete
+function symbols and sorts available to build well-sorted terms. The concrete
+signature depends on the chosen theories and can also be extended by the
+user with uninterpreted sorts and symbols by invoking commands to do so.
+SMT-LIB supports parametric sorts and sort terms, but we do not use the
+features.
+
+
+\begin{definition}[Signature]
+A signature is a tuple $\Theta = (\Theta^\cal{S}, \Theta^\cal{F}, \Theta^\cal{X}, V, R)$
+\begin{itemize}
+    \item  a finite set $\Theta^\cal{S}$  of sort symbols that contains the symbol \smtinline{Bool};
+    \item The infinite set $\Theta^\cal{X}$ contains the variables;
+    \item a set $\Theta^\cal{F}$ of function symbols;
+    \item a partial mapping $V$ from $\Theta^\cal{X}$ to $\Theta^\cal{S}$ that assigns sorts to some variables,
+    \item and a ranking relation $R \subseteq \Theta^\cal{F} \times (\Theta^\cal{S})^+$. The relation must be left-total: for
+    all $f \in \Theta^\cal{F}$ there is a $\eta \in (\Theta^\cal{S})^+$ such that $f \mathrel{R} \eta$. The set $(\Theta^\cal{S})^+$ 
+    is the set of non-empty finite lists over the sort symbols in $\Theta^\cal{S}$.
+\end{itemize}
+\end{definition}
+
+
+A rank denotes the expected sort of the symbol's arguments and of the result.
+Since the SMT-LIB logic allows overloading, $R$ is not left-unique. The form of overloading supported by the SMT-LIB logic is called ad hoc polymorphism.
+
+\section{The Meaning of Formulas}
+
+To define the semantic of the SMT-LIB logic, we use the familiar notion of $\Sigma$-structure.
+
+\begin{definition}[$\Sigma$-structure]
+Let $\Sigma$ be a signature.  
+A \emph{$\Sigma$-structure} is a tuple $\mathcal{A} = (U, I)$ of a set $U$, the \emph{universe}, and a mapping $I$.
+\begin{itemize}
+    \item Each sort $\sigma \in \Sigma^{S}$ is mapped to a non-empty set $I(\sigma) \subseteq U$, the \emph{domain} of $\sigma$.  
+    The mapping is such that $U = \bigcup_{\sigma \in \Sigma^{S}} I(\sigma)$.
+    \item For each sort $\sigma_1 \dots \sigma_n \sigma$, $I(\sigma_1 \dots \sigma_n \sigma)$ is the set of total functions from $I(\sigma_1) \times \dots \times I(\sigma_n)$ to $I(\sigma)$.
+    \item $I(\mathsf{Bool}) = \{\mathsf{true}, \mathsf{false}\}$, where $\mathsf{true}$ and $\mathsf{false}$ are distinct and both are elements of $U$.
+    \item Each ranked function symbol $f : \sigma$ (i.e., each constant) is mapped such that $I(f : \sigma) \in I(\sigma)$.
+    \item Each ranked function symbol $f : \sigma_1 \dots \sigma_n \sigma \in \Sigma$ is mapped to a total function from $I(\sigma_1 \dots \sigma_n \sigma)$.
+\end{itemize}
+\end{definition}
+
+The notion of a satisfiable or falsifiable formula is defined as usual. A
+$\Sigma$-interpretation satisfies a formula $\varphi$ if $\llbracket \varphi \rrbracket^{\cal{T}} = \kw{true}$.
+If, on the other hand $\varphi$ if $\llbracket \varphi \rrbracket^{\cal{T}} = \kw{false}$,  then the $\Sigma$-interpretation \emph{falsifies} the formula.
+Furthermore, a formula $\varphi$ is \emph{satisfiable} if there is a $\Sigma$-interpretation that satisfies it and,
+accordingly, it is \emph{unsatisfiable} if there is none.
+
+The notion of a \emph{model} only applies to sentences. In this case, the valuation
+$\nu$ is irrelevant. Hence, a model of a formula without free variables $\varphi$
+is a $\Sigma$-structure $\mathcal{A}$ such that every (or, equivalently, at least one)
+$\Sigma$-interpretation $(\mathcal{A}, \nu)$ satisfies $\varphi$. As usual, $\models$
+denotes semantic entailment. A set of sentences $\Gamma$ entails a sentence $\psi$
+iff every model that satisfies all sentences in $\Gamma$ satisfies $\psi$ as well.
+This is denoted $\Gamma \models \psi$ and if $\Gamma$ contains only one sentence
+$\varphi$ it is denoted $\varphi \models \psi$.
+
+
+\section{Theories}
+
+The SMT-LIB language allows the combination of theories.
+Theories can be combined if their signatures are compatible.
+Signatures are compatible if they have the same sort symbols and agree on the sorts they assign to variables.
+
+The result of combining two compatible theories is as expected: it is the class of $\Sigma$-structures whose projections to the signature of a component theory are models of that theory.
+
+Within SMT-LIB parlance, a logic is a specific signature $\Sigma$ together with a theory $\cal{T}$ and a restriction to the set of allowed sentences.
+The restrictions are usually syntactical and ban undefined sentences.
+For example, in the logic of linear arithmetic, it is pointless to multiply two variables.
+We will follow the common practice of the SMT community and do not always draw a clear distinction between "logic" and "theory".
+
+\begin{definition}[Theories]
+A $\Sigma$-theory $\cal{T}$ is a class of $\Sigma$-structure on a signature $\Sigma$.
+These structures are the \emph{models} of the theory $\cal{T}$.
+\end{definition}
+
+Defining theories this way gives us the flexibility to declare theories as
+either specific models (such as the usual model of natural numbers), or as
+the $\Sigma$-structures that satisfies a set of sentences which are called axioms.
+
+\begin{definition}[Satisfiability and Entailment In a Theory]
+A $\Sigma$-sequence is satisfiable in a theory $\cal{T}$ if and only if it is satisfied by one of the models
+of $\cal{T}$. A set $\Gamma$ of $\Sigma$-sequences $\cal{T}$-entails a $\Sigma$-sequence $\varphi$ denoted
+$\Gamma \models_{\cal{T}} \varphi$ if and only if every model of $\cal{T}$ that satisfies all sentences in $\Gamma$ satisfies $\varphi$ as well.
+\end{definition}
+
+
+\begin{definition}[The Core theory]
+This theory is used by every SMT-LIB logic. It contains the usual Boolean connective $\land, \lor, \neg, \to, \kw{xor}, \kw{distinct}, \kw{ite}$.
+Equality, denoted by $\simeq$ (=in SMT-LIB), is also part of this theory.
+The \emph{Core theory} does not contain a dedicated "if and only if" connective.
+Instead equality with Boolean sorts is used.
+\end{definition}
+
+\todo{ac}{add distinct + ite def?}
+
+\begin{remark}
+Since SMT-LIB is restricted to ASCII characters, it uses the strings \smtinline{and, or, not, =>, xor} for boolean connectives. 
+\end{remark}
+
+\begin{definition}[The theory of linear arithmetic]
+Linear arithmetic within SMT-LIB is defined by the theories for reals and integers together with syntactic restrictions that restrict arithmetic expressions to linear expressions.
+\end{definition}
+
+The signature of the theory of reals and integers contains two additional sorts: \smtinline{Int} and \smtinline{Real}. 
+It also contains the function symbols listed in Table~\ref{tab:real-int-funs}.
+Most functions are overloaded to work with integers and reals.
+The interpretation of the theory is as expected.
+Division, however, is a special case since SMT-LIB does not support partial functions.
+Hence, terms such as \((/~x~0.0)\) are well-defined. The standard, however, does not constrain the interpretation of such terms.
+As a consequence, for each real constant \(v\), the term \((\approx~v~(/~t~0.0))\) has a model.
+In practice, this means that such terms are useless.
+The same applies for \tt{div} – the integer division.
+
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lll}
+\toprule
+\textbf{Symbol} & \textbf{String} & \textbf{Rank} \\
+\midrule
+$-$ & \texttt{-} & Int Int \\
+    &            & Real Real \\
+$-$ & \texttt{-} & Int Int Int \\
+    &            & Real Real Real \\
+$+$ & \texttt{+} & Int Int Int \\
+    &            & Real Real Real \\
+$\times$ & \texttt{*} & Int Int Int \\
+    &               & Real Real Real \\
+\texttt{div} & \texttt{div} & Int Int Int \\
+/ & \texttt{/} & Real Real Real \\
+\texttt{mod} & \texttt{mod} & Int Int Int \\
+\texttt{abs} & \texttt{abs} & Int Int \\
+$\leq$ & \texttt{<=} & Int Int Bool \\
+    &                & Real Real Bool \\
+$<$ & \texttt{<} & Int Int Bool \\
+    &             & Real Real Bool \\
+$\geq$ & \texttt{>=} & Int Int Bool \\
+    &               & Real Real Bool \\
+$>$ & \texttt{>} & Int Int Bool \\
+    &             & Real Real Bool \\
+\texttt{to\_real} & \texttt{to\_real} & Int Real \\
+\texttt{to\_int}  & \texttt{to\_int} & Real Int \\
+\texttt{is\_int}  & \texttt{is\_int} & Real Bool \\
+\texttt{divisible} $n$ & \texttt{(\_ divisible n )} & Int Bool \\
+\bottomrule
+\end{tabular}
+\caption{Function symbols of the real and integers theory.}
+\label{tab:real-int-funs}
+\end{table}
+
+
+\section{Solving SMT Problems}
+
+In general, any system that solves SMT problems is an SMT solver. This is only half of the story, though.
+The structure of typical SMT problems goes hand in hand with the most common algorithm used to solve them.
+The core idea is to combine propositional reasoning with theory reasoning.
+The standard algorithm to propositional reasoning is \textit{conflict-driven clause learning} (CDCL).
+
+
+The basic idea of CDCL(T) is to separate propositional reasoning from
+theory reasoning by creating an abstract version of the problem where every
+literal is replaced by a propositional variable. Standard CDCL determines
+which propositional variables, and hence which literals, must hold. A theory
+solver then determines if those literals are also valid in the theory. If this
+is the case the problem is solved, if it is not, then new clauses are gener-
+ated. Should the problem contain quantifiers, then an additional component
+instantiates the quantifiers.
+
+
+This approach to SMT solving is known as the lazy approach. The eager
+approach, on the other hand, works by encoding the input problem into a
+propositional satisfiability problem up front. The translation must preserve
+the satisfiability of the problem. The propositional problem can then be
+handed over to any standard SAT solver.
+Let us now look at the lazy approach in more detail. The following de-
+scription is inspired by the CDCL(T) implementation in veriT, but is greatly
+simplified.
+
+\begin{figure}
+\begin{tikzpicture}[
+  node distance=8pt and 8pt, font=\scriptsize
+]
+    % Inner boxes
+    \node (Box1) [draw, rounded corners=3pt, align=center] {CDLC};
+    \node (Box2) [draw, rounded corners=3pt, align=center, below=of Box1] {Theory Solver};
+    
+    % Larger box around the two
+    \node (Container) [draw, minimum width=5cm, rounded corners=3pt, thick, fit=(Box1) (Box2), inner sep=10pt] {};
+    
+    % Instantiation Procedure above Container
+    \node (Box3) [draw, rounded corners=3pt, above=of Container] {Instantiation Procedure};
+
+    % Outer container
+    \node (Container2) [draw, minimum width=7cm, rounded corners=3pt, thick, fit=(Container) (Box3), inner sep=10pt] {};
+
+    % Left and right columns aligned by TOP (north)
+    \node (L1) [draw, rounded corners=3pt, align=center,
+                anchor=north] at ([xshift=-5cm]Container2.north) {Problem};
+    % \node (L2) [draw, rounded corners=3pt, below=of L1] {Preprocess};
+    \node (L2) [draw, rounded corners=3pt, align=center, anchor=center] at (L1.center |- Box1.center) {Preprocess};
+
+
+    \node (R1) [draw, rounded corners=3pt, align=center,
+                anchor=north] at ([xshift=5cm]Container2.north) {Sat};
+    \node (R2) [draw, rounded corners=3pt, below=of R1] {Unsat};
+    \node (R3) [draw, rounded corners=3pt, below=of R2] {Timeout};
+
+    %  \draw [-> ] (Box1.east) to [bend left=60,looseness=3] (Box2.east);
+    %  \draw [-> ] (Box2.west) to [bend left=60,looseness=3] (Box1.west);
+    \draw[->] (Box1.east) to[out=0,   in=0,   looseness=2] (Box2.east);
+    \draw[->] (Box2.west) to[out=180, in=180, looseness=2] (Box1.west);
+
+
+    \draw[->] (Box3.east) to[out=0,   in=0,   looseness=1.8] (Container.east);
+    \draw[->] (Container.west)      to[out=180, in=180, looseness=1.8] (Box3.west);
+
+
+    \draw[->] ([yshift=44pt]Container2.east) -- (R1.west);
+    \draw[->] ([yshift=22pt]Container2.east) -- (R2.west);
+    \draw[->] ([yshift=0pt]Container2.east) -- (R3.west);
+
+    \draw [-> ] (L2) to (Container2);
+
+    \draw [-> ] (L1) to (L2);
+\end{tikzpicture}
+\caption{The main loop of an SMT solver.}
+\label{fig:CDCL}
+\end{figure}
+
+\cref{fig:CDCL} shows the operation of a CDCL(T) based SMT solver when
+solving a problem with quantifiers. It first preprocesses the input problem.
+Then two procedures together refute the problem: the ground solver either
+refutes the problem at the ground level, or finds a ground model. For problems without quantifiers the process would terminate now, but if quantifiers
+are present the instantiation procedure is started with the ground model.
+The procedure either creates new ground lemmas or can determine that the
+problem is satisfiable.
+
+
+Given an input sentence (i.e., a closed term of sort Bool) an SMT solver
+performs multiple preprocessing steps before the solving phase is started.
+This produces an equisatisfiable problem $F$ in clause normal form.
+To make efficient use of the ground solver, ground subformulas are fully
+clausified. Quantified formulas, however, are treated differently. They are
+usually not put in prenex form or clausified. Furthermore, strong quantifiers are usually not fully skolemized. This has the benefit that the original
+structure of quantified formulas is preserved, which is crucial for some instantiation techniques.
+
+Preprocessing applies some light form of rewriting on quantified formulas. In veriT, most rewriting steps apply to constants below arithmetic
+operators and Boolean connectives. For example, the term $(\bot \to \varphi_1) \to \varphi_2$ is replaced by $\varphi_2$.
+
+Skolemization is another preprocessing step applied to quantified formulas.
+How skolemization is applied is essentially implementation dependent.
+The common abstract CDCL(T) calculus is only concerned with ground reasoning.
+The SMT solvers cvc5 and veriT only skolemize outermost strong quantifiers in their default configuration.
+
+In the following we discuss the inner loop of the SMT solver as shown in
+\cref{fig:CDCL} It tries to find a model of the quantifier-free part of the problem.
+First, the CDCL algorithm searches for a propositional model of the abstracted problem.
+Then, the theory solvers checks if the literals in the propositional models are consistent in the theories.
+If this is the case, the literals form the ground model.
+
+If the SMT solver determines that no propositional model exists (i.e., the
+abstraction is propositionally unsatisfiable), the original problem is unsatisfiable and the SMT solver terminates. If, on the other hand, a propositional
+model is found, the theory solvers jump into action. The theory solvers depend on the theory used, and their calculus can vary widely. Furthermore, if
+more than on theory is used, it is necessary to combine the theory solvers for each theory.
+In any case, the theory solver takes as input the propositional model and determines either that the model is consistent with the theories or that it contradicts them.
+If the literals of the propositional model are consistent with the theories, then they form a ground model of the quantifier-free part of $F$.
+Since quantifier reasoning is handled by the dedicated instantiation module, such a model is usually just called "ground model" in SMT parlance.

@@ -262,7 +262,6 @@ with $\top_i : \prf\,\top$.
 
 This \emph{canonical representation} ensures uniqueness of representation (no two different pairs represent the same rational) and yields a decidable equality.
 Next, we will define a constructor function that will compute reduced fraction from a pair of integers.
-We first define the product type in \cref{def-product}, with the constant $\times: \set \ra \set \ra \set$.
 
 The constructor function $\kw{fracq}$, in \cref{def:fracq-def}, normalizes any integer pair to its reduced form and a proof that the invariant holds, so if two inputs represent the same rational number,
 the function $\kw{fracq}$ returns exactly the same $\Q$ value (with identical numerator/denominator and proof) e.g. $\kw{fracq} (2,4) \equivL \kw{fracq} (3,6)$.
@@ -317,7 +316,7 @@ For example, we define the addition $+_\Q$ symbol as follows:
 \label{ssec:encoding-bv}
 
 We interpret the sort of bitvectors \smtinline{ (_ BitVec w)} from the SMT logic \textbf{BV} as a number less than $2^w$. We use the type $\mathop{Fin}$ as the internal representation of a bitvector
-that represents the set of natural numbers less than an arbitrary $w$. We use a dependent pair type (\cref{dep-pair-def}) in Lambdapi necessary to encode \kw{Fin} using an inductive encoding.
+that represents the set of natural numbers less than an arbitrary $w$. We use a dependent pair type (\cref{dep-pair-def}) in Lambdapi necessary to encode \kw{Fin}.
 
 \begin{definition}[Fin]\label{def:fin-def}
 The type $\mathop{Fin} n$ is the type of natural numbers $i$ with the constraint that $i < n$.
