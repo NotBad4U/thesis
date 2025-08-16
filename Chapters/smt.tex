@@ -3,7 +3,7 @@
 
 \section{SMT Solvers}
 
-Satisfiability Modulo Theories (SMT) solvers are automated reasoning tools that extend SAT solving \cite{chaff,minitsat} by combining propositional search with reasoning in background theories.
+Satisfiability Modulo Theories (SMT) \cite{Barrett2021SatisfiabilityMT} solvers are automated reasoning tools that extend SAT solving \cite{chaff,minitsat} by combining propositional search with reasoning in background theories.
 These theories formalize the fundamental data types of computer science, including integers and rationals, floating-point numbers, strings, arrays, sequences, records, and finite sets.
 By incorporating the essential algebraic properties of such types as built-in reasoning modules, SMT solvers can handle them natively rather than treating them as uninterpreted.
 SMT solvers are widely used in software and hardware verification \cite{application-smt-hardware}, constraint solving \cite{awssmt,application-smt2}, and automated theorem proving \cite{coqhammer1,Sledgehammer}.
@@ -43,6 +43,9 @@ Well-sortedness in SMT-LIB is defined with respect to a \emph{signature}, which 
 The concrete signature depends on the selected background theories, but it can also be extended by the user with uninterpreted sorts and symbols through dedicated commands.
 While SMT-LIB in general supports parametric sorts and sort terms, these features are not used in our setting.
 
+
+A formula without free variables is called a \emph{sentence}.
+A term without any variables is called a \emph{ground term}. A formula that is a ground term is a \emph{ground formula}.
 
 \begin{notation}
 Since the symbol $\Sigma$ is already used for Lambdapi signatures, and SMT-LIB also employs $\Sigma$ for its own signature, we instead denote SMT signature by $\Theta$.  
@@ -255,15 +258,6 @@ This logic excludes quantifiers and introduces no additional symbols beyond thos
 
 \subsection{The theory of linear arithmetic}
 
-Linear arithmetic in SMT-LIB is specified by the theories of reals (\textbf{LA}) and integers (\textbf{LIA}), together with syntactic constraints ensuring that arithmetic expressions remain linear.
-
-The signature of the theory of reals and integers contains two additional sorts: \smtinline{Int} and \smtinline{Real} , along with the function symbols listed in \cref{tab:real-int-funs}.
-Most of these functions are overloaded to operate uniformly on both integers and reals.
-Their interpretation is standard, with the exception of division. 
-Since SMT-LIB does not support partial functions, terms such as \((/~x~0.0)\) are well-defined , although the standard leaves their interpretation unconstrained.
-Consequently, for each real constant \(v\), the term \((\approx~v~(/~t~0.0))\) admits a model.
-The same consideration applies to integer division (\texttt{div}).
-
 \begin{table}
 \centering
 \begin{tabular}{lll}
@@ -300,13 +294,17 @@ $>$ & \tt{>} & Int Int Bool \\
 \label{tab:real-int-funs}
 \end{table}
 
+Linear arithmetic in SMT-LIB is specified by the theories of reals (\textbf{LA}) and integers (\textbf{LIA}), together with syntactic constraints ensuring that arithmetic expressions remain linear.
+
+The signature of the theory of reals and integers contains two additional sorts: \smtinline{Int} and \smtinline{Real} , along with the function symbols listed in \cref{tab:real-int-funs}.
+Most of these functions are overloaded to operate uniformly on both integers and reals.
+Their interpretation is standard, with the exception of division. 
+Since SMT-LIB does not support partial functions, terms such as \((/~x~0.0)\) are well-defined , although the standard leaves their interpretation unconstrained.
+Consequently, for each real constant \(v\), the term \((\approx~v~(/~t~0.0))\) admits a model.
+The same consideration applies to integer division (\texttt{div}).
 
 \subsection{Bit-vectors}
 
-Bitvectors in SMT-LIB are defined by the theory \textbf{BV}.
-Its signature introduces the sort \smtinline{(_ BitVec n)} for every fixed width $n \geq 1$, together with the function symbols listed in \cref{tab:bv-funs}.
-The semantics of these operations follow standard fixed-width, two's complement bitvector arithmetic, including modular addition, subtraction, multiplication, and division, as well as bitwise logical and shift operators.
-All operations are total, since results are wrapped modulo $2^n$.
 
 \begin{table}
 \centering
@@ -357,32 +355,28 @@ $\ge$\(_s\) & \tt{bvsge} & \(\mathrm{BitVec}\;n\)\; \(\mathrm{BitVec}\;n\)\; Boo
 \label{tab:bv-funs}
 \end{table}
 
+Bitvectors in SMT-LIB are defined by the theory \textbf{BV}.
+Its signature introduces the sort \smtinline{(_ BitVec n)} for every fixed width $n \geq 1$, together with the function symbols listed in \cref{tab:bv-funs}.
+The semantics of these operations follow standard fixed-width, two's complement bitvector arithmetic, including modular addition, subtraction, multiplication, and division, as well as bitwise logical and shift operators.
+All operations are total, since results are wrapped modulo $2^n$.
+
+
 \section{Solving SMT Problems}
 
-In general, any system that solves SMT problems is an SMT solver. This is only half of the story, though.
-The structure of typical SMT problems goes hand in hand with the most common algorithm used to solve them.
-The core idea is to combine propositional reasoning with theory reasoning.
-The standard algorithm to propositional reasoning is \textit{conflict-driven clause learning} (CDCL).
+The core idea of SMT solving is to combine propositional reasoning with theory reasoning.
+The standard method for propositional reasoning is \emph{conflict-driven clause learning} (CDCL) \cite{dpll}.
+In its extension CDCL($\mathcal{T}$), propositional reasoning is separated from theory reasoning by constructing an abstract version of the input problem in which every literal is replaced by a propositional variable.
+The CDCL engine then decides which propositional variables, and hence which literals, must hold.
+The theory solver checks whether these literals are consistent with the background theory.
+If they are, the problem is solved; otherwise, the theory solver generates new clauses that are added back into the propositional search.
+When the problem contains quantifiers, an additional instantiation component is required.
 
+\begin{remark}
+This style of SMT solving is known as the \emph{lazy} approach.
+By contrast, the \emph{eager} approach encodes the entire input problem directly into propositional logic, ensuring that satisfiability is preserved by the translation.
+The resulting propositional formula can then be handed to any standard SAT solver.
+\end{remark}
 
-The basic idea of CDCL(T) is to separate propositional reasoning from
-theory reasoning by creating an abstract version of the problem where every
-literal is replaced by a propositional variable. Standard CDCL determines
-which propositional variables, and hence which literals, must hold. A theory
-solver then determines if those literals are also valid in the theory. If this
-is the case the problem is solved, if it is not, then new clauses are gener-
-ated. Should the problem contain quantifiers, then an additional component
-instantiates the quantifiers.
-
-
-This approach to SMT solving is known as the lazy approach. The eager
-approach, on the other hand, works by encoding the input problem into a
-propositional satisfiability problem up front. The translation must preserve
-the satisfiability of the problem. The propositional problem can then be
-handed over to any standard SAT solver.
-Let us now look at the lazy approach in more detail. The following de-
-scription is inspired by the CDCL(T) implementation in veriT, but is greatly
-simplified.
 
 \begin{figure}
 \begin{tikzpicture}[
@@ -435,41 +429,35 @@ simplified.
 \label{fig:CDCL}
 \end{figure}
 
-\cref{fig:CDCL} shows the operation of a CDCL(T) based SMT solver when
-solving a problem with quantifiers. It first preprocesses the input problem.
-Then two procedures together refute the problem: the ground solver either
-refutes the problem at the ground level, or finds a ground model. For problems without quantifiers the process would terminate now, but if quantifiers
-are present the instantiation procedure is started with the ground model.
-The procedure either creates new ground lemmas or can determine that the
-problem is satisfiable.
+\cref{fig:CDCL} illustrates the operation of a CDCL($\mathcal{T}$)-based SMT solver on a problem with quantifiers.
+The solver first preprocesses the input.
+Then two procedures cooperate to refute the problem: the ground solver, i.e. the combination of the propositional CDCL engine with the theory solvers restricted to quantifier-free formulas, either refutes it at the ground level or produces a ground model.
+For quantifier-free problems this is sufficient, whereas in the presence of quantifiers the instantiation procedure is applied to the ground model, either producing new ground lemmas or establishing satisfiability.
+A \emph{ground model} is an assignment to the variables of a quantifier-free formula that satisfies all ground literals with respect to the background theories.
+Ground models are obtained from the combination of the CDCL engine with the theory solvers, prior to any reasoning about quantifiers.
 
-
-Given an input sentence (i.e., a closed term of sort Bool) an SMT solver
-performs multiple preprocessing steps before the solving phase is started.
+Given an input sentence (i.e., a closed term of sort \texttt{Bool}), an SMT solver applies several preprocessing steps before entering the solving phase.
 This produces an equisatisfiable problem $F$ in clause normal form.
-To make efficient use of the ground solver, ground subformulas are fully
-clausified. Quantified formulas, however, are treated differently. They are
-usually not put in prenex form or clausified. Furthermore, strong quantifiers are usually not fully skolemized. This has the benefit that the original
-structure of quantified formulas is preserved, which is crucial for some instantiation techniques.
+To optimize the ground solver, ground subformulas are fully clausified.
+Quantified formulas, however, are treated differently: they are usually neither converted into prenex form nor clausified, and strong quantifiers \cite{BAAZ2001273} are typically not fully Skolemized.
+Preserving the original structure of quantified formulas is crucial for certain instantiation techniques.
 
-Preprocessing applies some light form of rewriting on quantified formulas. In veriT, most rewriting steps apply to constants below arithmetic
-operators and Boolean connectives. For example, the term $(\bot \to \varphi_1) \to \varphi_2$ is replaced by $\varphi_2$.
 
-Skolemization is another preprocessing step applied to quantified formulas.
-How skolemization is applied is essentially implementation dependent.
-The common abstract CDCL(T) calculus is only concerned with ground reasoning.
-The SMT solvers cvc5 and veriT only skolemize outermost strong quantifiers in their default configuration.
+Preprocessing also includes lightweight rewriting of quantified formulas.
+For example, the term $(\bot \to \varphi_1) \to \varphi_2$ is simplified to $\varphi_2$.
+Skolemization is another preprocessing step, but its application is largely implementation dependent.
+The abstract CDCL($\mathcal{T}$) calculus itself only addresses ground reasoning.
+In practice, solvers such as cvc5 and veriT, in their default configurations, Skolemize only outermost strong quantifiers.
 
-In the following we discuss the inner loop of the SMT solver as shown in
-\cref{fig:CDCL} It tries to find a model of the quantifier-free part of the problem.
-First, the CDCL algorithm searches for a propositional model of the abstracted problem.
-Then, the theory solvers checks if the literals in the propositional models are consistent in the theories.
-If this is the case, the literals form the ground model.
 
-If the SMT solver determines that no propositional model exists (i.e., the
-abstraction is propositionally unsatisfiable), the original problem is unsatisfiable and the SMT solver terminates. If, on the other hand, a propositional
-model is found, the theory solvers jump into action. The theory solvers depend on the theory used, and their calculus can vary widely. Furthermore, if
-more than on theory is used, it is necessary to combine the theory solvers for each theory.
-In any case, the theory solver takes as input the propositional model and determines either that the model is consistent with the theories or that it contradicts them.
-If the literals of the propositional model are consistent with the theories, then they form a ground model of the quantifier-free part of $F$.
-Since quantifier reasoning is handled by the dedicated instantiation module, such a model is usually just called "ground model" in SMT parlance.
+The inner loop of the SMT solver, shown in \cref{fig:CDCL}, attempts to construct a model of the quantifier-free part of the problem.
+The CDCL engine first searches for a propositional model of the abstracted problem.
+The theory solvers then verify whether the literals in this propositional model are consistent with their respective background theories.
+If they are, the literals form a ground model.
+
+
+If the SMT solver finds that no propositional model exists (i.e., the abstraction is propositionally unsatisfiable), the original problem is \emph{unsatisfiable} and solving terminates.
+Otherwise, the propositional model is passed to the theory solvers.
+Their operation depends on the background theories involved, and their calculi may differ substantially.
+When multiple theories are present, their solvers must also be combined.
+In all cases, the theory solver evaluates the candidate model: if it is consistent with the theories, the literals constitute a ground model of the quantifier-free fragment of the sentence; otherwise, contradictions are reported back.
