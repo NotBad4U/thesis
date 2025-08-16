@@ -1,17 +1,32 @@
 \chapter{Satisfiability Modulo Theories}\label{ch:smt}
 
 
+\section{SMT Solvers}
+
+Satisfiability Modulo Theories (SMT) solvers are automated reasoning tools that extend SAT solving \cite{chaff,minitsat} by combining propositional search with reasoning in background theories.
+These theories formalize the fundamental data types of computer science, including integers and rationals, floating-point numbers, strings, arrays, sequences, records, and finite sets.
+By incorporating the essential algebraic properties of such types as built-in reasoning modules, SMT solvers can handle them natively rather than treating them as uninterpreted.
+SMT solvers are widely used in software and hardware verification \cite{application-smt-hardware}, constraint solving \cite{awssmt,application-smt2}, and automated theorem proving \cite{coqhammer1,Sledgehammer}.
+
+SMT solvers take as input a logical formula and determine whether it is \emph{satisfiable}, that is, whether there exists an assignment to the formula's variables that makes it true.
+In this sense, they function as constraint solvers.
+In many applications, however, the goal is not merely to establish that a property, expressed as a formula $F$, holds in some instance, but rather that it holds universally.
+Formally, this amounts to proving that $F$ is \emph{valid}. To verify validity with an SMT solver, this can be done with SMT solvers by checking
+if the \emph{negation} of the formula, $\neg F$,  is false in all cases i.e. \emph{unsatisfiable}. A proof of the \emph{unsatisfiability} of $\neg F$ provides evidence that $F$ is valid.
+Thus, SMT solvers provide not only a means of solving constraints but also a method for establishing theorems, since valid formulas are commonly referred to as theorems.
+
+Modern \emph{hammer} tools, such as Sledgehammer \cite{Sledgehammer} for Isabelle/HOL \cite{isabelle-hol-ref}, CoqHammer \cite{coqhammer1} for Rocq \cite{Rocq-refman}, and the SMT integration in Lean \cite{lean-smt}, make systematic use of SMT solvers to automate proof search.
+Their purpose is to bridge interactive theorem provers with powerful automated reasoning backends.
+Given a conjecture, the hammer translates the goal and relevant lemmas into a form suitable for external solvers, including SMT solvers, and then attempts to discharge the proof obligation automatically.
+If the SMT solver succeeds in showing that the translated problem is valid, the hammer reconstructs or certifies a corresponding proof inside the interactive prover.
+In this way, SMT solvers act as critical engines for proof automation, providing fast search capabilities that complement the expressive but more manual environments of interactive theorem proving.
+
 \section{Terms and Sorts}
 
-The term language of the SMT-LIB logic uses mutually disjoint sets of predefined symbols.
-Each such set is associated with a character that serves as a generic placeholder for the symbols in the set.
+The SMT-LIB initiative \cite{smtlib} defines a standardized input language and logical framework for SMT solvers, specifies a set of common background theories, and maintains an extensive collection of benchmarks.
+The SMT-LIB logic is a many-sorted first-order logic with equality.
 
-
-
-
-SMT-LIB terms are constructed from the function symbols and variables taken from their respective sets together with the three binders \( \forall, \exists \) and \( \kw{let} \dots \kw{in} \dots \).
-
-\begin{definition}[Terms]
+\begin{definition}[Terms]\label{def:smt-grammar}
 The following grammar rule describes the construction of terms $t$
 \begin{equation*}
 t ::= t \pipe x \pipe f~x \pipe f^\sigma t^* \pipe \exists (x: \sigma)^+. t \pipe \forall (x: \sigma)^+. t \pipe \mathrel{\kw{let}} (x = t)^+ \mathrel{\kw{in}} t
@@ -19,20 +34,21 @@ t ::= t \pipe x \pipe f~x \pipe f^\sigma t^* \pipe \exists (x: \sigma)^+. t \pip
 The notation $()^*$ denotes a possibly empty and finite list, and $()^+$ a finite list with at least one member.
 \end{definition}
 
-Since the SMT-LIB logic is many-sorted, every term has an associated sort.
+Since the SMT-LIB logic is many-sorted, every term has an associated sort $\sigma$.
 To avoid ambiguous sorts, there is a syntax to concretize the sort of a function symbol $f^\sigma$.
-Third, this term language also encompasses terms with Boolean sort – there is no distinction between terms and formulas.
-Finally, symbols such as equality and the Boolean connectives are not part of the syntax. They are handled by the special theory $Core$.
+Third, this term language also encompasses terms with Boolean sort, so that no distinction is made between terms and formulas.
+Moreover, symbols such as equality and the Boolean connectives are not treated as primitive syntax but are instead provided by the special \emph{theory Core}.
 
-he sorting rules use a signature. The signature determines the concrete
-function symbols and sorts available to build well-sorted terms. The concrete
-signature depends on the chosen theories and can also be extended by the
-user with uninterpreted sorts and symbols by invoking commands to do so.
-SMT-LIB supports parametric sorts and sort terms, but we do not use the
-features.
+Well-sortedness in SMT-LIB is defined with respect to a \emph{signature}, which specifies the available sorts and function symbols from which terms can be constructed.
+The concrete signature depends on the selected background theories, but it can also be extended by the user with uninterpreted sorts and symbols through dedicated commands.
+While SMT-LIB in general supports parametric sorts and sort terms, these features are not used in our setting.
 
 
-\begin{definition}[Signature]
+\begin{notation}
+Since the symbol $\Sigma$ is already used for Lambdapi signatures, and SMT-LIB also employs $\Sigma$ for its own signature, we instead denote SMT signature by $\Theta$.  
+\end{notation}
+
+\begin{definition}[Signature]\label{def:smt-signature}
 A signature is a tuple $\Theta = (\Theta^\cal{S}, \Theta^\cal{F}, \Theta^\cal{X}, V, R)$
 \begin{itemize}
     \item  a finite set $\Theta^\cal{S}$  of sort symbols that contains the symbol \smtinline{Bool};
@@ -45,136 +61,301 @@ A signature is a tuple $\Theta = (\Theta^\cal{S}, \Theta^\cal{F}, \Theta^\cal{X}
 \end{itemize}
 \end{definition}
 
+A rank denotes the expected sort of the symbol's arguments and the return sort.
+Since the SMT-LIB logic allows ad-hoc polymorphism (overloading), $R$ is not left-unique.
 
-A rank denotes the expected sort of the symbol's arguments and of the result.
-Since the SMT-LIB logic allows overloading, $R$ is not left-unique. The form of overloading supported by the SMT-LIB logic is called ad hoc polymorphism.
+\begin{definition}[Well-sorted Term]
+A term $t$ generated by the grammar rules in \cref{def:smt-signature} is \emph{well-sorted} for a signature $\Theta$ if $t$ has sort $\sigma$.  
+Let $\Theta[x_1 : \sigma_1, \dots, x_n : \sigma_n]$ denote the signature for which the function $V$ maps $x_i$ to $\sigma_i$ for $i \in 1,\dots,n$ and otherwise corresponds to $V$ of $\Theta$.  
+The term $t$ has sort $\sigma$ if a judgment $\Theta \vdash t : \sigma$ is derivable by the following sorting rules:
+\[
+\begin{array}{l}
+\begin{prooftree}
+\hypo{x : \sigma \in \Theta}
+\infer1{\Theta \vdash x : \sigma}
+\end{prooftree}
+\\[2em]
+\begin{prooftree}
+\hypo{\Theta \vdash t : \sigma}
+\infer1{\Theta \vdash (t) : \sigma}
+\end{prooftree}
+\\[2em]
+\begin{prooftree}
+\hypo{\Theta \vdash t_1 : \sigma_1 \quad \dots \quad \Theta \vdash t_k : \sigma_k}
+\infer1[if $\begin{cases} f : \sigma_1 \cdots \sigma_k \sigma \in \Theta, \\ f : \sigma_1 \cdots \sigma_k \sigma' \notin \Theta \text{ for all } \sigma' \neq \sigma \end{cases}$]{\Theta \vdash f\, t_1 \cdots t_k : \sigma}
+\end{prooftree}
+\\[2em]
+\begin{prooftree}
+\hypo{\Theta \vdash t_1 : \sigma_1 \quad \dots \quad \Theta \vdash t_k : \sigma_k}
+\infer1[(if $f : \sigma_1 \cdots \sigma_k \sigma \in \Theta$)]{\Theta \vdash f t_1 \cdots t_k : \sigma}
+\end{prooftree}
+\\[2em]
+\begin{prooftree}
+\hypo{\Theta[x_1 : \sigma_1, \dots, x_{k+1} : \sigma_{k+1}] \vdash t : \kw{Bool}}
+\infer1[(if $Q \in \{\forall, \exists\}$)]{\Theta \vdash Q\, x_1 : \sigma_1 \cdots x_{k+1} : \sigma_{k+1} . t : \kw{Bool}}
+\end{prooftree}
+\\[2em]
+\begin{prooftree}
+\hypo{
+  \begin{matrix}
+    \Sigma \vdash t_1 : \sigma_1 \dots  \Sigma \vdash t_{k+1} : \sigma_{k+1}  \\
+    \Sigma[x_1 : \sigma_1, \dots, x_{k+1} : \sigma_{k+1}] \vdash t : \sigma
+  \end{matrix}
+}
+\infer1[(if $x_i$ are all distinct)]{\Sigma \vdash (\kw{let } x_1 = t_1 \cdots x_{k+1} = t_{k+1} \kw{ in } t) : \sigma}
+\end{prooftree}
+\end{array}
+\]
+\end{definition}
 
-\section{The Meaning of Formulas}
 
-To define the semantic of the SMT-LIB logic, we use the familiar notion of $\Sigma$-structure.
 
-\begin{definition}[$\Sigma$-structure]
-Let $\Sigma$ be a signature.  
-A \emph{$\Sigma$-structure} is a tuple $\mathcal{A} = (U, I)$ of a set $U$, the \emph{universe}, and a mapping $I$.
+\section{semantics}
+
+To define the semantic of the SMT-LIB logic, we use the notion of $\Theta$-structure.
+
+\begin{definition}[$\Theta$-structure]
+Let $\Theta$ be a signature.  
+A \emph{$\Theta$-structure} is a tuple $\cal{A} = (U, I)$ of a set $U$, the \emph{universe}, and a mapping $I$.
 \begin{itemize}
-    \item Each sort $\sigma \in \Sigma^{S}$ is mapped to a non-empty set $I(\sigma) \subseteq U$, the \emph{domain} of $\sigma$.  
-    The mapping is such that $U = \bigcup_{\sigma \in \Sigma^{S}} I(\sigma)$.
+    \item Each sort $\sigma \in \Theta^{S}$ is mapped to a non-empty set $I(\sigma) \subseteq U$, the \emph{domain} of $\sigma$.  
+    The mapping is such that $U = \bigcup_{\sigma \in \Theta^{S}} I(\sigma)$.
     \item For each sort $\sigma_1 \dots \sigma_n \sigma$, $I(\sigma_1 \dots \sigma_n \sigma)$ is the set of total functions from $I(\sigma_1) \times \dots \times I(\sigma_n)$ to $I(\sigma)$.
     \item $I(\mathsf{Bool}) = \{\mathsf{true}, \mathsf{false}\}$, where $\mathsf{true}$ and $\mathsf{false}$ are distinct and both are elements of $U$.
     \item Each ranked function symbol $f : \sigma$ (i.e., each constant) is mapped such that $I(f : \sigma) \in I(\sigma)$.
-    \item Each ranked function symbol $f : \sigma_1 \dots \sigma_n \sigma \in \Sigma$ is mapped to a total function from $I(\sigma_1 \dots \sigma_n \sigma)$.
+    \item Each ranked function symbol $f : \sigma_1 \dots \sigma_n \sigma \in \Theta$ is mapped to a total function from $I(\sigma_1 \dots \sigma_n \sigma)$.
 \end{itemize}
 \end{definition}
 
-The notion of a satisfiable or falsifiable formula is defined as usual. A
-$\Sigma$-interpretation satisfies a formula $\varphi$ if $\llbracket \varphi \rrbracket^{\cal{T}} = \kw{true}$.
-If, on the other hand $\varphi$ if $\llbracket \varphi \rrbracket^{\cal{T}} = \kw{false}$,  then the $\Sigma$-interpretation \emph{falsifies} the formula.
-Furthermore, a formula $\varphi$ is \emph{satisfiable} if there is a $\Sigma$-interpretation that satisfies it and,
-accordingly, it is \emph{unsatisfiable} if there is none.
 
-The notion of a \emph{model} only applies to sentences. In this case, the valuation
-$\nu$ is irrelevant. Hence, a model of a formula without free variables $\varphi$
-is a $\Sigma$-structure $\mathcal{A}$ such that every (or, equivalently, at least one)
-$\Sigma$-interpretation $(\mathcal{A}, \nu)$ satisfies $\varphi$. As usual, $\models$
-denotes semantic entailment. A set of sentences $\Gamma$ entails a sentence $\psi$
-iff every model that satisfies all sentences in $\Gamma$ satisfies $\psi$ as well.
-This is denoted $\Gamma \models \psi$ and if $\Gamma$ contains only one sentence
-$\varphi$ it is denoted $\varphi \models \psi$.
 
+A $\Theta$-interpretation $\cal{I}$ is a pair $(\cal{A}, \nu)$ of a $\Theta$-structure $\cal{A}$ and a valuation $\nu$
+that assigns meaning to terms and formulas, given a $\cal{A}$ structure and a variable assignment, so that we can decide whether a formula is true or false.
+This mapping  function is denoted $\llbracket \_ \rrbracket^{\cal{I}}$.
+
+\begin{definition}[$\Theta$-interpretation]\label{def:smt-interpretation}
+Let $\Theta$ be a signature and $\cal{I}$ a $\Theta$-interpretation.  
+For every well-sorted term $t$ with sort $\sigma$, the mapping $\llbracket t \rrbracket^{\cal{I}}$ is defined recursively as follows:
+
+\[
+\llbracket x \rrbracket^{\cal{I}} = \nu(x : \sigma)
+\]
+where $\cal{I} = (\cal{A}, \nu)$.
+
+\[
+\llbracket \hat{f}\; t_1 \dots t_n \rrbracket^{\cal{I}}
+   = \cal{A}(f : \sigma_1 \dots \sigma_n \sigma)(a_1, \dots, a_n)
+\]
+where
+\[
+\begin{cases}
+   \cal{I} = (\cal{A}, \nu) \text{ with signature } \Theta, \\
+   \hat{f} = f \text{ or } \hat{f} = f^{\sigma}, \\
+   \Theta \vdash t_i : \sigma_i \text{ and } a_i = \llbracket t_i \rrbracket^{\cal{I}}, \quad i=1,\dots,n.
+\end{cases}
+\]
+
+\[
+\llbracket \text{let } x_1 = t_1 \cdots x_n = t_n \text{ in } t \rrbracket^{\cal{I}}
+    = \llbracket t \rrbracket^{\cal{I}'}
+\]
+where
+\[
+\begin{cases}
+   \cal{I} \text{ has signature } \Theta, \\
+   \Theta \vdash t_i : \sigma_i \text{ and } a_i = \llbracket t_i \rrbracket^{\cal{I}}, \quad i=1,\dots,n, \\
+   \cal{I}' = \cal{I}[x_1 : \sigma_1 \mapsto a_1, \dots, x_n : \sigma_n \mapsto a_n].
+\end{cases}
+\]
+
+\[
+\llbracket \exists x_1 : \sigma_1 \cdots x_n : \sigma_n . t \rrbracket^{\cal{I}} = \text{true}
+\;\;\text{iff}\;\; \llbracket t \rrbracket^{\cal{I}'} = \text{true for some }\cal{I}' 
+\]
+where
+\[
+\begin{cases}
+   \cal{I} = ((U,I),\nu), \\
+   (a_1,\dots,a_n) \in I(\sigma_1) \times \cdots \times I(\sigma_n), \\
+   \cal{I}' = \cal{I}[x_1 : \sigma_1 \mapsto a_1, \dots, x_n : \sigma_n \mapsto a_n].
+\end{cases}
+\]
+
+\[
+\llbracket \forall x_1 : \sigma_1 \cdots x_n : \sigma_n . t \rrbracket^{\cal{I}} = \text{true}
+\;\;\text{iff}\;\; \llbracket t \rrbracket^{\cal{I}'} = \text{true for all }\cal{I}'
+\]
+where
+\[
+\begin{cases}
+   \cal{I} = ((U,I),\nu), \\
+   (a_1,\dots,a_n) \in I(\sigma_1) \times \cdots \times I(\sigma_n), \\
+   \cal{I}' = \cal{I}[x_1 : \sigma_1 \mapsto a_1, \dots, x_n : \sigma_n \mapsto a_n].
+\end{cases}
+\]
+\end{definition}
+
+The notions of satisfiability and falsifiability are defined in the standard way.
+A $\Theta$-interpretation satisfies a formula $\varphi$ if $\llbracket \varphi \rrbracket^{\mathcal{A}} = \kw{true}$.
+Conversely, it falsifies $\varphi$ if $\llbracket \varphi \rrbracket^{\mathcal{A}} = \kw{false}$.
+A formula $\varphi$ is \emph{satisfiable} if there exists a $\Theta$-interpretation that satisfies it, and \emph{unsatisfiable} if no such interpretation exists.
+
+The notion of a \emph{model} applies only to sentences, i.e., formulas without free variables.
+In this case, the valuation $\nu$ is irrelevant.
+A model of a sentence $\varphi$ is a $\Theta$-structure $\mathcal{A}$ such that every (equivalently, at least one) $\Theta$-interpretation $(\mathcal{A}, \nu)$ satisfies $\varphi$.
+As usual, $\models$ denotes semantic entailment. A set of sentences $\Gamma$ entails a sentence $\psi$ if every model of $\Gamma$ is also a model of $\psi$.
+This is written $\Gamma \models \psi$, and if $\Gamma$ contains a single sentence $\varphi$, it is abbreviated $\varphi \models \psi$.
 
 \section{Theories}
 
-The SMT-LIB language allows the combination of theories.
-Theories can be combined if their signatures are compatible.
-Signatures are compatible if they have the same sort symbols and agree on the sorts they assign to variables.
+As discussed above, well-sortedness in SMT-LIB is defined relative to a signature.
+The SMT-LIB language further permits the combination of theories, provided their signatures are compatible.
+Two signatures are compatible if they share the same sort symbols and assign identical sorts to all variables.
+The combination of two compatible theories is then defined as the class of $\Theta$-structures whose projections onto the signatures of the component theories are models of those theories.
 
-The result of combining two compatible theories is as expected: it is the class of $\Sigma$-structures whose projections to the signature of a component theory are models of that theory.
+A \emph{logic} in SMT-LIB consists of a specific signature $\Theta$, a theory $\mathcal{T}$, and a restriction on the set of admissible sentences.
+These restrictions are typically syntactic and serve to exclude ill-formed expressions.
+For instance, in the logic of linear arithmetic, the multiplication of two variables is not permitted.
+Following common usage in the SMT community, we will not always maintain a strict distinction between the terms "logic" and "theory".
 
-Within SMT-LIB parlance, a logic is a specific signature $\Sigma$ together with a theory $\cal{T}$ and a restriction to the set of allowed sentences.
-The restrictions are usually syntactical and ban undefined sentences.
-For example, in the logic of linear arithmetic, it is pointless to multiply two variables.
-We will follow the common practice of the SMT community and do not always draw a clear distinction between "logic" and "theory".
-
-\begin{definition}[Theories]
-A $\Sigma$-theory $\cal{T}$ is a class of $\Sigma$-structure on a signature $\Sigma$.
+\begin{definition}[Models]
+A $\Theta$-theory $\cal{T}$ is a class of $\Theta$-structure on a signature $\Theta$.
 These structures are the \emph{models} of the theory $\cal{T}$.
 \end{definition}
 
-Defining theories this way gives us the flexibility to declare theories as
-either specific models (such as the usual model of natural numbers), or as
-the $\Sigma$-structures that satisfies a set of sentences which are called axioms.
+Defining theories this way gives us the flexibility to declare theories as either specific models, or as the $\Theta$-structures that satisfies a set of sentences which are called axioms.
 
 \begin{definition}[Satisfiability and Entailment In a Theory]
-A $\Sigma$-sequence is satisfiable in a theory $\cal{T}$ if and only if it is satisfied by one of the models
-of $\cal{T}$. A set $\Gamma$ of $\Sigma$-sequences $\cal{T}$-entails a $\Sigma$-sequence $\varphi$ denoted
+A $\Theta$-sequence is satisfiable in a theory $\cal{T}$ if and only if it is satisfied by one of the models
+of $\cal{T}$. A set $\Gamma$ of $\Theta$-sequences $\cal{T}$-entails a $\Theta$-sequence $\varphi$ denoted
 $\Gamma \models_{\cal{T}} \varphi$ if and only if every model of $\cal{T}$ that satisfies all sentences in $\Gamma$ satisfies $\varphi$ as well.
 \end{definition}
 
+In what follows, we briefly introduce some of the logics that will be used in the subsequent chapters.
 
-\begin{definition}[The Core theory]
+\subsection{The Core theory}
+
 This theory is used by every SMT-LIB logic. It contains the usual Boolean connective $\land, \lor, \neg, \to, \kw{xor}, \kw{distinct}, \kw{ite}$.
-Equality, denoted by $\simeq$ (=in SMT-LIB), is also part of this theory.
+Equality, denoted by $\simeq$ (= in SMT-LIB), is also part of this theory.
 The \emph{Core theory} does not contain a dedicated "if and only if" connective.
 Instead equality with Boolean sorts is used.
-\end{definition}
 
-\todo{ac}{add distinct + ite def?}
+\question{ac}{add distinct + ite def?}
 
 \begin{remark}
-Since SMT-LIB is restricted to ASCII characters, it uses the strings \smtinline{and, or, not, =>, xor} for boolean connectives. 
+Since SMT-LIB is restricted to ASCII characters, it uses the strings \smtinline{and, or, not, =>, xor} for boolean  connectives. 
 \end{remark}
 
-\begin{definition}[The theory of linear arithmetic]
-Linear arithmetic within SMT-LIB is defined by the theories for reals and integers together with syntactic restrictions that restrict arithmetic expressions to linear expressions.
-\end{definition}
+\subsection{Uninterpreted Symbols}
 
-The signature of the theory of reals and integers contains two additional sorts: \smtinline{Int} and \smtinline{Real}. 
-It also contains the function symbols listed in Table~\ref{tab:real-int-funs}.
-Most functions are overloaded to work with integers and reals.
-The interpretation of the theory is as expected.
-Division, however, is a special case since SMT-LIB does not support partial functions.
-Hence, terms such as \((/~x~0.0)\) are well-defined. The standard, however, does not constrain the interpretation of such terms.
-As a consequence, for each real constant \(v\), the term \((\approx~v~(/~t~0.0))\) has a model.
-In practice, this means that such terms are useless.
-The same applies for \tt{div} – the integer division.
+The logic \textbf{UF} (for uninterpreted functions) allows the declaration of new function symbols.
+The prefix \textbf{QF} (for quantifier-free) may be applied to any logic to indicate that quantifiers are disallowed.
+The simplest extension of the core theory is therefore \textbf{QF\_UF}, denoting quantifier-free uninterpreted functions.
+This logic excludes quantifiers and introduces no additional symbols beyond those of the core theory.
 
+\subsection{The theory of linear arithmetic}
 
-\begin{table}[h]
+Linear arithmetic in SMT-LIB is specified by the theories of reals (\textbf{LA}) and integers (\textbf{LIA}), together with syntactic constraints ensuring that arithmetic expressions remain linear.
+
+The signature of the theory of reals and integers contains two additional sorts: \smtinline{Int} and \smtinline{Real} , along with the function symbols listed in \cref{tab:real-int-funs}.
+Most of these functions are overloaded to operate uniformly on both integers and reals.
+Their interpretation is standard, with the exception of division. 
+Since SMT-LIB does not support partial functions, terms such as \((/~x~0.0)\) are well-defined , although the standard leaves their interpretation unconstrained.
+Consequently, for each real constant \(v\), the term \((\approx~v~(/~t~0.0))\) admits a model.
+The same consideration applies to integer division (\texttt{div}).
+
+\begin{table}
 \centering
 \begin{tabular}{lll}
 \toprule
 \textbf{Symbol} & \textbf{String} & \textbf{Rank} \\
 \midrule
-$-$ & \texttt{-} & Int Int \\
+$-$ & \tt{-} & Int Int \\
     &            & Real Real \\
-$-$ & \texttt{-} & Int Int Int \\
+$-$ & \tt{-} & Int Int Int \\
     &            & Real Real Real \\
-$+$ & \texttt{+} & Int Int Int \\
+$+$ & \tt{+} & Int Int Int \\
     &            & Real Real Real \\
-$\times$ & \texttt{*} & Int Int Int \\
+$\times$ & \tt{*} & Int Int Int \\
     &               & Real Real Real \\
-\texttt{div} & \texttt{div} & Int Int Int \\
-/ & \texttt{/} & Real Real Real \\
-\texttt{mod} & \texttt{mod} & Int Int Int \\
-\texttt{abs} & \texttt{abs} & Int Int \\
-$\leq$ & \texttt{<=} & Int Int Bool \\
+\tt{div} & \tt{div} & Int Int Int \\
+/ & \tt{/} & Real Real Real \\
+\tt{mod} & \tt{mod} & Int Int Int \\
+\tt{abs} & \tt{abs} & Int Int \\
+$\leq$ & \tt{<=} & Int Int Bool \\
     &                & Real Real Bool \\
-$<$ & \texttt{<} & Int Int Bool \\
+$<$ & \tt{<} & Int Int Bool \\
     &             & Real Real Bool \\
-$\geq$ & \texttt{>=} & Int Int Bool \\
+$\geq$ & \tt{>=} & Int Int Bool \\
     &               & Real Real Bool \\
-$>$ & \texttt{>} & Int Int Bool \\
+$>$ & \tt{>} & Int Int Bool \\
     &             & Real Real Bool \\
-\texttt{to\_real} & \texttt{to\_real} & Int Real \\
-\texttt{to\_int}  & \texttt{to\_int} & Real Int \\
-\texttt{is\_int}  & \texttt{is\_int} & Real Bool \\
-\texttt{divisible} $n$ & \texttt{(\_ divisible n )} & Int Bool \\
+\tt{to\_real} & \tt{to\_real} & Int Real \\
+\tt{to\_int}  & \tt{to\_int} & Real Int \\
+\tt{is\_int}  & \tt{is\_int} & Real Bool \\
+\tt{divisible} $n$ & \tt{(\_ divisible n )} & Int Bool \\
 \bottomrule
 \end{tabular}
 \caption{Function symbols of the real and integers theory.}
 \label{tab:real-int-funs}
 \end{table}
 
+
+\subsection{Bit-vectors}
+
+Bitvectors in SMT-LIB are defined by the theory \textbf{BV}.
+Its signature introduces the sort \smtinline{(_ BitVec n)} for every fixed width $n \geq 1$, together with the function symbols listed in \cref{tab:bv-funs}.
+The semantics of these operations follow standard fixed-width, two's complement bitvector arithmetic, including modular addition, subtraction, multiplication, and division, as well as bitwise logical and shift operators.
+All operations are total, since results are wrapped modulo $2^n$.
+
+\begin{table}
+\centering
+\begin{tabular}{lll}
+\toprule
+\textbf{Symbol} & \textbf{String} & \textbf{Rank} \\
+\midrule
+$\sim$ & \tt{bvnot} & \(\mathrm{BitVec}\;n\)\; \(\mathrm{BitVec}\;n\) \\
+$-$   & \tt{bvneg} & \(\mathrm{BitVec}\;n\)\; \(\mathrm{BitVec}\;n\) \\
+$\land$ & \tt{bvand} & \(\mathrm{BitVec}\;n\)\; \(\mathrm{BitVec}\;n\)\; \(\mathrm{BitVec}\;n\) \\
+$\lor$  & \tt{bvor}  & \(\mathrm{BitVec}\;n\)\; \(\mathrm{BitVec}\;n\)\; \(\mathrm{BitVec}\;n\) \\
+$\oplus$& \tt{bvxor} & \(\mathrm{BitVec}\;n\)\; \(\mathrm{BitVec}\;n\)\; \(\mathrm{BitVec}\;n\) \\
+$\uparrow$ & \tt{bvnand} & \(\mathrm{BitVec}\;n\)\; \(\mathrm{BitVec}\;n\)\; \(\mathrm{BitVec}\;n\) \\
+$\downarrow$ & \tt{bvnor}  & \(\mathrm{BitVec}\;n\)\; \(\mathrm{BitVec}\;n\)\; \(\mathrm{BitVec}\;n\) \\
+$\odot$ & \tt{bvxnor} & \(\mathrm{BitVec}\;n\)\; \(\mathrm{BitVec}\;n\)\; \(\mathrm{BitVec}\;n\) \\
+$+$ & \tt{bvadd} & \(\mathrm{BitVec}\;n\)\; \(\mathrm{BitVec}\;n\)\; \(\mathrm{BitVec}\;n\) \\
+$-$ & \tt{bvsub} & \(\mathrm{BitVec}\;n\)\; \(\mathrm{BitVec}\;n\)\; \(\mathrm{BitVec}\;n\) \\
+$\times$ & \tt{bvmul} & \(\mathrm{BitVec}\;n\)\; \(\mathrm{BitVec}\;n\)\; \(\mathrm{BitVec}\;n\) \\
+/\(_u\) & \tt{bvudiv} & \(\mathrm{BitVec}\;n\)\; \(\mathrm{BitVec}\;n\)\; \(\mathrm{BitVec}\;n\) \\
+/\(_s\) & \tt{bvsdiv} & \(\mathrm{BitVec}\;n\)\; \(\mathrm{BitVec}\;n\)\; \(\mathrm{BitVec}\;n\) \\
+$\bmod_u$ & \tt{bvurem} & \(\mathrm{BitVec}\;n\)\; \(\mathrm{BitVec}\;n\)\; \(\mathrm{BitVec}\;n\) \\
+$\bmod_s$ & \tt{bvsrem} & \(\mathrm{BitVec}\;n\)\; \(\mathrm{BitVec}\;n\)\; \(\mathrm{BitVec}\;n\) \\
+$\mathrm{mod}_s$ & \tt{bvsmod} & \(\mathrm{BitVec}\;n\)\; \(\mathrm{BitVec}\;n\)\; \(\mathrm{BitVec}\;n\) \\
+$\ll$ & \tt{bvshl}  & \(\mathrm{BitVec}\;n\)\; \(\mathrm{BitVec}\;n\)\; \(\mathrm{BitVec}\;n\) \\
+$\gg_u$ & \tt{bvlshr} & \(\mathrm{BitVec}\;n\)\; \(\mathrm{BitVec}\;n\)\; \(\mathrm{BitVec}\;n\) \\
+$\gg_s$ & \tt{bvashr} & \(\mathrm{BitVec}\;n\)\; \(\mathrm{BitVec}\;n\)\; \(\mathrm{BitVec}\;n\) \\
+$\circ$ & \tt{concat} & \(\mathrm{BitVec}\;n\)\; \(\mathrm{BitVec}\;m\)\; \(\mathrm{BitVec}\;(n{+}m)\) \\
+— & \tt{(\_ extract i j)} & \(\mathrm{BitVec}\;n\)\; \(\mathrm{BitVec}\;(i{-}j{+}1)\) \\
+— & \tt{(\_ repeat k)} & \(\mathrm{BitVec}\;n\)\; \(\mathrm{BitVec}\;(k\cdot n)\) \\
+— & \tt{(\_ zero\_extend k)} & \(\mathrm{BitVec}\;n\)\; \(\mathrm{BitVec}\;(n{+}k)\) \\
+— & \tt{(\_ sign\_extend k)} & \(\mathrm{BitVec}\;n\)\; \(\mathrm{BitVec}\;(n{+}k)\) \\
+— & \tt{(\_ rotate\_left k)} & \(\mathrm{BitVec}\;n\)\; \(\mathrm{BitVec}\;n\) \\
+— & \tt{(\_ rotate\_right k)} & \(\mathrm{BitVec}\;n\)\; \(\mathrm{BitVec}\;n\) \\
+$<$\(_u\) & \tt{bvult} & \(\mathrm{BitVec}\;n\)\; \(\mathrm{BitVec}\;n\)\; Bool \\
+$\le$\(_u\) & \tt{bvule} & \(\mathrm{BitVec}\;n\)\; \(\mathrm{BitVec}\;n\)\; Bool \\
+$>$\(_u\) & \tt{bvugt} & \(\mathrm{BitVec}\;n\)\; \(\mathrm{BitVec}\;n\)\; Bool \\
+$\ge$\(_u\) & \tt{bvuge} & \(\mathrm{BitVec}\;n\)\; \(\mathrm{BitVec}\;n\)\; Bool \\
+$<$\(_s\) & \tt{bvslt} & \(\mathrm{BitVec}\;n\)\; \(\mathrm{BitVec}\;n\)\; Bool \\
+$\le$\(_s\) & \tt{bvsle} & \(\mathrm{BitVec}\;n\)\; \(\mathrm{BitVec}\;n\)\; Bool \\
+$>$\(_s\) & \tt{bvsgt} & \(\mathrm{BitVec}\;n\)\; \(\mathrm{BitVec}\;n\)\; Bool \\
+$\ge$\(_s\) & \tt{bvsge} & \(\mathrm{BitVec}\;n\)\; \(\mathrm{BitVec}\;n\)\; Bool \\
+\tt{bvcomp} & \tt{bvcomp} & \(\mathrm{BitVec}\;n\)\; \(\mathrm{BitVec}\;n\)\; \(\mathrm{BitVec}\;1\) \\
+\tt{int2bv} & \tt{((\_ \tt{int2bv}~n))} & Int \;\(\mathrm{BitVec}\;n\) \\
+\tt{bv2int} & \tt{bv2int} & \(\mathrm{BitVec}\;n\)\; Int \\
+\bottomrule
+\end{tabular}
+\caption{SMT-LIB Bit-Vector theory function symbols (sizes \(n,m,k,i,j\) are numerals).}
+\label{tab:bv-funs}
+\end{table}
 
 \section{Solving SMT Problems}
 
