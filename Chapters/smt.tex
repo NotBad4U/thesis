@@ -313,9 +313,9 @@ The same consideration applies to integer division (\texttt{div}).
 \textbf{Symbol} & \textbf{String} & \textbf{Rank} \\
 \midrule
 $\sim$ & \tt{bvnot} & \(\mathrm{BitVec}\;n\)\; \(\mathrm{BitVec}\;n\) \\
-$-$   & \tt{bvneg} & \(\mathrm{BitVec}\;n\)\; \(\mathrm{BitVec}\;n\) \\
-$\land$ & \tt{bvand} & \(\mathrm{BitVec}\;n\)\; \(\mathrm{BitVec}\;n\)\; \(\mathrm{BitVec}\;n\) \\
-$\lor$  & \tt{bvor}  & \(\mathrm{BitVec}\;n\)\; \(\mathrm{BitVec}\;n\)\; \(\mathrm{BitVec}\;n\) \\
+$!$   & \tt{bvneg} & \(\mathrm{BitVec}\;n\)\; \(\mathrm{BitVec}\;n\) \\
+$\&\&$ & \tt{bvand} & \(\mathrm{BitVec}\;n\)\; \(\mathrm{BitVec}\;n\)\; \(\mathrm{BitVec}\;n\) \\
+$||$  & \tt{bvor}  & \(\mathrm{BitVec}\;n\)\; \(\mathrm{BitVec}\;n\)\; \(\mathrm{BitVec}\;n\) \\
 $\oplus$& \tt{bvxor} & \(\mathrm{BitVec}\;n\)\; \(\mathrm{BitVec}\;n\)\; \(\mathrm{BitVec}\;n\) \\
 $\uparrow$ & \tt{bvnand} & \(\mathrm{BitVec}\;n\)\; \(\mathrm{BitVec}\;n\)\; \(\mathrm{BitVec}\;n\) \\
 $\downarrow$ & \tt{bvnor}  & \(\mathrm{BitVec}\;n\)\; \(\mathrm{BitVec}\;n\)\; \(\mathrm{BitVec}\;n\) \\
@@ -461,3 +461,28 @@ Otherwise, the propositional model is passed to the theory solvers.
 Their operation depends on the background theories involved, and their calculi may differ substantially.
 When multiple theories are present, their solvers must also be combined.
 In all cases, the theory solver evaluates the candidate model: if it is consistent with the theories, the literals constitute a ground model of the quantifier-free fragment of the sentence; otherwise, contradictions are reported back.
+
+\section{SMT proof}
+
+Since SMT applications crucially rely on correct results, ensuring solver correctness becomes paramount.
+Ensuring the correctness of SMT solvers is a significant challenge, as these tools have large and highly optimized code bases that evolve rapidly. 
+Rather than attempting to certify the entire solver implementation, a promising approach is to instrument SMT solvers to produce \emph{proofs} of their results \cite{proof-smt}.
+
+Proof production drastically reduces the size of the trusted code base, since only the proof checker must be trusted, not the entire solver.
+Beyond this fundamental advantage, proof infrastructure provides multiple benefits:  it enforces modularity and clarity in the solver’s code, often uncovering bugs in the process;
+it serves as a powerful debugging aid, where failed or incorrect proof generation highlights faults in the solver;
+and it offers a form of test oracle, since an incorrect proof can be detected  by an independent checker \cite{10.1007/978-3-319-66107-0_18}. 
+
+When a solver determines satisfiability, it may return a model, while in the unsatisfiable case,  a proof of inconsistency provides a verifiable guarantee of correctness. 
+However, producing well-formed proofs is itself non-trivial: errors may arise from faulty proof steps, cycles in proof graphs, or reliance on unsupported assumptions. 
+Efficiency is another key concern, as proof generation must not significantly  degrade solver performance. 
+
+A common technique is \emph{lazy proof generation}, where the solver constructs a high-level proof sketch  during the search, delaying the expansion of detailed lemmas until after unsatisfiability is established. 
+This reduces implementation effort, minimizes performance overhead, and ensures that only  relevant proof material is expanded.
+Lazy proof generation is a key feature of the DRAT \cite{drat} proof format used by SAT solvers, and several ways of expanding (also known as elaborating) DRAT proofs have been proposed \cite{10.1007/978-3-319-63046-5_14,DBLP:conf/cade/KieslRH18, 10.1007/978-3-319-63046-5_15}.
+This line of work also inspired investigations in the SMT setting \cite{lazy-proof-smt}, where lazy proof generation was developed for CVC4, the predecessor of cvc5 \cite{cvc4}.
+
+Despite progress, current proof-producing SMT solvers still face shortcomings:  some produce proofs that are too shallow, requiring complex external checking; 
+others leave performance-critical components outside of proof production; 
+and many rely on monolithic proof formats, limiting interoperability. 
+Nevertheless, proof production remains the most promising avenue for ensuring SMT solver correctness  without certifying their entire, complex code base \cite{LFSC}.
