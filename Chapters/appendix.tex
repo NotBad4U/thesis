@@ -3,38 +3,7 @@
 %*******************************************************
 % If problems with the headers: get headings in appendix etc. right
 %\markboth{\spacedlowsmallcaps{Appendix}}{\spacedlowsmallcaps{Appendix}}
-\chapter{Appendix Test}
-
-\section{The Alethe Syntax}\label{app:alethe}
-
-\begin{figure}[htb]%[H]
-    \[
-      \begin{array}{r c l}
-     \grNT{proof}           &\grRule & \grNT{proof\_command}^{*} \\
-     \grNT{proof\_command}  &\grRule & \textAlethe{(assume}\; \grNT{symbol}\; \grNT{proof\_term}\,\textAlethe{)} \\
-                            &\grOr   & \textAlethe{(step}\; \grNT{symbol}\; \grNT{clause}
-                                            \; \textAlethe{:rule}\; \grNT{symbol} \\
-                            &        & \quad \grNT{premises\_annotation}^{?} \\
-                            &        & \quad \grNT{context\_annotation}^{?}\;\grNT{attribute}^{*}\,\textAlethe{)} \\
-                            & \grOr  & \textAlethe{(anchor :step}\; \grNT{symbol}\;
-                                                \\
-                            &        & \quad \grNT{args\_annotation}^{?}\;\grNT{attribute}^{*}\,\textAlethe{)} \\
-                            & \grOr  & \textAlethe{(define-fun}\; \grNT{function\_def}\,\textAlethe{)} \\
-     \grNT{clause}          &\grRule & \textAlethe{(cl}\; \grNT{proof\_term}^{*}\,\textAlethe{)} \\
-     \grNT{proof\_term}     &\grRule & \grNT{term}\text{ extended with } \\
-                            &        & \textAlethe{(choice (}\, \grNT{sorted\_var}\,\textAlethe{)}\; \grNT{proof\_term}\,\textAlethe{)}  \\
-     \grNT{premises\_annotation} &\grRule & \textAlethe{:premises (}\; \grNT{symbol}^{+}\textAlethe{)} \\
-     \grNT{args\_annotation}     &\grRule & \textAlethe{:args}\,\textAlethe{(}\,\grNT{step\_arg}^{+}\,\textAlethe{)}  \\
-     \grNT{step\_arg}            &\grRule & \grNT{symbol} \grOr
-                                              \textAlethe{(}\; \grNT{symbol}\; \grNT{proof\_term}\,\textAlethe{)} \\
-     \grNT{context\_annotation}  &\grRule & \textAlethe{:args}\,\textAlethe{(}\,\grNT{context\_assignment}^{+}\,\textAlethe{)}  \\
-     \grNT{context\_assignment}  &\grRule & \textAlethe{(}    \,\grNT{sorted\_var}\,\textAlethe{)}  \\
-                                 & \grOr  & \textAlethe{(:=}\, \grNT{symbol}\;\grNT{proof\_term}\,\textAlethe{)} \\
-      \end{array}
-      \]
-      \caption{Alethe grammar}
-      \label{fig:grammar}
-\end{figure}
+\chapter{Appendix}
 
 \section{Confluence of the rewriting rules of integers and positive binary number}
 \label{app:confluence-int-pos}

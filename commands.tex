@@ -105,7 +105,6 @@
 % Lambdapi command for text
 %******************************************************************
 
-\newcommand\textAlethe[1]{\texttt{#1}}
 \newcommand\C[1]{\mathcal{C}(#1)}
 \newcommand\D[1]{\mathcal{D}(#1)}
 \newcommand\F[1]{\mathcal{F}(#1)}
@@ -192,6 +191,9 @@
   $#1.\ \Gamma \quad \triangleright #2 \quad (\kw{#3})%
   \ifx#4\empty\else\ [#4]\fi$%
 }
+
+\newcommand\textAlethe[1]{\textcolor{BrickRed}{\texttt{#1}}}
+\newcommand\cdclt{CDCL($\cal{T}$)}
 
 
 %******************************************************************
