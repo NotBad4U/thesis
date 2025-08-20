@@ -60,6 +60,29 @@
   showstringspaces=false,
 }
 
+
+\lstdefinelanguage{RARE}
+{
+  numbers=left,
+  numbersep=5pt,
+  inputencoding=utf8,
+  extendedchars=true,
+  numberstyle=\footnotesize,
+  tabsize=2,
+  basicstyle={\ttfamily\scriptsize\upshape},
+  keywords=[1]{define-rule, define-rule*, define-cond-rule},
+  keywords=[2]{Int, Real, Bool, not, :list},
+  keywords=[3]{true, false},
+  alsoletter={-,*,:},
+  sensitive=true,
+  keywordstyle={[1]\color{mylpurple}},
+  keywordstyle={[2]\color{RoyalBlue}},
+  keywordstyle={[3]\color{mypurple}},
+  string=[b]{"},
+  stringstyle=\color{orange},
+  showstringspaces=false,
+}
+
 \newcommand{\sub}[1]{\ensuremath{_{\!#1}}}
 
 
@@ -145,4 +168,5 @@
 
 
 \newcommand\smtinline[1]{\lstinline[language=SMT,basicstyle=\ttfamily\normalsize]|#1|}
+\newcommand\rareinline[1]{\lstinline[language=RARE,basicstyle=\ttfamily\normalsize]|#1|}
 \newcommand\lpinline[1]{\lstinline[language=Lambdapi,basicstyle=\ttfamily\normalsize]|#1|}

@@ -321,112 +321,30 @@ To simplify reconstruction, Alethe can optionally define Skolem constants as fun
 \smtinline{define-fun} commands that define shorthand $0$-ary functions for the \smtinline{(choice ...)} terms
 needed. Without this option, no \smtinline{define-fun} commands are issued, and the constants are expanded.
 
-\section{Checking Alethe Proofs}
-
-In this section, we present an abstract procedure to verify whether an Alethe proof
-is well-formed and valid. An Alethe proof is well-formed if and only if its anchors
-and steps are properly balanced. To check this property, we systematically replace innermost
-subproofs with holes until no subproof remains. If the resulting proof structure is
-free of anchors and steps that use concluding rules, then the proof is well-formed.
-Furthermore, if all steps within the subproofs satisfy the conditions prescribed by their
-respective rules, then each subproof is valid. Consequently, if all subproofs are valid,
-then the entire proof is valid.
-
-Formally, an Alethe proof $P$ is represented as a sequence $[C_1, \ldots, C_n]$ of steps and anchors.
-Since each step employs a unique index, we assume that step $C_i$ in $P$ uses
-$i$ as its index. The logical context changes only at anchors and subproof-concluding
-steps. Therefore, the step elements $C_1, \ldots, C_n$ are not directly associated
-with a context. Instead, the context can be computed from the preceding anchors,
-as anchors serve exclusively to extend the context.
-
-To validate an Alethe proof, we employ an iterative approach that eliminates the first-innermost
-subproof at each step. The first-innermost subproof is defined as the innermost subproof that does not
-follow a complete subproof. This restriction to first subproofs significantly simplifies the computation of
-the context for steps within the subproof.
-
-\begin{definition}[First-Innermost Subproof]\label{def:first-innermost}
-Let $P$ be the proof $[C_1, \ldots, C_n]$ and let $1 \leq \mathit{start} < \mathit{end} \leq n$ be two indices such
-that:
-\begin{itemize}
-\item $C_{\mathit{start}}$ is an anchor,
-\item $C_{\mathit{end}}$ is a step that uses a concluding rule,
-\item no $C_k$ with $k < \mathit{start}$ uses a concluding rule, and
-\item no $C_k$ with $\mathit{start} < k < \mathit{end}$ is an anchor or a step that uses a concluding rule.
-\end{itemize}
-Then $[C_{\mathit{start}}, \ldots, C_{\mathit{end}}]$ is called the \emph{first-innermost subproof} of $P$.
-\end{definition}
-
-\begin{definition}[Valid Alethe Proof]\label{def:valid-alethe-proof}
-A proof $P$ is a \emph{valid Alethe proof} if and only if:
-\begin{itemize}
-\item $P$ is well-formed,
-\item $P$ does not contain any step that uses the hole rule,
-\item $P_{\mathit{last}}$ contains a step that has the empty clause as its conclusion,
-\item the first-innermost subproof of every $P_i$ with $i < \mathit{last}$ is valid,
-\item all steps $C_i$ in $P_{\mathit{last}}$ only use premises $C_j$ in $P_{\mathit{last}}$ with $1 \leq j < i$, and
-\item all steps $C_i$ in $P_{\mathit{last}}$ adhere to the conditions of their rule under the empty context.
-\end{itemize}
-\end{definition}
-
-The condition that $P$ contains no holes ensures that the original proof is
-complete and holes are only introduced by eliminating valid subproofs.
-
-It is sometimes useful to speak about the steps that are not within a subproof.
-We call such a step an \emph{outermost step}. In a well-formed proof, these are precisely the steps of $P_{\mathit{last}}$.
-
-\begin{theorem}[Soundness of Concrete Alethe Proofs]
-If there is a valid proof $P = [C_1, \dots , C_n]$ that has the formulas $\varphi_1, \dots, \varphi_1$ as the conclusions of the outermost assume steps, then
-\[
-  \varphi_1, \dots, \varphi_1 \models \bot
-\]
-Here, $\models$ represents semantic consequence in the many-sorted first order logic of SMT-LIB with the theories of uninterpreted functions and linear arithmetic extended to clauses.
-\end{theorem}
-
-\subsection{Challenges in Proof Verification}
-
-While the abstract procedure described above provides a clear framework for validating Alethe proofs,
-practical verification presents significant challenges due to the implicit nature of certain proof steps.
-The coarse-grained representation used by Alethe contrasts sharply with the fine-grained proofs required
-by proof assistants such as Lambdapi, creating a substantial gap that must be bridged during verification.
-
-The primary difficulty stems from the fact that Alethe treats several fundamental logical operations
-implicitly, requiring proof checkers to reconstruct missing intermediate steps. This implicit treatment
-manifests in multiple ways, making direct verification challenging without additional proof reconstruction.
-
-The following aspects are treated implicitly by Alethe:
-
-\begin{itemize}
-  \item Symmetry of equalities that are not top-most equalities in steps with non-empty context;
-  \item The order of literals in the clauses;
-  \item The unfolding of names introduced by \tt{(! t :named n)};
-  \item The unfolding of function symbols introduced by \tt{define-fun}.
-\end{itemize}
-
-These implicit operations necessitate sophisticated proof reconstruction algorithms that can infer
-and generate the missing intermediate steps, effectively transforming coarse-grained Alethe proofs
-into the fine-grained format required by formal verification systems.
-
-\section{The Alethe Rules}\info{ac}{I will just repeat the rule here even if they are also describe in \cref{ch:reconstruction}}
+\section{Overview of Alethe Rules}\info{ac}{I will just repeat the rule here even if they are also describe in \cref{ch:reconstruction}}
 
 Together with the language, the Alethe format also includes a set of proof rule.
 The \cite[\S 5]{alethespec} gives the complete list of all proof rules.
 Historically, the proof rules correspond to the rules that the solver veriT can emit.
+Alethe provide different types of proof rules that we will describe with example of rule that  :
 
 
-
-\paragraph{Tautologous Rules and Simple Deduction}
-Most rules introduce tautologies. One example is
-the \kw{equiv\_pos2} rule: $\neg (\varphi_1 \approx \varphi_2), \neg \varphi_1, \varphi_2$.
+\paragraph{Tautologous Rules and Simple Deduction.}
+These rules introduce tautologies. One example is the \kw{equiv\_pos2} rule used in \cref{lst:smtexampleinput-fol} that introduces the tautology clause:
+\[
+  \neg (\varphi_1 \approx \varphi_2), \neg \varphi_1, \varphi_2 \text{ equivalent to } \varphi_1 \approx \varphi_2 \implies  \varphi_1 \implies \varphi_2
+\]
 %
 Other rules derive their conclusion from a single premise such as \kw{cong} (congruence).
 %
 Those rules are primarily used to simplify Boolean connectives during preprocessing.
 For example, the \kw{implies} rule eliminates an implication: From $\varphi_1 \to \varphi_2$, it deduces $\neg \varphi_1, \varphi_2$.
 
-\paragraph{Simplification rules}
+\paragraph{Simplification rules.} These rules represent typical operator level simplifications.
+For example, the rule \tt{or\_simplify} below simplify \kw{or} expression:
 
 \begin{equation}
-i. \quad \Gamma~\triangleright \quad l_1 \lor \dots \lor l_n ~ \approx \psi \quad \texttt{or\_simplify}
+i. \quad \Gamma~\triangleright \quad l_1 \lor \dots \lor l_n ~ \approx \psi \quad \tt{or\_simplify}
 \end{equation}
 where $\psi$ is the transformed term. The possible transformations are:
 \begin{enumerate}
@@ -437,12 +355,9 @@ where $\psi$ is the transformed term. The possible transformations are:
 \item[(5)] $l_1 \lor \dots \lor l_i \lor \dots \lor l_j \lor \dots \lor  l_n \Rightarrow \top$ where $l_i = \neg^{2p} x$, $l_j = \neg^{2q+1} x$.
 \end{enumerate}
 
-
 \paragraph{Resolution.}
 {\cdclt}-based SMT solvers, and especially their SAT solvers, are fundamentally based on resolution of clauses.
-Hence, Alethe also has dedicated clauses and a resolution proof rule.
-However, since SMT solvers do not enforce a strict clausal normal form, ordinary disjunction is also used.
-Keeping clauses and disjunctions distinct simplifies rule checking.
+Hence, Alethe also has dedicated resolution proof rule.
 
 \medskip
 
@@ -455,25 +370,23 @@ $j.~~\triangleright$  & \qquad $l_{s_1}^{r_1},\, \dots,\, l_{s_m}^{r_m}$ \qquad 
 
 \medskip
 
-
+However, since SMT solvers do not enforce a strict clausal normal form, ordinary disjunction is also used.
+Therefore Alethe keep clauses and disjunctions distinct to simplifies rule checking.
 For example, in the case of resolution there is a clear distinction between unit clauses where the sole literal starts with a disjunction and non-unit clauses.
 The syntax for clauses uses the \smtinline{cl} operator, while disjunctions use the standard \smtinline{or} operator.
 The \kw{or} \emph{rule} is responsible for converting disjunctions into clauses.
 
 The Alethe proofs use a generalized propositional resolution rule with the name \kw{resolution} or \kw{th\_resolution}.
 Both names denote the same rule.
-The difference only serves to distinguish if the rule was introduced by the SAT solver or by a theory solver.
+The difference only serves to distinguish whether the rule was introduced by the SAT solver or by a theory solver.
 The resolution step is purely propositional; there is no notion of a unifier.
-The resolution rules also implicitly simplifies repeated negations at the head of literals.
+The resolution rules also implicitly simplify repeated negations at the head of literals.
 
 The premises of a resolution step are clauses, and the conclusion is a clause that has been derived from the premises by some binary resolution steps.
 
-\paragraph{Quantifier Instantiation}
-To express quantifier instantiation, the rule \kw{forall\_inst}
-is used. It produces a formula of the form $(\neg \forall \bar
-x_n.\,\varphi) \lor \varphi[\bar t_n]$, where $\varphi$ is
-a term containing the free variables $\bar x_n$, and for each $i$ the
-ground term $t_i$ is a new term with the same sort as $x_i$.
+\paragraph{Quantifier Instantiation.}
+To express quantifier instantiation, the rule \kw{forall\_inst} is used.
+It produces a formula of the form $(\neg \forall \bar x_n.\,\varphi) \lor \varphi[\bar t_n]$, where $\varphi$ is a term containing the free variables $\bar x_n$, and for each $i$ the ground term $t_i$ is a new term with the same sort as $x_i$.
 
 \medskip
 
@@ -483,47 +396,13 @@ ground term $t_i$ is a new term with the same sort as $x_i$.
 
 \medskip
 
-The argument of a \kw{forall\_inst} step, for a quantification of the form $\forall x_1,\dots,x_n. \varphi$,  is the list $t_1,\dots, t_n$, where $t_i$ denotes the substitute of variable $x_i$. While this information can be recovered from the term,
-providing it explicitly helps reconstruction because the implicit reordering of
-equalities obscures which terms have been used as instances.
-Existential quantifiers are handled by skolemization.
+The argument of a \kw{forall\_inst} step, for a quantification of the form $\forall x_1,\dots,x_n. \varphi$,  is the list $t_1,\dots, t_n$, where $t_i$ denotes the substitute of variable $x_i$.
+While this information can be recovered from the term, providing it explicitly helps reconstruction because the implicit reordering of equalities obscures which terms have been used as instances.
+Existential quantifiers are handled by skolemization \question{ac}{should I say something also about skolemization?}.
 
 \paragraph{Linear arithmetic.}
 
-Proofs for linear arithmetic steps use a number of rules listed in \cref{table:linear-arith-rules}, such as \tt{la\_totality} that asserts totality of the ordering $\leq$.
-Following our encoding of Alethe in Lambdapi as described in \cite{ColtellacciMD24}, the linear arithmetic rules \tt{la\_disequality}, \tt{la\_totality}, and \tt{la\_mult\_*} are implemented as lemmas.
-We do not support the remaining arithmetic simplification rules, including the \tt{la\_tautology} rule from Alethe.
-This omission is primarily due to the fact that cvc5 extends Alethe with the RARE simplification rules \cite{rare}, which it uses in place of the original ones.
-Consequently, we support the RARE rules prefixed by \tt{arith-*}, as listed in \cref{table:linear-arith-rules}, and we have selectively implemented those that appear in the proof traces of the benchmarks discussed in \cref{sec:evaluation}.
-In addition, support for the \tt{evaluate} rule is provided through the work described in \cref{sec:encoding}, and support for \tt{arith-poly-norm} is realized through the normalization approach detailed in \cref{sec:lia-reconstruction}.
-
-
-\lstinputlisting[language=SMT,label={lst:smtexampleinput-lia},caption={Input problem.}]{Assets/example_lia.smt2}
-
-\lstinputlisting[language=SMT,caption={Proof of unsatisfiability of the input problem of \protect{\cref{lst:smtexampleinput}}.},label={lst:smtexampleproof}]{Assets/example_lia.proof}
-
-The proofs starts with \tt{assume} steps \tt{a0}, \tt{a1}, \tt{a2} that restate the assertions from the \emph{input problem}. % (\cref{lst:smtexampleproof}).
-Step \tt{t1} transforms the disjunction \texttt{a0} into a clause by using the Alethe rule \tt{or}.
-Steps \tt{t2} and \tt{t5} are tautologies introduced by the main rule \tt{la\_generic}
-in Linear Real Arithmetic (LRA) logic and also used in LIA logic, where \colorbox{green!30}{$l_1, l_2,\dots, l_n$} represent linear inequalities.
-The \lstinline[language=SMT,basicstyle=\ttfamily\footnotesize]{Real} terms in LRA and LIA logic are built over the \lstinline[language=SMT,basicstyle=\ttfamily\footnotesize]{Real} and \lstinline[language=SMT,basicstyle=\ttfamily\footnotesize]{Int} signatures from SMT-LIB with free variables, but containing only linear atoms; that is
-atoms of the form \lstinline[language=SMT,basicstyle=\ttfamily\footnotesize]{d}, \lstinline[language=SMT,basicstyle=\ttfamily\footnotesize]{(* d x)}, or \lstinline[language=SMT,basicstyle=\ttfamily\footnotesize]{(* x d)}  where \lstinline[language=SMT,basicstyle=\ttfamily\footnotesize]{x} is a free variable and  \lstinline[language=SMT,basicstyle=\ttfamily\footnotesize]{d} is an integer or rational constant.
-A linear inequality is an expression of the form
-
-\begin{equation}
-\sum_{i=0}^{n}c_i\times{}t_i + d_1\bowtie \sum_{i=n+1}^{m} c_i\times{}t_i + d_2
-\label{eqn:inequality}
-\end{equation}
-%
-where $\mathop{\bowtie} \mathrel{\in} \mathop{\{=, <, >, \leq, \geq\}}$, $m\geq n$, $c_i, d_1, d_2$ are either \lstinline[language=SMT,basicstyle=\ttfamily\footnotesize]{Int} or \lstinline[language=SMT,basicstyle=\ttfamily\footnotesize]{Real}
-constants, and where $c_i$ and $t_i$ have the same sort for all $i$.
-Checking the clause validity of \tt{t2} and \tt{t5} in \cref{lst:smtexampleproof}, amounts to checking the unsatisfiability of the system of linear equations e.g. $x < 3$ and $x = 2$ in \tt{t2}.
-Coefficients for each inequality are passed as arguments e.g. $(\frac{1}{1},\frac{1}{1})$ in \tt{t2}.
-Steps \tt{t3} and \tt{t4} apply the \colorbox{purple!30}{\texttt{resolution}} rule to the premises \tt{a1}, \tt{t2} (respectively \tt{t1} and \tt{t3}).
-Finally, the step \texttt{t6} concludes the proof by generating the empty clause $\bot$, denoted as \kw{(cl)} in \cref{lst:smtexampleproof}.
-Notice that the contexts \colorbox{blue!30}{$\Gamma$} of each step are all empty in this proof.
-
-\begin{table}[tp]
+\begin{table}
   \centering
   \begin{tabular}{ll}
   Rule & Description \\ \hline
@@ -563,14 +442,48 @@ Notice that the contexts \colorbox{blue!30}{$\Gamma$} of each step are all empty
   \label{table:linear-arith-rules}
 \end{table}
 
-A different approach is taken for the rules \tt{la\_generic} and \tt{lia\_generic}, as they describe an algorithm.
-While the \tt{la\_generic rule} is primarily intended for LRA logic, it is also applied in LIA proofs when all variables in the (in)equalities are of integer sort.
-A step of the rule \tt{la\_generic} represents a tautological clause of linear inequalities.  It can be checked by showing that the conjunction of
-the negated inequalities is unsatisfiable. After the application of some strengthening rules, the resulting conjunction is unsatisfiable,
-even if \lstinline[language=SMT,basicstyle=\ttfamily\footnotesize\upshape]{Int} variables are assumed to be \lstinline[language=SMT,basicstyle=\ttfamily\footnotesize\upshape]{Real} variables.
+Proofs for linear arithmetic use several straightforward rules listed in \cref{table:linear-arith-rules}, such as \tt{la\_totality} that asserts totality of the ordering $\leq$.
+and the main rules \tt{la\_generic} and \tt{lia\_generic}, which describe an algorithm.
+A step of the rule \tt{la\_generic} represents a tautological clause of linear inequalities.
+That can be verified by demonstrating that the conjunction of the negated inequalities is unsatisfiable.
+While the \tt{la\_generic rule} is primarily intended for \textbf{LRA} logic, it is also applied in \textbf{LIA} proofs when all variables in the (in)equalities are of integer sort.
+The \cref{lst:smtexampleproof} shows an example of a linear arithmetic proof in Alethe.
+
+\lstinputlisting[language=SMT]{Assets/example_lia.smt2}
+
+\begin{center}
+$\lightning$
+\end{center}
+
+\lstinputlisting[language=SMT,caption={Linear arithmetic proof},label={lst:smtexampleproof}]{Assets/example_lia.proof}
+
+The proofs begins with \tt{assume} steps \tt{a0}, \tt{a1}, \tt{a2} that restate the assertions from the \emph{input problem}. % (\cref{lst:smtexampleproof}).
+Step \tt{t1} transforms the disjunction \texttt{a0} into a clause by using the Alethe rule \tt{or}.
+Steps \tt{t2} and \tt{t5} are tautologies introduced by the main rule \tt{la\_generic}
+in Linear Real Arithmetic (LRA) logic and also used in LIA logic, where \colorbox{green!30}{$l_1, l_2,\dots, l_n$} represent linear inequalities.
+The \lstinline[language=SMT,basicstyle=\ttfamily\footnotesize]{Real} terms in LRA and LIA logic are constructed over the \lstinline[language=SMT,basicstyle=\ttfamily\footnotesize]{Real} and \lstinline[language=SMT,basicstyle=\ttfamily\footnotesize]{Int} signatures from SMT-LIB with free variables, but containing only linear atoms; that is
+atoms of the form \lstinline[language=SMT,basicstyle=\ttfamily\footnotesize]{d}, \lstinline[language=SMT,basicstyle=\ttfamily\footnotesize]{(* d x)}, or \lstinline[language=SMT,basicstyle=\ttfamily\footnotesize]{(* x d)}  where \lstinline[language=SMT,basicstyle=\ttfamily\footnotesize]{x} is a free variable and  \lstinline[language=SMT,basicstyle=\ttfamily\footnotesize]{d} is an integer or rational constant.
+A linear inequality is an expression of the form:
+
+\begin{equation}
+\sum_{i=0}^{n}c_i\times{}t_i + d_1\bowtie \sum_{i=n+1}^{m} c_i\times{}t_i + d_2
+\label{eqn:inequality}
+\end{equation}
+%
+where $\mathop{\bowtie} \mathrel{\in} \mathop{\{=, <, >, \leq, \geq\}}$, $m\geq n$, $c_i, d_1, d_2$ are either \lstinline[language=SMT,basicstyle=\ttfamily\footnotesize]{Int} or \lstinline[language=SMT,basicstyle=\ttfamily\footnotesize]{Real}
+constants, and where $c_i$ and $t_i$ have the same sort for all $i$.
+Checking the clause validity of \tt{t2} and \tt{t5} in \cref{lst:smtexampleproof}, amounts to checking the unsatisfiability of the system of linear equations e.g. $x < 3$ and $x = 2$ in \tt{t2}.
+Coefficients for each inequality are passed as arguments e.g. $(\frac{1}{1},\frac{1}{1})$ in \tt{t2}.
+Steps \tt{t3} and \tt{t4} apply the \colorbox{purple!30}{\texttt{resolution}} rule to the premises \tt{a1}, \tt{t2} (respectively \tt{t1} and \tt{t3}).
+Finally, the step \texttt{t6} concludes the proof by generating the empty clause $\bot$, denoted as \kw{(cl)} in \cref{lst:smtexampleproof}.
+Notice that the contexts \colorbox{blue!30}{$\Gamma$} of each step are all empty in this proof.
+
+To elaborate on the \tt{la\_generic} rule, it can be verified by showing that the conjunction of the negated inequalities is unsatisfiable.
+After applying strengthening rules, the resulting conjunction is unsatisfiable,
+even when \lstinline[language=SMT,basicstyle=\ttfamily\footnotesize\upshape]{Int} variables are treated as \lstinline[language=SMT,basicstyle=\ttfamily\footnotesize\upshape]{Real} variables.
 Although the rule may introduce rational coefficients, they often reduce to integers—as shown in \cref{lst:smtexampleproof}, where the coefficients are $(\frac{1}{1}, \frac{1}{1})$.
-Cases where coefficients cannot be reduced to integers are rare in practice, however, we reduce them to integers by \emph{clearing denominators} with their least common denominator.
-Let $\varphi_1,\dots, \varphi_n$ be linear inequalities and $a_1, \dots, a_n$ rational numbers, then a \tt{la\_generic} step has the general form
+Cases where coefficients cannot be reduced to integers are rare in practice, however, we reduce them to integers by \emph{clearing denominators} using their least common denominator.
+Let $\varphi_1,\dots, \varphi_n$ be rational numbers linear inequalities and $a_1, \dots, a_n$ rational numbers. Then a \tt{la\_generic} step has the general form
 %
 \[
 \begin{matrix*}[c]
@@ -645,132 +558,93 @@ Since our approach does not support the \lstinline[language=SMT,basicstyle=\ttfa
 
 
 
-\section{RARE elaboration}
-\label{sec:rare-intro}
+\section{Checking Alethe Proofs}
 
-\begin{figure}
-\centering
-\begin{tikzpicture}[scale=0.8,
-    box/.style={rectangle, draw, minimum width=2cm, minimum height=1cm, align=center, font=\normalsize},
-    smallbox/.style={rectangle, draw, minimum width=1.2cm, minimum height=0.6cm, align=center, font=\small},
-    arrow/.style={->, thick},
-    bidirectional/.style={<->, thick}
-]
+\subsection{Abstract procedure}
 
-% Combined Theory Solver/Rewriter boxes
-\node[box, minimum height=2cm] (combined1) at (0, 5) {};
-\node[box, minimum height=2cm] (combined2) at (5, 5) {};
+We present an abstract procedure to verify whether an Alethe proof
+is well-formed and valid. An Alethe proof is well-formed if and only if its anchors
+and steps are properly balanced. To check this property, we systematically replace innermost
+subproofs with holes until no subproof remains. If the resulting proof structure is
+free of anchors and steps that use concluding rules, then the proof is well-formed.
+Furthermore, if all steps within the subproofs satisfy the conditions prescribed by their
+respective rules, then each subproof is valid. Consequently, if all subproofs are valid,
+then the entire proof is valid.
 
-% Add text labels
-\node at (0, 5.5) {\scriptsize Th. Solver};
-\node at (0, 4.5) {\scriptsize Th. Rewriter};
-\node at (5, 5.5) {\scriptsize Th. Solver};
-\node at (5, 4.5) {\scriptsize Th. Rewriter};
+Formally, an Alethe proof $P$ is represented as a sequence $[C_1, \ldots, C_n]$ of steps and anchors.
+Since each step employs a unique index, we assume that step $C_i$ in $P$ uses
+$i$ as its index. The logical context changes only at anchors and subproof-concluding
+steps. Therefore, the step elements $C_1, \ldots, C_n$ are not directly associated
+with a context. Instead, the context can be computed from the preceding anchors,
+as anchors serve exclusively to extend the context.
 
-% Add horizontal dividing lines
-\draw (combined1.west |- 0,5) -- (combined1.east |- 0,5);
-\draw (combined2.west |- 0,5) -- (combined2.east |- 0,5);
+To validate an Alethe proof, we employ an iterative approach that eliminates the first-innermost
+subproof at each step. The first-innermost subproof is defined as the innermost subproof that does not
+follow a complete subproof. This restriction to first subproofs significantly simplifies the computation of
+the context for steps within the subproof.
 
-% Dots between boxes
-\node at (2.5, 5) {\Large $\cdots$};
+\begin{definition}[First-Innermost Subproof]\label{def:first-innermost}
+Let $P$ be the proof $[C_1, \ldots, C_n]$ and let $1 \leq \mathit{start} < \mathit{end} \leq n$ be two indices such
+that:
+\begin{itemize}
+\item $C_{\mathit{start}}$ is an anchor,
+\item $C_{\mathit{end}}$ is a step that uses a concluding rule,
+\item no $C_k$ with $k < \mathit{start}$ uses a concluding rule, and
+\item no $C_k$ with $\mathit{start} < k < \mathit{end}$ is an anchor or a step that uses a concluding rule.
+\end{itemize}
+Then $[C_{\mathit{start}}, \ldots, C_{\mathit{end}}]$ is called the \emph{first-innermost subproof} of $P$.
+\end{definition}
 
-% Main Rewriter (center)
-\node[box, minimum width=5cm] (rewriter) at (2.5, 2) {Rewriter};
+\begin{definition}[Valid Alethe Proof]\label{def:valid-alethe-proof}
+A proof $P$ is a \emph{valid Alethe proof} if and only if:
+\begin{itemize}
+\item $P$ is well-formed,
+\item $P$ does not contain any step that uses the hole rule,
+\item $P_{\mathit{last}}$ contains a step that has the empty clause as its conclusion,
+\item the first-innermost subproof of every $P_i$ with $i < \mathit{last}$ is valid,
+\item all steps $C_i$ in $P_{\mathit{last}}$ only use premises $C_j$ in $P_{\mathit{last}}$ with $1 \leq j < i$, and
+\item all steps $C_i$ in $P_{\mathit{last}}$ adhere to the conditions of their rule under the empty context.
+\end{itemize}
+\end{definition}
 
-% Rules Files (right side)
-\node[smallbox] (rules1) at (8, 5) {\scriptsize Rules\\ \scriptsize File};
-\node[smallbox] (rules2) at (11, 5) {\scriptsize Rules\\\scriptsize File};
+The condition that $P$ contains no holes ensures that the original proof is
+complete and holes are only introduced by eliminating valid subproofs.
 
-% Dots between rules
-\node at (9.5, 5) {\Large $\cdots$};
+It is sometimes useful to speak about the steps that are not within a subproof.
+We call such a step an \emph{outermost step}. In a well-formed proof, these are precisely the steps of $P_{\mathit{last}}$.
 
-% DSL Compiler
-\node[box] (dsl) at (9, 3) {DSL Compiler};
+\begin{theorem}[Soundness of Concrete Alethe Proofs]
+If there is a valid proof $P = [C_1, \dots , C_n]$ that has the formulas $\varphi_1, \dots, \varphi_1$ as the conclusions of the outermost assume steps, then
+\[
+  \varphi_1, \dots, \varphi_1 \models \bot
+\]
+Here, $\models$ represents semantic consequence in the many-sorted first order logic of SMT-LIB with the theories of uninterpreted functions and linear arithmetic extended to clauses.
+\end{theorem}
 
-% Rewrite components (bottom)
-\node[box] (proof_reconstructor) at (2.5, -1) {Rewrite Proof\\Reconstructor};
-\node[box] (rule_database) at (2.5, -3.5) {Rewrite Rule\\Database};
+\subsection{Challenges in Proof Verification}
+\label{ssec:challenge-recon}
 
-% Arrows
-\draw[bidirectional] (combined1) -- (rewriter);
-\draw[bidirectional] (combined2) -- (rewriter);
+While the abstract procedure described above provides a clear framework for validating Alethe proofs,
+practical verification presents significant challenges due to the implicit nature of certain proof steps.
+The coarse-grained representation used by Alethe contrasts sharply with the fine-grained proofs required
+by proof assistants such as Lambdapi, creating a substantial gap that must be bridged during verification.
 
-\draw[arrow] (rewriter) -- node[right] {$t$} (proof_reconstructor);
-\draw[arrow] (proof_reconstructor) -- node[right] {$t\downarrow$} (rewriter);
+The primary difficulty stems from the fact that Alethe treats several fundamental logical operations
+implicitly, requiring proof checkers to reconstruct missing intermediate steps. This implicit treatment
+manifests in multiple ways, making direct verification challenging without additional proof reconstruction.
 
-\draw[bidirectional] (proof_reconstructor) -- (rule_database);
+The following aspects are treated implicitly by Alethe:
 
-\draw[arrow] (rules1) -- (dsl);
-\draw[arrow] (rules2) -- (dsl);
-\draw[arrow] (dsl) |- (rule_database.east);
+\begin{itemize}
+  \item Symmetry of equalities that are not top-most equalities in steps with non-empty context;
+  \item The order of literals in the clauses;
+  \item The trace of rewrites in simplification steps is not provided by Alethe. 
+  \item The unfolding of names introduced by \tt{(! t :named n)};
+  \item The unfolding of function symbols introduced by \tt{define-fun}.
+\end{itemize}
 
-\end{tikzpicture}
-\caption{Overview of the components of our approach}
-\label{fig:system_overview}
-\end{figure}
+Moreover, in simplification rules, the order of the rewrites matters since some rules are not confluent.
 
-To address this problem, we use the domain-specific language RARE \cite{rare} provided by cvc5 for defining rewrite rules. As described in \cref{sec:rare-intro}, RARE elaborates proofs for specific rewrite steps on demand based on built-in rewrite rules of cvc5.
-The RARE rule used and its arguments are made explicit in the \lstinline[language=SMT]{:args} parameter of the rule \kw{rare\_rewrite} in the proof trace.
-cvc5 elaborates the proof by rendering each coarse step into fined grain with atomic rewrite.
-Although RARE is currently only supported by cvc5, its use has allowed us to increase the success rate of proof reconstruction.
-
-The example of \cref{lst:or_simp_example} illustrates how RARE transforms an Alethe proof trace into a more fine-grained proof.
-The original step \texttt{t1} uses the rule \texttt{or\_simplify} by applying twice the transformation (2).
-However, cvc5 can output instead a proof trace using RARE that indicates the rule \kw{bool-or-false} and makes the arguments explicit.
-Note that the RARE format represents an empty list as \kw{rare-list} without argument.
-
-\begin{example}[RARE example] An original step $\kw{or\_simplify}$ below
-\begin{lstlisting}[language=SMT]
-(step t1 (cl (= (or false x y false z) (x y z)))
-      :rule or_simplify)
-\end{lstlisting}
-
-can be changed by cvc5 if RARE is enabled into:
-
-\begin{lstlisting}[language=SMT,caption={\texttt{or\_simplify} elaborated by RARE}, label={lst:or_simp_example}]
-(step t1 (cl (= (or false x y false z) (or x y false z)))
-      :rule rare_rewrite :args ("bool-or-false" rare-list
-                                   (rare-list (x y false z))))
-(step t2 (cl (= (or x false y z) (or x y z)))
-      :rule rare_rewrite :args ("bool-or-false" (rare-list x)
-                                   (rare-list (y z))))
-\end{lstlisting}
-\end{example}
-
-
-\section{Elaborating lia\_generic steps}
-\label{sec:elaboration-lia}
-
-The rule \tt{lia\_generic} is similar to \tt{la\_generic}, but omits the coefficients,
-i.e.\ \colorbox{orange!30}{$[a_1 \dots a_r]$} is empty..
-%Since this rule can introduce a disjunction of arbitrary linear integer inequalities without any additional hints, proof checking is \emph{NP-complete} \cite{Schrijver:lia}.
-We decided to leverage the elaboration process of \tt{lia\_generic} performed by Carcara, as doing otherwise would require implementing Fourier-Motzkin elimination for integers, as done in \cite{micromega,omegatest}, hence reimplementing work that was already done by the solver.
-
-Carcara considers $\tt{lia\_generic}$ steps as holes in the proof, given that ``their checking is as hard as solving'' \cite[\S 3.2]{carcara}.
-To address this, Carcara leverages an external tool that reformulates each \tt{lia\_generic} step as a separate problem and produces Alethe proofs not containing \tt{lia\_generic} steps.
-The proof is then imported and validated, replacing the original step.
-%% sm: I don't see why this remark is relevant for this paper?
-%However, at present, Carcara only uses the solver cvc5 for performing this task.
-Thus, the step
-% In detail, the elaboration method, when encountering a \tt{lia\_generic} step
-%
-\begin{lstlisting}[language=SMT]
-    (step S (cl (not l1) ... (not ln)) :rule lia_generic)
-\end{lstlisting}
-%
-concluding the clause $\neg l_1 \lor \dots \neg l_n$ where all $l_i$ are inequalities, generates an SMT-LIB problem asserting $l_1$, \dots, $l_n$ and invokes the solver cvc5 on it, expecting an Alethe proof $\pi : (l_1 \land \dots \land l_n) \ra \bot$
-that does not use \tt{lia\_generic}. Carcara will check this subproof and then replace the original step by a proof of the form
-
-\begin{lstlisting}[language=SMT,caption={Elaboration of \tt{lia\_generic}},label={lst:elab_lia}]
-(anchor :step S.t_m+1)
-(assume S.h_1 l1)
-...
-(assume S.h_n ln)
-...
-(step t.t_m (cl false) :rule ...)
-(step t.t_p (cl (not l1) ... (not ln) false) :rule subproof)
-(step t.t_q (cl (not false)) :rule false)
-(step S (cl (not l1) ... (not ln)) :rule resolution :premises (S.t_p S.t_q))
-\end{lstlisting}
-
-% In the next section, we first present an overview of our embedding of Alethe in Lambdapi, and then our automatic procedure to reconstruct $\tt{la\_generic}$ step that appear in LIA problem.
+These implicit operations necessitate sophisticated proof reconstruction algorithms that can infer
+and generate the missing intermediate steps, effectively transforming coarse-grained Alethe proofs
+into the fine-grained format required by formal verification systems.

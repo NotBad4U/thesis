@@ -1,0 +1,284 @@
+\chapter{Elaboration of Alethe proof}\label{ch:elab}
+
+\section{Elaboration with Carcara}
+\label{sect:elaboration}
+
+Unfortunately, Alethe proof traces provided by SMT solvers such as veriT and cvc5 can be challenging to reconstruct in a proof assistant.
+For instance, the order of literals in the clauses is not determined, symmetry
+of equality is sometimes used implicitly, and the \tt{resolution} proof rule
+may not indicate pivots explicitly and remove duplicated literals implicitly.
+
+Carcara provides an elaboration mechanism for Alethe proof traces where
+``elaboration passes'' are applied to replace coarse-grained steps with
+fine-grained proofs of their conclusions, adding details that can make proof
+reconstruction easier.
+%
+For example, a clause \smtinline{(or p (= b a))} may later be used as the term \smtinline{(or p (= a b))}, with the equality \smtinline{(= b a)} implicitly reordered.
+%
+Carcara applies an elaboration pass that introduces intermediate steps to convert the original assertion into one with equality reordered and consistently uses that version in the rest of the proof.
+%
+The list of elaboration passes performed by Carcara can be found in \cite[\S
+3.2]{carcara}, and besides removing implicit equality reordering it includes
+removing some trivial transient steps, rewriting the order of literals in a
+clause, and computing a proof for arithmetic steps that lack explicit justification by calling an
+external SMT solver.
+
+\subsection{Eliminating clause reordering steps}
+\label{ssec:elabration-reordering}
+
+In Alethe, the \tt{reordering} rule is used to reorder the terms of a clause. Concretely, steps of this rule take a single clause as a premise, and conclude a permutation of it.
+Translating these steps into Lambdapi is not ideal, as formally proving that the two permutations are equivalent would be costly to check.
+Instead, we have added a new elaboration step to Carcara that completely removes all \tt{reordering} steps from the proof.
+
+When we remove a \tt{reordering} step from the proof, subsequent proof steps that relied on it may now be incorrect, since one of their premises changed.
+To address this, we must recompute the conclusion of these steps so that they are again valid, and keep propagating these changes throughout the proof.
+Luckily, all rules in Alethe that depend on the order of the terms in a premise clause (namely, \tt{resolution}, \tt{contraction} and \tt{or\_intro}) can be recomputed to still be valid by only changing the order of the terms in the conclusion. No other rules are affected.
+%
+This means that we do not need to add any new steps when doing this elaboration --- changes in the conclusion of a step may only cause other steps to have their conclusion changed, down until the end of the proof.
+
+Figure~\ref{reordering-elaboration} shows an example of this elimination in action.
+Note how the conclusion of the \tt{resolution} step had to be recomputed --- if any step further down in the proof used this \tt{resolution} step as a premise, it would also have to be recomputed.
+
+\begin{figure}
+  \centering
+  \begin{tabular}{c c}
+    \textbf{Before} & \textbf{After} \\[0.5em]
+    \begin{prooftree}
+      \hypo{x \lor y \lor z}
+      \infer1[\small\tt{Res}]{y \lor x \lor z}
+      \hypo{\neg z}
+      \infer2[\small\tt{Res}]{y \lor x}
+    \end{prooftree}
+    &
+    \begin{prooftree}
+      \hypo{x \lor y \lor z}
+      \hypo{\neg z}
+      \infer2[\small\tt{Res}]{x \lor y}
+    \end{prooftree}
+  \end{tabular}
+  \caption{A proof snippet before and after elimination of \tt{reordering} steps}
+  \label{reordering-elaboration}
+\end{figure}
+
+\subsection{Elaboration of resolution steps}
+\label{ssec:elabration-resolution}
+
+The \tt{resolution} rule in Alethe is very flexible. Namely, it does not require the pivots to be provided, it allows implicit reorderings of terms in the conclusion clause, and it allows duplicate literals to be removed implicitly.
+This flexibility significantly complicates the translation of resolution steps to Lambdapi, so we again use elaboration in Carcara to address it.
+There is an existing elaboration step in Carcara that can compute the pivots used if they are not provided~\cite{carcara}, and the implicit reordering of the conclusion clause can be handled by adding a \tt{reordering} step.\footnote{These steps may later be eliminated, as discussed in~\cref{sect:elabration-reordering}} As for the implicit removal of duplicate literals, we had to develop a new elaboration procedure in Carcara to address it.
+
+This elaboration algorithm makes the removal of duplicate literals explicit, using the \tt{contraction} rule.
+%
+Since in Alethe the \tt{resolution} rule actually represents a chain of several binary resolution steps, we may need to break this chain into multiple \tt{resolution} proof steps, with \tt{contraction} steps in between.
+To do this, the algorithm first computes the ``naive'' conclusion of the resolution step, without removing any duplicates, and determines which literals are present in this ``naive'' conclusion, but not in the actual conclusion.
+These are called the \emph{crowding} literals, and represent pivots whose duplicates were implicitly removed before they were eliminated. To make duplicate removal explicit, there needs to be, for each crowding literal, a contraction step between the last time it is introduced and the time it is eliminated.
+
+
+\begin{figure}
+  \centering
+  \begin{tabular}{c}
+    \textbf{Before} \\[0.5em]
+    \begin{prooftree}
+      \hypo{\neg a \lor b \lor x \lor c}
+      \hypo{a \lor b \lor c}
+      \hypo{\neg b \lor y \lor z}
+      \hypo{\neg c}
+      \infer4[\small\tt{Res}\, $a, b, c$]{x \lor y \lor z}
+    \end{prooftree} \\[2em]
+    \textbf{After} \\[0.5em]
+    \begin{prooftree}
+      \hypo{\neg a \lor b \lor x \lor c}
+      \hypo{a \lor b \lor c}
+      \infer2[\small\tt{Res}; $a$]{b \lor x \lor c \lor b \lor c}
+      \infer1[\small\tt{contra}]{b \lor x \lor c}
+      \hypo{\neg b \lor y \lor z}
+      \hypo{\neg c}
+      \infer3[\small\tt{Res}\, $b, c$]{x \lor y \lor z}
+    \end{prooftree}
+  \end{tabular}
+  \caption{A resolution step before and after elaboration.}
+  \label{resolution-uncrowding}
+\end{figure}
+
+Figure~\ref{resolution-uncrowding} shows an example of this elaboration in action.
+Notice that, in the original resolution chain, the $b$ literal is introduced twice in the first two premises.
+However, when it is eliminated by the $\neg b$ literal in the third premise, this duplicate is implicitly removed.
+The same thing happens with the $c$ literal. In the elaborated \tt{resolution} step, this duplicate removal is made explicit, with a \tt{contraction} step.
+
+
+
+\subsection{Elaboration of lia\_generic steps}
+\label{ssec:elaboration-lia}
+
+The rule \tt{lia\_generic} is similar to \tt{la\_generic}, but omits the coefficients,
+i.e.\ \colorbox{orange!30}{$[a_1 \dots a_r]$} is empty..
+%Since this rule can introduce a disjunction of arbitrary linear integer inequalities without any additional hints, proof checking is \emph{NP-complete} \cite{Schrijver:lia}.
+We decided to leverage the elaboration process of \tt{lia\_generic} performed by Carcara, as doing otherwise would require implementing Fourier-Motzkin elimination for integers, as done in \cite{micromega,omegatest}, hence reimplementing work that was already done by the solver.
+
+Carcara considers $\tt{lia\_generic}$ steps as holes in the proof, given that ``their checking is as hard as solving'' \cite[\S 3.2]{carcara}.
+To address this, Carcara leverages an external tool that reformulates each \tt{lia\_generic} step as a separate problem and produces Alethe proofs not containing \tt{lia\_generic} steps.
+The proof is then imported and validated, replacing the original step.
+%% sm: I don't see why this remark is relevant for this paper?
+%However, at present, Carcara only uses the solver cvc5 for performing this task.
+Thus, the step
+% In detail, the elaboration method, when encountering a \tt{lia\_generic} step
+%
+\begin{lstlisting}[language=SMT, frame=none, numbers=none]
+    (step S (cl (not l1) ... (not ln)) :rule lia_generic)
+\end{lstlisting}
+%
+concluding the clause $\neg l_1 \lor \dots \neg l_n$ where all $l_i$ are inequalities, generates an SMT-LIB problem asserting $l_1$, \dots, $l_n$ and invokes the solver cvc5 on it, expecting an Alethe proof $\pi : (l_1 \land \dots \land l_n) \ra \bot$
+that does not use \tt{lia\_generic}. Carcara will check this subproof and then replace the original step by a proof of the form
+
+\begin{lstlisting}[language=SMT,caption={Elaboration of \tt{lia\_generic}},label={lst:elab_lia}]
+(anchor :step S.t_m+1)
+(assume S.h_1 l1)
+...
+(assume S.h_n ln)
+...
+(step t.t_m (cl false) :rule ...)
+(step t.t_p (cl (not l1) ... (not ln) false) :rule subproof)
+(step t.t_q (cl (not false)) :rule false)
+(step S (cl (not l1) ... (not ln)) :rule resolution :premises (S.t_p S.t_q))
+\end{lstlisting}
+
+
+\section{Elaboration of simplifications with RARE}
+\label{ssec:rare-intro}
+
+To address the challenge described in \cref{ssec:challenge-recon} of reconstructing coarse-grained proofs for simplification steps, we leverage the RARE framework \cite{rare}.
+Modern SMT solvers implement hundreds of theory-specific rewrite rules for normalizing and simplifying terms to achieve state-of-the-art performance.
+Conceptually, the implementation of these theory-specific rewrite rules can be viewed as \emph{theory rewriter modules} within individual theory solvers.
+A \emph{Rewriter} is a module that traverses a given term and invokes the appropriate theory rewriter on each subterm by examining the top-most symbol of the subterm and calling the theory whose signature contains that symbol.
+
+However, instrumentation of rewriting components can be particularly challenging and tedious, as it requires modifying complex, performance-critical code while maintaining efficiency during the solving process.
+RARE provides a domain-specific language for declaratively specifying rewrite rules and automatically reconstructing detailed proofs from coarse-grained atomic rewrites, making it particularly well-suited for generating the fine-grained simplification proofs required to reconstruct Alethe proofs in the Lambdapi proof assistant.
+The RARE framework has been implemented in cvc5 and replaces the original simplification rules of Alethe with its built-in rules.
+
+
+\begin{figure}
+\centering
+\begin{tikzpicture}[scale=0.8,
+    box/.style={rectangle, draw, minimum width=2cm, minimum height=1cm, align=center, font=\normalsize},
+    smallbox/.style={rectangle, draw, minimum width=1.2cm, minimum height=0.6cm, align=center, font=\small},
+    arrow/.style={->, thick},
+    bidirectional/.style={<->, thick}
+]
+
+% Combined Theory Solver/Rewriter boxes
+\node[box, minimum height=2cm] (combined1) at (0, 5) {};
+\node[box, minimum height=2cm] (combined2) at (5, 5) {};
+
+% Add text labels
+\node at (0, 5.5) {\scriptsize Th. Solver};
+\node at (0, 4.5) {\scriptsize Th. Rewriter};
+\node at (5, 5.5) {\scriptsize Th. Solver};
+\node at (5, 4.5) {\scriptsize Th. Rewriter};
+
+% Add horizontal dividing lines
+\draw (combined1.west |- 0,5) -- (combined1.east |- 0,5);
+\draw (combined2.west |- 0,5) -- (combined2.east |- 0,5);
+
+% Dots between boxes
+\node at (2.5, 5) {\Large $\cdots$};
+
+% Main Rewriter (center)
+\node[box, minimum width=5cm] (rewriter) at (2.5, 2) {Rewriter};
+
+% Rules Files (right side)
+\node[smallbox] (rules1) at (8, 5) {\scriptsize Rules\\ \scriptsize File};
+\node[smallbox] (rules2) at (11, 5) {\scriptsize Rules\\\scriptsize File};
+
+% Dots between rules
+\node at (9.5, 5) {\Large $\cdots$};
+
+% DSL Compiler
+\node[box] (dsl) at (9, 3) {DSL Compiler};
+
+% Rewrite components (bottom)
+\node[box] (proof_reconstructor) at (2.5, -1) {Rewrite Proof\\Reconstructor};
+\node[box] (rule_database) at (2.5, -3.5) {Rewrite Rule\\Database};
+\node[above left of= proof_reconstructor, yshift=1em, xshift=-1em] (n1) {\scriptsize Proof Module}; 
+
+
+\node[draw, minimum width=5cm,  minimum height=4cm, fit=(proof_reconstructor) (rule_database) (n1)] {};
+
+% Arrows
+\draw[bidirectional] (combined1) -- (rewriter);
+\draw[bidirectional] (combined2) -- (rewriter);
+
+\draw[arrow] (rewriter) -- node[right] {$t$} (proof_reconstructor);
+\draw[arrow] (proof_reconstructor) -- node[right] {$t\downarrow$} (rewriter);
+
+\draw[bidirectional] (proof_reconstructor) -- (rule_database);
+
+\draw[arrow] (rules1) -- (dsl);
+\draw[arrow] (rules2) -- (dsl);
+\draw[arrow] (dsl) |- (rule_database.east);
+
+\end{tikzpicture}
+\caption{Overview of the components of our approach}
+\label{fig:system_overview}
+\end{figure}
+
+The RARE approach described in \cref{fig:system_overview} treats the SMT solver's rewriter as a black box and employs a post-processing phase to expand coarse-grained rewriting steps into fine-grained proofs.
+The proof module, which manages proofs, utilizes a rewrite proof reconstructor to fill in the missing subproofs for rewrites.
+The rewrite proof reconstructor bases its reconstruction on a set of rewrite rules stored in a rewrite rule database (Rules file), which is generated at compile-time from declaratively specified rules written in the RARE domain-specific language.
+
+RARE supports three categories of rewrite rules that are particularly useful for Alethe simplification proofs.
+Basic unconditional rules handle straightforward rewrites, such as
+
+\begin{lstlisting}[language=RARE,numbers=none,frame=none,basicstyle=\ttfamily\small]
+(define-rule arith-refl-leq ((t ?)) (<= t t) true)
+\end{lstlisting}
+
+which simplifies any $t \leq t$ into \true. The $?$ denotes that a term can be of any sort. In contrast to SMT-LIB, parameterized sorts such as arrays and bit-vectors do not need to be concrete.
+Instead, RARE is gradually typed and allows the parameters of such sorts to remain abstract (e.g. ). This enables the specification of rewrites that are, e.g., independent of the bit-width or the sorts.
+%
+Conditional rules enable context-dependent simplifications, exemplified by rules:
+
+\begin{lstlisting}[language=RARE,numbers=none,frame=none,basicstyle=\ttfamily\small]
+(define-cond-rule bool-not-true ((t Bool))
+    (= t false) (not t) true)
+\end{lstlisting}
+%
+that simplifies \rareinline{(not t)} to \rareinline{true} under the condition that $t$ evaluates to \rareinline{false}.
+%
+Fixed-point rules support iterative simplifications, such as:
+%
+\begin{lstlisting}[language=RARE,numbers=none,frame=none,basicstyle=\ttfamily\small]
+(define-rule* bool-or-de-morgan ((x Bool) (y Bool) (zs Bool :list)) 
+  (not (or x y zs))
+  (not (or y zs))
+  (and (not x) _))
+\end{lstlisting}
+%
+that implements De Morgan's law by iteratively rewriting $\neg (x \lor y \lor \dots)$ to $(\neg x \land \neg (y \lor \dots))$,
+where the \rareinline{:list} attribute enables \rareinline{zs} to capture any remaining terms in the disjunction and the underscore $\_$ represents the result of recursively applying the same transformation to the remaining disjunction until all elements are processed.
+
+The RARE rule used and its arguments are made explicit in the \smtinline{:args} parameter of the rule \kw{rare\_rewrite} in the proof trace.
+cvc5 elaborates the proof by rendering each coarse step into a fined-grain one with atomic rewrite.
+Although RARE is currently only supported by cvc5, its use has allowed us to increase the success rate of proof reconstruction.
+
+The example of \cref{ex:rare} illustrates how RARE transforms an Alethe proof trace into a more fine-grained proof.
+The original step \tt{t1} uses the rule \tt{or\_simplify} by applying twice the transformation (2).
+However, cvc5 can output instead a proof trace using RARE that indicates the rule \kw{bool-or-false} and makes the arguments explicit.
+Note that the RARE format represents an empty list as \kw{rare-list} without argument.
+
+\begin{example}[RARE example]\label{ex:rare}
+An original step $\kw{or\_simplify}$ below
+\begin{lstlisting}[language=SMT,numbers=none]
+(step t1 (cl (= (or false x y false z) (x y z))) :rule or_simplify)
+\end{lstlisting}
+%
+can be changed by cvc5 if RARE is enabled into:
+%
+\begin{lstlisting}[language=SMT]
+(step t1 (cl (= (or false x y false z) (or x y false z)))
+      :rule rare_rewrite :args ("bool-or-false" rare-list
+                                   (rare-list (x y false z))))
+(step t2 (cl (= (or x false y z) (or x y z)))
+      :rule rare_rewrite :args ("bool-or-false" (rare-list x)
+                                   (rare-list (y z))))
+\end{lstlisting}
+\end{example}
