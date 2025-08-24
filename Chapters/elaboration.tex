@@ -4,14 +4,11 @@
 \label{sect:elaboration}
 
 Unfortunately, Alethe proof traces provided by SMT solvers such as veriT and cvc5 can be challenging to reconstruct in a proof assistant.
-For instance, the order of literals in the clauses is not determined, symmetry
-of equality is sometimes used implicitly, and the \tt{resolution} proof rule
-may not indicate pivots explicitly and remove duplicated literals implicitly.
+As we mentioned in \cref{ssec:challenge-recon}, the order of literals in the clauses is not determined, \emph{symmetry}
+of equality is sometimes used implicitly, and the \tt{resolution} proof rule may not indicate \emph{pivots} explicitly and remove duplicated literals implicitly.
 
-Carcara provides an elaboration mechanism for Alethe proof traces where
-``elaboration passes'' are applied to replace coarse-grained steps with
-fine-grained proofs of their conclusions, adding details that can make proof
-reconstruction easier.
+Carcara provides an elaboration mechanism \cite[\S 3]{carcara} for Alethe proof traces where ``elaboration passes'' are applied to replace coarse-grained steps with
+fine-grained proofs of their conclusions, adding details that can make proof reconstruction easier.
 %
 For example, a clause \smtinline{(or p (= b a))} may later be used as the term \smtinline{(or p (= a b))}, with the equality \smtinline{(= b a)} implicitly reordered.
 %

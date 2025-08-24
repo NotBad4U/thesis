@@ -80,22 +80,7 @@ numpages = {20},
 location = {Paris, France},
 address="Cham",
 }
-@INPROCEEDINGS{rare,
-  author={Nötzli, Andres and Barbosa, Haniel and Niemetz, Aina and Preiner, Mathias and Reynolds, Andrew and Barrett, Clark and Tinelli, Cesare},
-  booktitle={FMCAD 2022}, 
-  title={Reconstructing Fine-Grained Proofs of Rewrites Using a Domain-Specific Language}, 
-  pages={65-74},
- year={2022},
-  doi={10.34727/2022/isbn.978-3-85448-053-2_12}
-}
 
-@inproceedings{alethe2,
-  title = {{Alethe: Towards a Generic {SMT} Proof Format (extended abstract)}},
-  author = {Schurr, Hans-J{\"o}rg and Fleury, Mathias and Barbosa, Haniel and Fontaine, Pascal},
-  pages = {49-54},
-  booktitle = {PxTP 2021},
-
-}
 
 @article{proof-smt,
 author = {Barbosa, Haniel and Barrett, Clark and Cook, Byron and Dutertre, Bruno and Kremer, Gereon and Lachnitt, Hanna and Niemetz, Aina and N\"{o}tzli, Andres and Ozdemir, Alex and Preiner, Mathias and Reynolds, Andrew and Tinelli, Cesare and Zohar, Yoni},
@@ -226,6 +211,54 @@ pages = {91–118},
 numpages = {28},
 }
 
+% ======== Alethe =======================================
+
+@inproceedings{alethe2,
+  title = {{Alethe: Towards a Generic {SMT} Proof Format (extended abstract)}},
+  author = {Schurr, Hans-J{\"o}rg and Fleury, Mathias and Barbosa, Haniel and Fontaine, Pascal},
+  pages = {49-54},
+  booktitle = {PxTP 2021},
+
+}
+
+@INPROCEEDINGS{rare,
+  author={Nötzli, Andres and Barbosa, Haniel and Niemetz, Aina and Preiner, Mathias and Reynolds, Andrew and Barrett, Clark and Tinelli, Cesare},
+  booktitle={FMCAD 2022}, 
+  title={Reconstructing Fine-Grained Proofs of Rewrites Using a Domain-Specific Language}, 
+  pages={65-74},
+ year={2022},
+  doi={10.34727/2022/isbn.978-3-85448-053-2_12}
+}
+
+@InProceedings{IsaRare,
+author="Lachnitt, Hanna
+and Fleury, Mathias
+and Aniva, Leni
+and Reynolds, Andrew
+and Barbosa, Haniel
+and N{\"o}tzli, Andres
+and Barrett, Clark
+and Tinelli, Cesare",
+editor="Finkbeiner, Bernd
+and Kov{\'a}cs, Laura",
+title="IsaRare: Automatic Verification of SMT Rewrites in Isabelle/HOL",
+booktitle="Tools and Algorithms for the Construction and Analysis of Systems",
+year="2024",
+publisher="Springer Nature Switzerland",
+address="Cham",
+pages="311--330",
+isbn="978-3-031-57246-3"
+}
+
+@misc{alethespec,
+	title = {The {Alethe} {Proof} {Format} {An} {Evolving} {Specification} and {Reference}},
+	shorttitle = {The {Alethe} {Proof} {Format}},
+	note = {\url{https://verit.gitlabpages.uliege.be/alethe/specification.pdf}},
+	author = {Barbosa, Haniel and Fleury, Mathias and Fontaine, Pascal and Schurr, Hans-Jörg},
+	month = mar,
+	year = {2024},
+}
+
 
 
 % ======== Lambdapi =======================================
@@ -276,15 +309,6 @@ numpages = {28},
   MONTH = May,
 }
 
-
-@misc{alethespec,
-	title = {The {Alethe} {Proof} {Format} {An} {Evolving} {Specification} and {Reference}},
-	shorttitle = {The {Alethe} {Proof} {Format}},
-	note = {\url{https://verit.gitlabpages.uliege.be/alethe/specification.pdf}},
-	author = {Barbosa, Haniel and Fleury, Mathias and Fontaine, Pascal and Schurr, Hans-Jörg},
-	month = mar,
-	year = {2024},
-}
 
 @article{lf,
   title={A framework for defining logics},
@@ -1048,6 +1072,86 @@ pages="489--495",
 }
 
 % ======== Misc =======================================
+
+
+@phdthesis{lean-perf,
+title = "Formalizing Fundamental Algebraic Number Theory",
+author = "Anne Baanen",
+year = "2024",
+month = jan,
+day = "29",
+doi = "10.5463/thesis.541",
+language = "English",
+type = "PhD-Thesis - Research and graduation internal",
+school = "Vrije Universiteit Amsterdam",
+}
+
+@inproceedings{vampire,
+	address = {Berlin, Heidelberg},
+	title = {First-{Order} {Theorem} {Proving} and {Vampire}},
+	isbn = {978-3-642-39799-8},
+	abstract = {In this paper we give a short introduction in first-order theorem proving and the use of the theorem prover Vampire. We discuss the superposition calculus and explain the key concepts of saturation and redundancy elimination, present saturation algorithms and preprocessing, and demonstrate how these concepts are implemented in Vampire. Further, we also cover more recent topics and features of Vampire designed for advanced applications, including satisfiability checking, theory reasoning, interpolation, consequence elimination, and program analysis.},
+	booktitle = {Computer {Aided} {Verification}},
+	publisher = {Springer Berlin Heidelberg},
+	author = {Kovács, Laura and Voronkov, Andrei},
+	editor = {Sharygina, Natasha and Veith, Helmut},
+	year = {2013},
+	pages = {1--35},
+}
+
+
+@inproceedings{eprover,
+	address = {Berlin, Heidelberg},
+	title = {System {Description}: {E} 0.81},
+	isbn = {978-3-540-25984-8},
+	abstract = {E is an equational theorem prover for clausal logic with equality. We describe the latest version, E 0.81 Tumsong, with special emphasis on the important aspects that have changed compared to previously described versions.},
+	booktitle = {Automated {Reasoning}},
+	publisher = {Springer Berlin Heidelberg},
+	author = {Schulz, Stephan},
+	editor = {Basin, David and Rusinowitch, Michaël},
+	year = {2004},
+	pages = {223--228},
+}
+
+
+@book{linear-arith-book,
+author = {Schrijver, Alexander},
+title = {Theory of linear and integer programming},
+year = {1986},
+isbn = {0471908541},
+publisher = {John Wiley \& Sons, Inc.},
+address = {USA}
+}
+
+@inproceedings{ltac,
+	address = {Berlin, Heidelberg},
+	title = {A {Tactic} {Language} for the {System} {Coq}},
+	isbn = {978-3-540-44404-6},
+	booktitle = {Logic for {Programming} and {Automated} {Reasoning}},
+	publisher = {Springer Berlin Heidelberg},
+	author = {Delahaye, David},
+	editor = {Parigot, Michel and Voronkov, Andrei},
+	year = {2000},
+	pages = {85--95},
+}
+
+
+@article{urzyczyn_intuitionistic_2016,
+	title = {Intuitionistic {Games}: {Determinacy}, {Completeness}, and {Normalization}},
+	volume = {104},
+	issn = {1572-8730},
+	url = {https://doi.org/10.1007/s11225-016-9661-4},
+	doi = {10.1007/s11225-016-9661-4},
+	abstract = {We investigate a simple game paradigm for intuitionistic logic, inspired by Wajsberg’s implicit inhabitation algorithm and Beth tableaux. The principal idea is that one player,  ∃ros, is trying to construct a proof in normal form (positions in the game represent his progress in proof construction) while his opponent, ∀phrodite,  attempts to build a counter-model (positions or plays can be seen as states in a Kripke model). The determinacy of the game (a proof-construction and a model-construction game in one) implies therefore both completeness and semantic cut-elimination.},
+	number = {5},
+	journal = {Studia Logica},
+	author = {Urzyczyn, Paweł},
+	month = oct,
+	year = {2016},
+	pages = {957--1001},
+}
+
+
 
 @book{isabelle-hol-ref,
   author = {Nipkow, Tobias and Wenzel, Markus and Paulson, Lawrence C.},
