@@ -240,5 +240,31 @@ This encoding faithfully mirrors the structure of the original \tlaplus proof ob
 We used the \textit{Cantor} example to illustrate the general approach taken to encode set-theoretic reasoning, as all proof obligations produced by the backend follow a similar structure.
 Full details of the SMT encoding for \tlaplus are provided in \cite{new-encoding-tlaps}.
 
-By leveraging the work presented in this thesis, we can establish a complete verification pipeline for TLAPS proofs: the SMT solver proof traces can be elaborated using Carcara to produce detailed Alethe format proofs, which are then reconstructed in Lambdapi using our reconstruction framework to verify their correctness.
+By leveraging the work presented in this thesis, we can establish a complete verification pipeline for TLAPS proofs as illustrated in \cref{"Complete Verification Pipeline for TLAPS Proofs"
+}: the SMT solver proof traces can be elaborated using Carcara to produce detailed Alethe format proofs, which are then reconstructed in Lambdapi using our reconstruction framework to verify their correctness.
 This approach would transform TLAPS from a partially verified proof assistant into a fully certified system where all SMT-backed proofs undergo rigorous verification, thereby enhancing the trustworthiness of TLA+ specifications and their proofs.
+
+\begin{figure}
+\begin{tikzpicture}[
+    node distance=1,
+    box/.style={rectangle, draw, minimum width=2cm, minimum height=0.8cm, align=center, font=\footnotesize},
+    arrow/.style={->, >=Stealth, thick}
+]
+\node[box] (tlaps) {TLAPS};
+\node[box, right=of tlaps] (cvc5) {cvc5};
+\node[box, right=of cvc5] (carcara_elab) {Carcara/\\Elaboration};
+
+\node[box, below=1.5cm of carcara_elab] (carcara_recon) {Carcara/\\Reconstruction};
+\node[box, left=of carcara_recon] (lambdapi) {Lambdapi};
+
+% Draw arrows
+\draw[arrow] (tlaps) -- (cvc5);
+\draw[arrow] (cvc5) -- (carcara_elab);
+\draw[arrow] (carcara_elab) -- (carcara_recon);
+\draw[arrow] (carcara_recon) -- (lambdapi);
+\end{tikzpicture}
+
+\caption{Complete Verification Pipeline for TLAPS Proofs}
+\label{"Complete Verification Pipeline for TLAPS Proofs"
+}
+\end{figure}
