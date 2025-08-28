@@ -374,7 +374,7 @@ but the type $\prf\,A$. Second, the embedding is not surjective—meaning not al
 
 Consequently, a \emph{step} in an Alethe proof trace is represented as an inhabitant of type $\prf{}\,p$, for a suitable proposition $p$.
 
-\begin{example}[Multiplication group]
+\begin{example}[Multiplication group]\label{ex:group}
 The encoding of the multiplication group with a multiplication symbol $\times$, an inverse operation $inv$ and a neutral element $1$.
 \[
 \begin{array}{lll}
@@ -385,6 +385,25 @@ The encoding of the multiplication group with a multiplication symbol $\times$, 
 \end{array}
 \]
 \end{example}
+
+\begin{lstlisting}[language=Lambdapi,caption={Concetre syntax of \cref{ex:group}}, label={lst:concrete-syntax}]
+symbol ι : TYPE;
+symbol × : ι → ι → ι;
+symbol 1 : ι;
+symbol inv : ι → ι;
+
+rule $x × 1 ↪ $x;
+rule 1 × $x ↪ $x;
+rule ($x × $y) × $z ↪ $x × ($y × $z);
+rule $x × (inv $x) ↪ 1;
+rule (inv $x) × $x ↪ 1;
+rule inv 1 ↪ 1;
+rule inv (inv $x) ↪ $x;
+\end{lstlisting}
+
+The \cref{lst:concrete-syntax} above shows the concrete syntax for the group specification. In Lambdapi's concrete syntax, constants are declared using the \lpinline{symbol} keyword,
+while variables in rewrite rules are prefixed with \kw{\$} to distinguish them from constants during pattern matching.
+
 
 \section{Constructive connectives, quantifiers}
 \label{ssec:encoding-prop}
