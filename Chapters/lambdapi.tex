@@ -374,6 +374,18 @@ but the type $\prf\,A$. Second, the embedding is not surjective—meaning not al
 
 Consequently, a \emph{step} in an Alethe proof trace is represented as an inhabitant of type $\prf{}\,p$, for a suitable proposition $p$.
 
+\begin{example}[Multiplication group]
+The encoding of the multiplication group with a multiplication symbol $\times$, an inverse operation $inv$ and a neutral element $1$.
+\[
+\begin{array}{lll}
+\iota : \type & \times : \iota \to \iota \to \iota & \text{inv} : \iota \to \iota \\
+1 : \iota & x \times 1 \re x & x \times (\text{inv } x) \re 1 \\
+\text{inv } (\text{inv } x) \re x & 1 \times x \re x & (\text{inv } x) \times x \re 1 \\
+\text{inv } 1 \re 1 & (x \times y) \times z \re x \times (y \times z) & \\
+\end{array}
+\]
+\end{example}
+
 \section{Constructive connectives, quantifiers}
 \label{ssec:encoding-prop}
 
