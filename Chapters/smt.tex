@@ -101,11 +101,11 @@ The term $t$ has sort $\sigma$ if a judgment $\Theta \vdash t : \sigma$ is deriv
 \begin{prooftree}
 \hypo{
   \begin{matrix}
-    \Sigma \vdash t_1 : \sigma_1 \dots  \Sigma \vdash t_{k+1} : \sigma_{k+1}  \\
-    \Sigma[x_1 : \sigma_1, \dots, x_{k+1} : \sigma_{k+1}] \vdash t : \sigma
+    \Theta \vdash t_1 : \sigma_1 \dots  \Theta \vdash t_{k+1} : \sigma_{k+1}  \\
+    \Theta[x_1 : \sigma_1, \dots, x_{k+1} : \sigma_{k+1}] \vdash t : \sigma
   \end{matrix}
 }
-\infer1[(if $x_i$ are all distinct)]{\Sigma \vdash (\kw{let } x_1 = t_1 \cdots x_{k+1} = t_{k+1} \kw{ in } t) : \sigma}
+\infer1[(if $x_i$ are all distinct)]{\Theta \vdash (\kw{let } x_1 = t_1 \cdots x_{k+1} = t_{k+1} \kw{ in } t) : \sigma}
 \end{prooftree}
 \end{array}
 \]
