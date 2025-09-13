@@ -3,19 +3,19 @@
 
 \section{SMT Solvers}
 
-Satisfiability Modulo Theories (SMT) \cite{Barrett2021SatisfiabilityMT} solvers are automated reasoning tools that extend SAT solving \cite{chaff,minitsat} by combining propositional search with reasoning in background theories.
-These theories formalize the fundamental data types of computer science, including integers and rationals, floating-point numbers, strings, arrays, sequences, records, and finite sets.
+Satisfiability Modulo Theories (SMT) \cite{Barrett2021SatisfiabilityMT} solvers are automated reasoning tools that extend SAT solving \cite{chaff,minitsat}, combining propositional search with reasoning in background theories.
+These theories formalize some fundamental data types of computer science, including integers and rationals, floating-point numbers, strings, arrays, sequences, records, and finite sets.
 By incorporating the essential algebraic properties of such types as built-in reasoning modules, SMT solvers can handle them natively rather than treating them as uninterpreted.
-SMT solvers are widely used in software and hardware verification \cite{application-smt-hardware}, constraint solving \cite{awssmt,application-smt2}, and automated theorem proving \cite{coqhammer1,Sledgehammer}.
+SMT solvers are widely used in software and hardware verification \cite{application-smt-hardware}, constraint solving \cite{awssmt,application-smt2}, and are integrated into interactive theorem prover for automated theorem proving \cite{coqhammer1,Sledgehammer, fstar,dafny, vyper}.
 
 SMT solvers take as input a logical formula and determine whether it is \emph{satisfiable}, that is, whether there exists an assignment to the formula's variables that makes it true.
 In this sense, they function as constraint solvers.
 In many applications, however, the goal is not merely to establish that a property, expressed as a formula $F$, holds in some instance, but rather that it holds universally.
-Formally, this amounts to proving that $F$ is \emph{valid}. To verify validity with an SMT solver, this can be done with SMT solvers by checking
+Formally, this amounts to proving that $F$ is \emph{valid}. To verify validity with an SMT solver, this can be done by checking
 if the \emph{negation} of the formula, $\neg F$,  is false in all cases i.e. \emph{unsatisfiable}. A proof of the \emph{unsatisfiability} of $\neg F$ provides evidence that $F$ is valid.
 Thus, SMT solvers provide not only a means of solving constraints but also a method for establishing theorems, since valid formulas are commonly referred to as theorems.
 
-Modern \emph{hammer} tools, such as Sledgehammer \cite{Sledgehammer} for Isabelle/HOL \cite{isabelle-hol-ref}, CoqHammer \cite{coqhammer1} for Rocq \cite{Rocq-refman}, and the SMT integration in Lean \cite{lean-smt}, make systematic use of SMT solvers to automate proof search.
+Modern \emph{hammer} tools, such as CoqHammer \cite{coqhammer1} for Rocq \cite{Rocq-refman}, Sledgehammer \cite{Sledgehammer} for Isabelle/HOL \cite{isabelle-hol-ref}, and the SMT integration in Lean \cite{lean-smt}, make systematic use of SMT solvers to automate proof search.
 Their purpose is to bridge interactive theorem provers with powerful automated reasoning backends.
 Given a conjecture, the hammer translates the goal and relevant lemmas into a form suitable for external solvers, including SMT solvers, and then attempts to discharge the proof obligation automatically.
 If the SMT solver succeeds in showing that the translated problem is valid, the hammer reconstructs or certifies a corresponding proof inside the interactive prover.
@@ -26,17 +26,27 @@ In this way, SMT solvers act as critical engines for proof automation, providing
 The SMT-LIB initiative \cite{smtlib} defines a standardized input language and logical framework for SMT solvers, specifies a set of common background theories, and maintains an extensive collection of benchmarks.
 The SMT-LIB logic is a many-sorted first-order logic with equality.
 
+\begin{itemize}
+    \item The set $\cal{S}$ contains the sort symbols denoted by $\sigma$. The set contains the symbol \smtinline{Bool} for Booleans.
+    \item The countably infinite set $\cal{X}$ contains the variables denoted by $x$ and $y$.
+    \item The set $\cal{F}$ contains the function symbols. This set contains the symbols $\approx, \lor, \land,$ and $\neg$.
+    \item The two-element set $\cal{B}$ contains the symbols for the \smtinline{Bool}.
+\end{itemize}
+
+
 \begin{definition}[Terms]\label{def:smt-grammar}
 The following grammar rule describes the construction of terms $t$
 \begin{equation*}
-t ::= t \pipe x \pipe f~x \pipe f^\sigma t^* \pipe \exists (x: \sigma)^+. t \pipe \forall (x: \sigma)^+. t \pipe \mathrel{\kw{let}} (x = t)^+ \mathrel{\kw{in}} t
+t ::= x \pipe f~t^* \pipe f^\sigma t^* \pipe \exists (x: \sigma)^+. t \pipe \forall (x: \sigma)^+. t \pipe \mathrel{\kw{let}} (x = t)^+ \mathrel{\kw{in}} t
 \end{equation*}
 The notation $()^*$ denotes a possibly empty and finite list, and $()^+$ a finite list with at least one member.
 \end{definition}
 
+A sort designates the logical type associated with terms, variables, and functions, thereby defining the domain of discourse within a given theory.
+Sorts provide the formal structure necessary to ensure that formulas are well-formed, preventing ill-formed operations across incompatible domains.
 Since the SMT-LIB logic is many-sorted, every term has an associated sort $\sigma$.
 To avoid ambiguous sorts, there is a syntax to concretize the sort of a function symbol $f^\sigma$.
-Third, this term language also encompasses terms with Boolean sort, so that no distinction is made between terms and formulas.
+Third, the term language also encompasses terms of Boolean sort, so that formulas are represented as Boolean terms, while still being distinguished by their sorts.
 Moreover, symbols such as equality and the Boolean connectives are not treated as primitive syntax but are instead provided by the special \emph{theory Core}.
 
 Well-sortedness in SMT-LIB is defined with respect to a \emph{signature}, which specifies the available sorts and function symbols from which terms can be constructed.
@@ -52,10 +62,13 @@ Since the symbol $\Sigma$ is already used for Lambdapi signatures, and SMT-LIB a
 \end{notation}
 
 \begin{definition}[Signature]\label{def:smt-signature}
-A signature is a tuple $\Theta = (\Theta^\cal{S}, \Theta^\cal{F}, \Theta^\cal{X}, V, R)$
+A signature is a tuple:
+\[
+    \Theta = (\Theta^\cal{S}, \Theta^\cal{F}, \Theta^\cal{X}, V, R)
+\]
 \begin{itemize}
     \item  a finite set $\Theta^\cal{S}$  of sort symbols that contains the symbol \smtinline{Bool};
-    \item The infinite set $\Theta^\cal{X}$ contains the variables;
+    \item The countably infinite set $\Theta^\cal{X}$ contains the variables;
     \item a set $\Theta^\cal{F}$ of function symbols;
     \item a partial mapping $V$ from $\Theta^\cal{X}$ to $\Theta^\cal{S}$ that assigns sorts to some variables,
     \item and a ranking relation $R \subseteq \Theta^\cal{F} \times (\Theta^\cal{S})^+$. The relation must be left-total: for
@@ -64,8 +77,15 @@ A signature is a tuple $\Theta = (\Theta^\cal{S}, \Theta^\cal{F}, \Theta^\cal{X}
 \end{itemize}
 \end{definition}
 
-A rank denotes the expected sort of the symbol's arguments and the return sort.
+A rank denotes the expected sort of the symbol's arguments and the return sort. The lists $(\Theta^\cal{S})^+$ are the ranks.
+From left to right, a rank denotes the expected sort of the symbol's arguments and of the result.
 Since the SMT-LIB logic allows ad-hoc polymorphism (overloading), $R$ is not left-unique.
+A function symbol together with a sort is called a ranked function symbol.
+A ranked function is written as $f: \sigma_1\dots\sigma_n\sigma \in \Theta^{\cal{F}} \times (\Theta^{\cal{S}})^+$.
+
+\begin{notation}
+We write $f: \sigma_1\dots\sigma_n\sigma \in \Theta$ if $f~R~\sigma_1 \dots \sigma_n \sigma_1$ and $x \in \Theta$ if $V(x) = \sigma$.
+\end{notation}
 
 \begin{definition}[Well-sorted Term]
 A term $t$ generated by the grammar rules in \cref{def:smt-signature} is \emph{well-sorted} for a signature $\Theta$ if $t$ has sort $\sigma$.  
@@ -74,18 +94,12 @@ The term $t$ has sort $\sigma$ if a judgment $\Theta \vdash t : \sigma$ is deriv
 \[
 \begin{array}{l}
 \begin{prooftree}
-\hypo{x : \sigma \in \Theta}
-\infer1{\Theta \vdash x : \sigma}
-\end{prooftree}
-\\[2em]
-\begin{prooftree}
-\hypo{\Theta \vdash t : \sigma}
-\infer1{\Theta \vdash (t) : \sigma}
+\infer0[if~$x : \sigma \in \Theta$]{\Theta \vdash x : \sigma}
 \end{prooftree}
 \\[2em]
 \begin{prooftree}
 \hypo{\Theta \vdash t_1 : \sigma_1 \quad \dots \quad \Theta \vdash t_k : \sigma_k}
-\infer1[if $\begin{cases} f : \sigma_1 \cdots \sigma_k \sigma \in \Theta, \\ f : \sigma_1 \cdots \sigma_k \sigma' \notin \Theta \text{ for all } \sigma' \neq \sigma \end{cases}$]{\Theta \vdash f\, t_1 \cdots t_k : \sigma}
+\infer1[if $\begin{cases} f : \sigma_1 \cdots \sigma_k \sigma \in \Theta, \\ f : \sigma_1 \cdots \sigma_k \sigma' \notin \Theta\\ \quad \text{for all } \sigma' \neq \sigma \end{cases}$]{\Theta \vdash f\, t_1 \cdots t_k : \sigma}
 \end{prooftree}
 \\[2em]
 \begin{prooftree}
@@ -105,49 +119,43 @@ The term $t$ has sort $\sigma$ if a judgment $\Theta \vdash t : \sigma$ is deriv
     \Theta[x_1 : \sigma_1, \dots, x_{k+1} : \sigma_{k+1}] \vdash t : \sigma
   \end{matrix}
 }
-\infer1[(if $x_i$ are all distinct)]{\Theta \vdash (\kw{let } x_1 = t_1 \cdots x_{k+1} = t_{k+1} \kw{ in } t) : \sigma}
+\infer1[($x_i$ all distinct)]{\Theta \vdash (\kw{let } x_1 = t_1 \cdots x_{k+1} = t_{k+1} \kw{ in } t) : \sigma}
 \end{prooftree}
 \end{array}
 \]
 \end{definition}
 
 
-
 \section{semantics}
 
-To define the semantic of the SMT-LIB logic, we use the notion of $\Theta$-structure.
+To define the semantics of the SMT-LIB logic, we use the notion of $\Theta$-structure.
 
-\begin{definition}[$\Theta$-structure]
-Let $\Theta$ be a signature.  
-A \emph{$\Theta$-structure} is a tuple $\cal{A} = (U, I)$ of a set $U$, the \emph{universe}, and a mapping $I$.
+\begin{definition}[$\Theta$-structure] A \emph{$\Theta$-structure} is a tuple $\cal{A} = (U, I)$ of a set $U$, the \emph{universe}, and a mapping $I$.
 \begin{itemize}
     \item Each sort $\sigma \in \Theta^{S}$ is mapped to a non-empty set $I(\sigma) \subseteq U$, the \emph{domain} of $\sigma$.  
     The mapping is such that $U = \bigcup_{\sigma \in \Theta^{S}} I(\sigma)$.
     \item For each sort $\sigma_1 \dots \sigma_n \sigma$, $I(\sigma_1 \dots \sigma_n \sigma)$ is the set of total functions from $I(\sigma_1) \times \dots \times I(\sigma_n)$ to $I(\sigma)$.
     \item $I(\mathsf{Bool}) = \{\mathsf{true}, \mathsf{false}\}$, where $\mathsf{true}$ and $\mathsf{false}$ are distinct and both are elements of $U$.
     \item Each ranked function symbol $f : \sigma$ (i.e., each constant) is mapped such that $I(f : \sigma) \in I(\sigma)$.
-    \item Each ranked function symbol $f : \sigma_1 \dots \sigma_n \sigma \in \Theta$ is mapped to a total function from $I(\sigma_1 \dots \sigma_n \sigma)$.
+    \item Each ranked function symbol $f : \sigma_1 \dots \sigma_n \sigma \in \Theta$ is mapped to a total function in $I(\sigma_1 \dots \sigma_n \sigma)$.
 \end{itemize}
 \end{definition}
 
 
 
 A $\Theta$-interpretation $\cal{I}$ is a pair $(\cal{A}, \nu)$ of a $\Theta$-structure $\cal{A}$ and a valuation $\nu$
-that assigns meaning to terms and formulas, given a $\cal{A}$ structure and a variable assignment, so that we can decide whether a formula is true or false.
+that assigns meaning to variables, given a $\cal{A}$ structure and a variable assignment, so that we can decide whether a formula is true or false.
 This mapping  function is denoted $\llbracket \_ \rrbracket^{\cal{I}}$.
 
 \begin{definition}[$\Theta$-interpretation]\label{def:smt-interpretation}
-Let $\Theta$ be a signature and $\cal{I}$ a $\Theta$-interpretation.  
+Let $\Theta$ be a signature and $\cal{I} = (\cal{A}, \nu)$ a $\Theta$-interpretation.  
 For every well-sorted term $t$ with sort $\sigma$, the mapping $\llbracket t \rrbracket^{\cal{I}}$ is defined recursively as follows:
 
 \[
-\llbracket x \rrbracket^{\cal{I}} = \nu(x : \sigma)
-\]
-where $\cal{I} = (\cal{A}, \nu)$.
-
-\[
-\llbracket \hat{f}\; t_1 \dots t_n \rrbracket^{\cal{I}}
-   = \cal{A}(f : \sigma_1 \dots \sigma_n \sigma)(a_1, \dots, a_n)
+\begin{array}{l}
+\llbracket x \rrbracket^{\cal{I}} = \nu(x : \sigma) \\
+\llbracket \hat{f}\; t_1 \dots t_n \rrbracket^{\cal{I}}= \cal{A}(f : \sigma_1 \dots \sigma_n \sigma)(a_1, \dots, a_n)
+\end{array}
 \]
 where
 \[
@@ -218,12 +226,14 @@ The combination of two compatible theories is then defined as the class of $\The
 
 A \emph{logic} in SMT-LIB consists of a specific signature $\Theta$, a theory $\mathcal{T}$, and a restriction on the set of admissible sentences.
 These restrictions are typically syntactic and serve to exclude ill-formed expressions.
-For instance, in the logic of linear arithmetic, the multiplication of two variables is not permitted.
+For instance, in the logic of linear arithmetic, scalar multiplication by concrete coefficients is admitted,
+allowing terms of the form \smtinline{c}, \smtinline{(* c x)}, or \smtinline{(* x c)} with \smtinline{x} a free constant and \smtinline{c} a numeral or its negation,
+whereas products of two variables are not.
+
 Following common usage in the SMT community, we will not always maintain a strict distinction between the terms "logic" and "theory".
 
-\begin{definition}[Models]
-A $\Theta$-theory $\cal{T}$ is a class of $\Theta$-structure on a signature $\Theta$.
-These structures are the \emph{models} of the theory $\cal{T}$.
+\begin{definition}[Models] The \emph{models} of a $\Theta$-theory $\cal{T}$ are the $\Theta$-structures
+that belong to $\cal{T}$.
 \end{definition}
 
 Defining theories this way gives us the flexibility to declare theories as either specific models, or as the $\Theta$-structures that satisfies a set of sentences which are called axioms.
@@ -238,9 +248,9 @@ In what follows, we briefly introduce some of the logics that will be used in th
 
 \subsection{The Core theory}
 
-This theory is used by every SMT-LIB logic. It contains the usual Boolean connective $\land, \lor, \neg, \to, \kw{xor}, \kw{distinct}, \kw{ite}$.
+This theory is used by every SMT-LIB logic. It contains the usual Boolean connectives $\land, \lor, \neg, \to, \kw{xor}, \kw{distinct}, \kw{ite}$.
 Equality, denoted by $\simeq$ (= in SMT-LIB), is also part of this theory.
-The \emph{Core theory} does not contain a dedicated "if and only if" connective.
+The \emph{Core theory} does not contain a dedicated ``if and only if'' connective.
 Instead equality with Boolean sorts is used.
 
 \question{ac}{add distinct + ite def?}
@@ -253,7 +263,7 @@ Since SMT-LIB is restricted to ASCII characters, it uses the strings \smtinline{
 
 The logic \textbf{UF} (for uninterpreted functions) allows the declaration of new function symbols.
 The prefix \textbf{QF} (for quantifier-free) may be applied to any logic to indicate that quantifiers are disallowed.
-The simplest extension of the core theory is therefore \textbf{QF\_UF}, denoting quantifier-free uninterpreted functions.
+The simplest extension of the core theory is therefore \textbf{QF\_UF}, denoting quantifier-free formulas over uninterpreted functions.
 This logic excludes quantifiers and introduces no additional symbols beyond those of the core theory.
 
 \subsection{The theory of linear arithmetic}
@@ -303,8 +313,7 @@ Since SMT-LIB does not support partial functions, terms such as \((/~x~0.0)\) ar
 Consequently, for each real constant \(v\), the term \((\approx~v~(/~t~0.0))\) admits a model.
 The same consideration applies to integer division (\texttt{div}).
 
-\subsection{Bit-vectors}
-
+\subsection{Bitvectors}
 
 \begin{table}
 \centering
@@ -356,7 +365,7 @@ $\ge$\(_s\) & \tt{bvsge} & \(\mathrm{BitVec}\;n\)\; \(\mathrm{BitVec}\;n\)\; Boo
 \end{table}
 
 Bitvectors in SMT-LIB are defined by the theory \textbf{BV}.
-Its signature introduces the sort \smtinline{(_ BitVec n)} for every fixed width $n \geq 1$, together with the function symbols listed in \cref{tab:bv-funs}.
+Its signature introduces the sort \smtinline{(BitVec n)} for every fixed width $n \geq 1$, together with the function symbols listed in \cref{tab:bv-funs}.
 The semantics of these operations follow standard fixed-width, two's complement bitvector arithmetic, including modular addition, subtraction, multiplication, and division, as well as bitwise logical and shift operators.
 All operations are total, since results are wrapped modulo $2^n$.
 
@@ -443,7 +452,7 @@ Quantified formulas, however, are treated differently: they are usually neither 
 Preserving the original structure of quantified formulas is crucial for certain instantiation techniques.
 
 
-Preprocessing also includes lightweight rewriting of quantified formulas.
+Preprocessing also includes lightweight rewriting of formulas.
 For example, the term $(\bot \to \varphi_1) \to \varphi_2$ is simplified to $\varphi_2$.
 Skolemization is another preprocessing step, but its application is largely implementation dependent.
 The abstract CDCL($\mathcal{T}$) calculus itself only addresses ground reasoning.
@@ -466,7 +475,7 @@ In all cases, the theory solver evaluates the candidate model: if it is consiste
 \label{sec:smt-proof}
 
 Since SMT applications crucially rely on correct results, ensuring solver correctness becomes paramount.
-Ensuring the correctness of SMT solvers is a significant challenge, as these tools have large and highly optimized code bases that evolve rapidly. 
+Ensuring the correctness of SMT solvers is a significant challenge, as these tools have large and highly optimized code bases that evolve rapidly \cite{cvc5}. 
 Rather than attempting to certify the entire solver implementation, a promising approach is to instrument SMT solvers to produce \emph{proofs} of their results \cite{proof-smt}.
 
 Proof production drastically reduces the size of the trusted code base, since only the proof checker must be trusted, not the entire solver.
@@ -482,6 +491,7 @@ A common technique is \emph{lazy proof generation}, where the solver constructs 
 This reduces implementation effort, minimizes performance overhead, and ensures that only  relevant proof material is expanded.
 Lazy proof generation is a key feature of the DRAT \cite{drat} proof format used by SAT solvers, and several ways of expanding (also known as elaborating) DRAT proofs have been proposed \cite{10.1007/978-3-319-63046-5_14,DBLP:conf/cade/KieslRH18, 10.1007/978-3-319-63046-5_15}.
 This line of work also inspired investigations in the SMT setting \cite{lazy-proof-smt}, where lazy proof generation was developed for CVC4, the predecessor of cvc5 \cite{cvc4}.
+A modern proof format for SMT, Alethe \cite{alethe,alethe2}, will be introduced in \cref{ch:alethe}.
 
 Despite progress, current proof-producing SMT solvers still face shortcomings:  some produce proofs that are too shallow, requiring complex external checking; 
 others leave performance-critical components outside of proof production; 
