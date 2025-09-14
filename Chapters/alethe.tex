@@ -6,11 +6,11 @@
 
 Alethe \cite{alethe,alethe2} is a modern proof format for SMT, designed to facilitate integration with proof assistants.
 It has been co-developed with proof checkers in Isabelle/HOL \cite{aletheInIsa} and currently supports proofs in the theories of uninterpreted functions (\textbf{UF}), linear arithmetic (\textbf{LA}), and linear integer arithmetic (\textbf{LIA}), while support for bit-vectors (\textbf{BV}) is under active development.
-As a result, for SMT fragments covered by Alethe, solver results can be verified inside proof assistants to prove correction of the solver.
+As a result, for SMT fragments covered by Alethe, solver results can be verified inside proof assistants to prove correctness of the solver.
 
 The format is intended as a flexible and uniform representation of \emph{unsatisfiability} proofs produced by SMT solvers as described in \cref{sec:smt-proof}.
 Its design combines a natural-deduction style structure with a set of rules operating on first-order clauses.
-The language of Alethe is based on SMT-LIB \cite{smtlib}, and therefore inherits its many-sorted first-order logic as foundation base.
+The language of Alethe is based on SMT-LIB \cite{smtlib}, and therefore inherits its many-sorted first-order logic as foundation.
 With the exception of clauses for propositional reasoning, there is no dedicated syntax for any theory.
 
 Beyond serving as an interchange format, Alethe aims to keep proofs accessible to both humans and automated tools.
@@ -60,11 +60,13 @@ In the following, we introduce the concepts needed to understand the proof produ
 \subsection{Many-Sorted First-Order Logic}
 
 An Alethe proof trace inherits the declarations of its input problem. All symbols (sorts, functions, assertions, etc.) declared or defined in the input problem remain declared or defined, respectively.
-Furthermore, the syntax for terms, sorts, and annotations uses the syntactic rules defined in SMT-LIB \cite[\S 3]{smtlib} and the SMT signature context defined in \cite[\S 5.1 and \S 5.2]{smtlib}.
+Furthermore, the syntax for terms, sorts, and annotations uses the syntactic rules (\cref{def:smt-grammar}) and the signature context (\cref{def:smt-signature}) defined in \cref{ch:smt}.
 The set of sorts present in a proof depends on the chosen SMT-LIB logic or theory, in addition to any sorts introduced by the user.
 However, the sort \smtinline{Bool} is always included.
 
-Alethe extends the SMT-LIB with Hilbert's choice operator $\epsilon$ (\smtinline{choice} in ASCII). A term of the form $\epsilon x.\,P(x)$ denotes a witness $\nu$ such that $P(\nu)$ holds if such a witness exists; if not, the term denotes an arbitrary value.
+Alethe extends SMT-LIB with Hilbert's \smtinline{choice} operator.
+A term of the form \smtinline{(choice x (P x))} denotes a witness $\nu$ such that $P(\nu)$ holds if such a witness exists; if not, the term denotes an arbitrary value.
+We will use the notation $\epsilon x, P~x$ to denotes \smtinline{(choice x (P x))}.
 To ensure coherence, Alethe enforces functionality of the choice operator with respect to logical equivalence: for any formulas $P$ and $Q$ with free variable $x$, if $\forall x.\,P \simeq Q$, then it must also hold that $\epsilon\, x.\,P \simeq \epsilon\, x.\,Q$.
 
 \subsection{Steps}
@@ -92,14 +94,19 @@ In order to reflect the concrete syntax of Alethe proofs, we denote proof steps 
 
 \medskip
 
-A step \cref{eq:step} consists of an index \colorbox{indexClr!30}{$i$} $\in \mathbb{I}$ where $\mathbb{I}$ is a countable infinite set of indices (e.g. \kw{a0}, \kw{t1}), and a clause of formulae \colorbox{green!30}{$l_1, \dots, l_n$} representing an $n$-ary disjunction. Steps that are not assumptions are justified by a proof rule \colorbox{purple!30}{$\mathcal{R}$} that depends on a possibly empty set of premises $\{\colorbox{red!30}{$p_1 \dots  p_m$}\} \subseteq \mathbb{I}$ that only references earlier steps such that the proof forms
-a directed acyclic graph. A rule might also depend on a list of arguments \colorbox{orange!30}{$[a_1 \dots a_r]$} where each argument $a_i$ is either a term or a pair $(x_i, t_i)$ where $x_i$ is a variable and $t_i$ is a term. The interpretation of the arguments is rule specific. The context \colorbox{blue!30}{$\Gamma$} of a step is a list $c_1 \dots c_l $ where each element $c_j$ is either a variable or a variable-term tuple denoted $x_j \mapsto t_j$. Therefore, steps with a non-empty context contain variables $x_j$ that appear in \colorbox{green!30}{$l_i$} and will be substituted by $t_j$. Proof rules \colorbox{purple!30}{$\mathcal{R}$} include theory lemmas and \texttt{resolution}, which corresponds to hyper-resolution on ground first-order clauses.
+A step \cref{eq:step} consists of an index \colorbox{indexClr!30}{$i$} $\in \mathbb{I}$ where $\mathbb{I}$ is a countable infinite set of indices (e.g. \kw{a0}, \kw{t1}), and a clause of formulae \colorbox{green!30}{$l_1, \dots, l_n$} representing an $n$-ary disjunction.
+Steps that are not assumptions are justified by a proof rule \colorbox{purple!30}{$\mathcal{R}$} that depends on a possibly empty set of premises $\{\colorbox{red!30}{$p_1 \dots  p_m$}\} \subseteq \mathbb{I}$ that only references earlier steps such that the proof forms
+a directed acyclic graph. A rule might also depend on a list of arguments \colorbox{orange!30}{$[a_1 \dots a_r]$} where each argument $a_i$ is either a term or a pair $(x_i, t_i)$ where $x_i$ is a variable and $t_i$ is a term. The interpretation of the arguments is rule specific.
+The context \colorbox{blue!30}{$\Gamma$} of a step is a list $c_1 \dots c_l $ where each element $c_j$ is either a variable or a variable-term tuple denoted $x_j \mapsto t_j$.
+Therefore, steps with a non-empty context contain variables $x_j$ that appear in \colorbox{green!30}{$l_i$} and will be substituted by $t_j$.
+Proof rules \colorbox{purple!30}{$\mathcal{R}$} include theory lemmas and \texttt{resolution}, which corresponds to hyper-resolution on ground first-order clauses.
 
 We now have the key components to explain the guiding proof in the bottom part of \cref{lst:smtexampleinput-fol} that consists of seven steps. The proof starts with three \texttt{assume} steps \texttt{a0}, \texttt{a1}, \texttt{a2} that restate the assertions from the input problem.
 In the concrete syntax, assume steps have a dedicated command \smtinline{assume} to clearly distinguish them from normal steps that use the \smtinline{step} command.
-Step \texttt{t1} introduces a tautology of the form $\neg (\varphi_1 \approx \varphi_2) \lor \neg \varphi_1 \lor \varphi_2$, justified by the rule \colorbox{purple!30}{\texttt{equiv\_pos2}}. Steps \texttt{t2}, \texttt{t3}, \texttt{t4} use earlier premises that correspond to previous steps. Step \texttt{t2} proves $p(a) \approx p(b)$ by congruence (rule \colorbox{purple!30}{\texttt{cong}}) from the assumption \texttt{a1}.
+Step \texttt{t1} introduces a tautology of the form $\neg (\varphi_1 \approx \varphi_2) \lor \neg \varphi_1 \lor \varphi_2$, justified by the rule \colorbox{purple!30}{\texttt{equiv\_pos2}}. Steps \texttt{t2}, \texttt{t3}, \texttt{t4} use earlier premises that correspond to previous steps.
+Step \texttt{t2} proves $p(a) \approx p(b)$ by congruence (rule \colorbox{purple!30}{\texttt{cong}}) from the assumption \texttt{a1}.
 Step \texttt{t3} applies the \colorbox{purple!30}{\texttt{resolution}} rule of propositional logic to the premises \texttt{t1, t2, a0} to derive $p(b)$. Finally, the step \texttt{t4} concludes the proof by generating the empty clause $\bot$, concretely denoted as \kw{(cl)} in \cref{lst:smtexampleinput-fol}. %(line 8)
-Notice that the contexts \colorbox{blue!30}{$\Gamma$} of each step are all empty in this proof.
+Notice that the contexts \colorbox{blue!30}{$\Gamma$} of all steps are empty in this proof.
 
 \subsection{Subproofs and Lemmas}
 \label{ssec:subproof-desc}
@@ -141,19 +148,20 @@ We recall that a context is a (possibly empty) list $c_1, \dots, c_n$, where eac
   \item a pair $x_i \mapsto t_i$, representing a substitution of $x_i$ by the term $t_i$.
 \end{enumerate}
 
-Every non-empty context $\Gamma$ induces a substitution $\mathop{subst}(\Gamma)$.
+Every non-empty $\Gamma$ induces a substitution $\mathop{subst}(\Gamma)$.
 The induced substitution is always \emph{capture-avoiding}, i.e., it avoids binding free variables.
+We use the notation $\bar{c}$ for $c_1, \dots, c_{n-1}$.
+
+\smallskip
 
 If $\Gamma$ ends with a fixing, the variable shadows any earlier substitution for it:
 \[
-\mathop{subst}([c_1, \dots, c_{n-1}, x_n]) \;=\;
-\mathop{subst}([c_1, \dots, c_{n-1}]) \text{ with } x_n \mapsto x_n.
+\mathop{subst}([\bar{c}, x_n]) \text{ is } \mathop{subst}([\bar{c}]),\text{ but } x_n \text{ maps to } x_n.
 \]
 
 If $\Gamma$ ends with a mapping, the substitution is extended accordingly:
 \[
-\mathop{subst}([c_1, \dots, c_{n-1}, x_n \mapsto t_n]) \;=\;
-\mathop{subst}([c_1, \dots, c_{n-1}]) \circ \{x_n \mapsto t_n\},
+\mathop{subst}([\bar{c}, x_n \mapsto t_n]) = \mathop{subst}([\bar{c}]) \circ \{x_n \mapsto t_n\},
 \]
 where $\circ$ denotes substitution composition.
 The application of a context $\Gamma$ to a term $t$ is written $\mathop{subst}(\Gamma)(t)$.
@@ -184,19 +192,18 @@ Consider a subproof with the context $\Gamma = [y, x \mapsto y]$, used to rename
 2. & \triangleright & \neg (\forall y, (P~y)) & \kw{assume} \\
 \multicolumn{4}{l}{%
 \begin{array}{r |r c l l}
-& 3.0 & y, x \mapsto y~\triangleright & x \simeq y & \kw{assume} \\
+& 3.0 & y, x \mapsto y~\triangleright & x \simeq y & \kw{refl} \\
 & 3.1 & y, x \mapsto y~\triangleright & (P~x) \simeq (P~y) & \kw{cong}~3.0 \\
 \cline{2-5}
 \end{array}
 } \\
 3. & \triangleright & \forall x, (P~x) \simeq \forall y, (P~y) & \kw{bind} \\
-4. & \triangleright & \neg(\forall x, (P~x) \simeq \forall y, (P~y)) & \\
-  & \triangleright & \neg  \forall x, (P~x),  \forall y, (P~y) & \kw{equiv\_pos2} \\
+4. & \triangleright & \neg(\forall x, (P~x) \simeq \forall y, (P~y)), & \\
+  &  & \neg  (\forall x, P~x),  (\forall y, P~y) & \kw{equiv\_pos2} \\
 
-5. & \triangleright & \bot & \kw{(resolution)~1\,2\,3\,4}
+5. & \triangleright & \bot & \kw{(resolution~1,2,3,4)}
 \end{array}
 \]
-In this case, the subproof concludes with a step that does not use the subproof rule, but another rule, such as the bind rule.
 \end{example}
 
 \begin{remark}
@@ -217,17 +224,27 @@ An Alethe proof is a list of commands.
 \begin{lstlisting}[language=SMT]
 (assume a0 (not (! (p a) :named @p_1)))
 (assume a1 (forall ((x1 U)) (or (not (= x1 a)) (p x1))))
-(assume a2 (forall ((x1 U) (x2 U) (x3 U)) (or (not (= x2 (f x3))) (or (not (= x3 a)) (q x1 x2 x3)))))
-(step t0 (cl (not (! (= (forall ((x1 U)) (or (not (= x1 a)) (p x1))) @p_1) :named @p_2)) (not (forall ((x1 U)) (or (not (= x1 a)) (p x1)))) @p_1) :rule equiv_pos2)
-
+(assume a2 (forall ((x1 U) (x2 U) (x3 U))
+  (or (not (= x2 (f x3))) (or (not (= x3 a)) (q x1 x2 x3)))))
+(step t0 (cl 
+  (not (! (= (forall ((x1 U)) (or (not (= x1 a)) (p x1))) @p_1) :named @p_2))
+  (not (forall ((x1 U)) (or (not (= x1 a)) (p x1)))) @p_1)
+  :rule equiv_pos2)
 (anchor :step t1 :args ((x1 U) (:= (x1 U) x1)))
 (step t1.t0 (cl (= (= x1 a) (= a x1))) :rule rare_rewrite :args ("eq-symm" x1 a))
 (step t1.t1 (cl (= (not (= x1 a)) (not (= a x1)))) :rule cong :premises (t1.t0))
 (step t1.t2 (cl (= (! (p x1) :named @p_5) @p_5)) :rule refl)
-(step t1.t3 (cl (= (or (not (= x1 a)) @p_5) (or (not (= a x1)) @p_5))) :rule cong :premises (t1.t1 t1.t2))
-(step t1 (cl (= (forall ((x1 U)) (or (not (= x1 a)) (p x1))) (forall ((x1 U)) (or (not (= a x1)) (p x1))))) :rule bind)
-
-(step t2 (cl (= (forall ((x1 U)) (or (not (= a x1)) (p x1))) (! (or (! (not (= a a)) :named @p_3) @p_1) :named @p_4))) :rule hole)
+(step t1.t3 (cl (= 
+  (or (not (= x1 a)) @p_5)
+  (or (not (= a x1)) @p_5)))
+  :rule cong :premises (t1.t1 t1.t2))
+(step t1 (cl (=
+  (forall ((x1 U)) (or (not (= x1 a)) (p x1)))
+  (forall ((x1 U)) (or (not (= a x1)) (p x1))))) :rule bind)
+(step t2 (cl (= 
+  (forall ((x1 U)) (or (not (= a x1)) (p x1)))
+  (! (or (! (not (= a a)) :named @p_3) @p_1) :named @p_4)))
+  :rule hole)
 (step t3 (cl (= (= a a) true)) :rule rare_rewrite :args ("eq-refl" a))
 ...
 (step t14 (cl) :rule resolution :premises (t13 a0) :args (@p_1 true))
@@ -280,27 +297,27 @@ production for the \smtinline{choice} (i.e. $\epsilon$) binder.
 
 Alethe proofs are a list of commands. Both commands assume and step require an index as the first argument to later refer back to it.
 This index is an arbitrary SMT-LIB symbol. It must be unique for each assume and step command.
-To simplify proof checking, the assumecommand must use the name assigned to the asserted formula if there is any.
+To simplify proof checking, the \smtinline{assume} command must use the name assigned to the asserted formula if there is any.
 For example, if the input problem contains \smtinline{(assert (! (not A) :named Goal))}, then the proof must refer to this assertion as
 \smtinline{(assume Goal (not a))}.
 
 The second argument in \smtinline{step} is always a clause. To express disjunctions in SMT-LIB the \smtinline{or} operator is used.
 This operator, however, needs at least two arguments and cannot represent unary or empty clauses.
-To circumvent this, Alethe introduce a new \smtinline{cl} operator. It corresponds to the standard or function extended to one argument, where it is equal to the identity, and zero
+To circumvent this, Alethe introduces a new \smtinline{cl} operator. It corresponds to the standard or function extended to one argument, where it is equal to the identity, and zero
 arguments, where it is equal to \smtinline{false}.
 
 \paragraph{Subproofs}
 The abstract notation denotes subproofs in \cref{ssec:subproof-desc} by marking them with a vertical line.
 To map this notation to a list of commands, Alethe uses the \smtinline{anchor} command.
 This command indicates the start of a subproof. A subproof is concluded by a matching \smtinline{step} command.
-This step must use a concluding rule (such as \kw{subproof}, \kw{bind}, and so forth).
+This step must use a \emph{concluding rule} (such as \kw{subproof}, \kw{bind}, and so forth).
 The \smtinline{:step} annotation of the \smtinline{anchor} command is used to indicate the step command that will end the subproof.
 The clause of this step command is the conclusion of the subproof.
 If the subproof uses a context, the \smtinline{:args} annotation of the anchor command indicates the arguments added to the context for this subproof.
 The annotation provides the sort of fixed variables.
 
 In the \cref{fig:syntax-alethe-example}, a subproof starts at the \smtinline{anchor} command at line 6.
-It ends with the \kw{bind} steps that finishes the proof of proving equality between the two term \smtinline{(forall ((x1 U)) (or (not (= x1 a)) (p x1)))} and \smtinline{(forall ((x1 U)) (or (not (= a x1)) (p x1)))}.
+It ends with the \kw{bind} steps that finish the proof of proving equality between the two term \smtinline{(forall ((x1 U)) (or (not (= x1 a)) (p x1)))} and \smtinline{(forall ((x1 U)) (or (not (= a x1)) (p x1)))}.
 The context for the subproof \kw{t1} contains a \emph{fixing} argument \smtinline{((x1 U) (:= (x1 U) x1))}.
 
 \paragraph{Sharing and Skolem Terms}
@@ -323,11 +340,10 @@ needed. Without this option, no \smtinline{define-fun} commands are issued, and 
 
 \section{Overview of Alethe Rules}\info{ac}{I will just repeat the rule here even if they are also describe in \cref{ch:reconstruction}}
 
-Together with the language, the Alethe format also includes a set of proof rule.
-The \cite[\S 5]{alethespec} gives the complete list of all proof rules.
+Together with the language, the Alethe format also includes a set of proof rules.
+The Alethe proof format \cite[\S 5]{alethespec} gives the complete list of all proof rules.
 Historically, the proof rules correspond to the rules that the solver veriT can emit.
-Alethe provide different types of proof rules that we will describe with example of rule that  :
-
+Alethe provide different types of proof rules that we will describe:
 
 \paragraph{Tautologous Rules and Simple Deduction.}
 These rules introduce tautologies. One example is the \kw{equiv\_pos2} rule used in \cref{lst:smtexampleinput-fol} that introduces the tautology clause:
@@ -341,7 +357,7 @@ Those rules are primarily used to simplify Boolean connectives during preprocess
 For example, the \kw{implies} rule eliminates an implication: From $\varphi_1 \to \varphi_2$, it deduces $\neg \varphi_1, \varphi_2$.
 
 \paragraph{Simplification rules.} These rules represent typical operator level simplifications.
-For example, the rule \tt{or\_simplify} below simplify \kw{or} expression:
+For example, the rule \tt{or\_simplify} below simplifies \kw{or} expression:
 
 \begin{equation}
 i. \quad \Gamma~\triangleright \quad l_1 \lor \dots \lor l_n ~ \approx \psi \quad \tt{or\_simplify}
@@ -357,7 +373,7 @@ where $\psi$ is the transformed term. The possible transformations are:
 
 \paragraph{Resolution.}
 {\cdclt}-based SMT solvers, and especially their SAT solvers, are fundamentally based on resolution of clauses.
-Hence, Alethe also has dedicated resolution proof rule.
+Hence, Alethe also has dedicated resolution proof rule:
 
 \medskip
 
@@ -370,19 +386,32 @@ $j.~~\triangleright$  & \qquad $l_{s_1}^{r_1},\, \dots,\, l_{s_m}^{r_m}$ \qquad 
 
 \medskip
 
-However, since SMT solvers do not enforce a strict clausal normal form, ordinary disjunction is also used.
+where $l_{s_1}^{r_1},\, \dots,\, l_{s_m}^{r_m}$ are from $l^i_j$ and are the result of a chain of binary predicate resolution steps on the clauses of $i_1$ to $i_n$.
+A binary predicate resolution can be formally defined as:
+
+\begin{equation*}\label{eq:bin-resolution}
+\begin{prooftree}
+  \hypo{ l^1_1, \dots, l^1_n, p }
+  \hypo{ l^2_1, \dots, l^2_n, \neg p }
+  \infer2[(Resolution)]{  l_{1}^{1}, \dots, l^1_n, l^2_1, \dots  l_{n}^2 }
+\end{prooftree}
+\end{equation*}
+
+It is possible that $m = 0$, i.e. that the result is the empty clause. When performing resolution steps, the rule implicitly merges repeated negations
+at the start of the formulas $l^i_j$. For example, the formulas $\neg \neg \neg P$ and $\neg P$ can serve as pivots during resolution.
+The first formula is interpreted as $\neg P$ and the second as just $P$ for the purpose of performing resolution steps.
+
+SMT solvers do not enforce a strict clausal normal form, ordinary disjunction is also used.
 Therefore Alethe keep clauses and disjunctions distinct to simplifies rule checking.
 For example, in the case of resolution there is a clear distinction between unit clauses where the sole literal starts with a disjunction and non-unit clauses.
 The syntax for clauses uses the \smtinline{cl} operator, while disjunctions use the standard \smtinline{or} operator.
 The \kw{or} \emph{rule} is responsible for converting disjunctions into clauses.
 
-The Alethe proofs use a generalized propositional resolution rule with the name \kw{resolution} or \kw{th\_resolution}.
+Alethe proofs use a generalized propositional resolution rule with the name \kw{resolution} or \kw{th\_resolution}.
 Both names denote the same rule.
 The difference only serves to distinguish whether the rule was introduced by the SAT solver or by a theory solver.
 The resolution step is purely propositional; there is no notion of a unifier.
-The resolution rules also implicitly simplify repeated negations at the head of literals.
-
-The premises of a resolution step are clauses, and the conclusion is a clause that has been derived from the premises by some binary resolution steps.
+The resolution rules also implicitly simplifies repeated negations at the head of literals.
 
 \paragraph{Quantifier Instantiation.}
 To express quantifier instantiation, the rule \kw{forall\_inst} is used.
@@ -398,7 +427,52 @@ It produces a formula of the form $(\neg \forall \bar x_n.\,\varphi) \lor \varph
 
 The argument of a \kw{forall\_inst} step, for a quantification of the form $\forall x_1,\dots,x_n. \varphi$,  is the list $t_1,\dots, t_n$, where $t_i$ denotes the substitute of variable $x_i$.
 While this information can be recovered from the term, providing it explicitly helps reconstruction because the implicit reordering of equalities obscures which terms have been used as instances.
-Existential quantifiers are handled by skolemization \question{ac}{should I say something also about skolemization?}.
+
+Skolemization is handled by two rules.
+The rule \tt{sko\_ex} is used to express the Skolemization of an existentially quantified variable. 
+The conclusion of a step that applies this rule is an equality. 
+On the left-hand side of the equality stands a formula whose outermost symbol is an existential quantifier over some variable $x$. 
+On the right-hand side, the variable $x$ is replaced by the corresponding Skolem term. 
+To justify this replacement, the \tt{sko\_ex} rule requires one premise. 
+The premise is evaluated under a context that maps the existentially quantified variable to the Skolem term that witnesses its existence:
+
+\smallskip
+
+\begin{tabular}{l l r}
+$i. \Gamma, x_1 \mapsto \epsilon_1, \dots, x_n \mapsto \epsilon_n$ & $\triangleright \varphi \approx \psi$ & $\qquad   (...)$ \\
+$j. \Gamma$  & $\triangleright \exists x_1 \dots x_n, \varphi \approx \psi$ \qquad & (\tt{sko\_ex}) \\
+\end{tabular}
+
+where $\epsilon_i$ stands for $\epsilon\,x_i, (\exists x_{i+1}, \dots , x_n, \varphi)$.
+
+\smallskip
+
+Analogously, the rule \tt{sko\_forall} is used to express the Skolemization for universal quantification. 
+The structure of the rule is the same as that of \tt{sko\_ex}: the conclusion is again an equality, with the left-hand side being a formula starting with a universal quantifier over some variable $x$. 
+In the formula on the right-hand side, the variable $x$ is replaced by the appropriate Skolem choice term, which is typically constructed from the negation of the body of the universal quantification. 
+As in the case of \tt{sko\_ex}, the \tt{sko\_forall} rule employs a single premise. 
+The premise is evaluated under a context that maps the universally quantified variable to its associated Skolem choice term:
+
+\begin{tabular}{l l r}
+$i. \Gamma, x_i \mapsto (\neg \epsilon\,x_i, \neg \phi)$ & $\triangleright \varphi \approx \psi$ & $\qquad   (...)$ \\
+$j. \Gamma$  & $\triangleright \forall x_1 \dots x_n, \varphi \approx \psi$ \qquad & (\tt{sko\_forall}) \\
+\end{tabular}
+
+with $i \in 1 \dots n$
+
+\smallskip
+
+\begin{example}
+Here the term $\neg p (\epsilon \, x, \neg p(x))$ is skolemized. The \tt{refl} rule expresses a simple tautology on the equality (reflexivity in this case), cong is functional congruence,
+and \tt{sko\_forall} works like \tt{sko\_ex}, except that the choice term is $\epsilon \, x,\neg\varphi$.
+
+\begin{tabular}{l r}
+$1. x \mapsto (\epsilon x,\,\neg(p~x))\ \triangleright x \approx \epsilon x.\,\neg(p~x)$ & \kw{refl} \\
+$2. x \mapsto (\epsilon x,\,\neg(p~x))\ \triangleright (p~x) \approx p(\epsilon x.\,\neg(p~x))$ & \kw{cong}~1 \\
+$3. \triangleright (\forall x,\ (p~x)) \approx p(\epsilon x.\,\neg(p~x))$ & \kw{sko\_forall}~2 \\
+$4. \triangleright \neg(\forall x,\ (p~x)) \approx \neg\!\big(p(\epsilon x.\,\neg(p~x))\big)$ & \kw{cong}~3 \\
+\end{tabular}
+\end{example}
 
 \paragraph{Linear arithmetic.}
 
@@ -406,12 +480,12 @@ Existential quantifiers are handled by skolemization \question{ac}{should I say 
   \centering
   \begin{tabular}{ll}
   Rule & Description \\ \hline
-  la\_generic & Tautologous disjunction of linear inequalities \\
-  lia\_generic & Tautologous disjunction of linear integer inequalities \\
+  la\_generic & Tautologous linear inequalities \\
+  lia\_generic & Tautologous linear integer inequalities \\
   la\_disequality & $t_1 \approx t_2 \lor \neg (t_1 \geq t_2) \lor \neg (t_2 \geq t_1)$ \\
   la\_totality & $t_1 \geq t_2 \lor t_2 \geq t_1$ \\
-  la\_mult\_pos & $t_1 > 0 \land (t_2 \bowtie t_3) \rightarrow t_1 * t_2 \bowtie t_1 * t_3$ and $\bowtie \in \{<, >, \geq, \leq, =\}$ \\
-  la\_mult\_neg & $t_1 < 0 \land (t_2 \bowtie t_3) \rightarrow t_1 * t_2 \bowtie_{inv} t_1 * t_3$ \\
+  % la\_mult\_pos & $t_1 > 0 \land (t_2 \bowtie t_3) \rightarrow t_1 * t_2 \bowtie t_1 * t_3$ \\
+  % la\_mult\_neg & $t_1 < 0 \land (t_2 \bowtie t_3) \rightarrow t_1 * t_2 \bowtie_{inv} t_1 * t_3$ \\
   la\_rw\_eq & $(t \approx u) \approx (t \geq u \land u \geq t)$ \\
   comp\_simplify & Simplification of arithmetic comparisons \\
   % (define-rule arith-int-eq-elim ((t Int) (s Int)) (= t s) (and (>= t s) (<= t s)))
@@ -433,19 +507,18 @@ Existential quantifiers are handled by skolemization \question{ac}{should I say 
   % (define-rule arith-geq-norm2 ((t ?) (s ?)) (>= t s) (<= (- t) (- s)))
   arith-geq-norm2 & $t \geq s \rightarrow - t \leq - s$ \\
   % (define-rule arith-geq-tighten ((t Int) (s Int)) (not (>= t s)) (>= s (+ t 1)))
-  arith-geq-tighten & $\neg (t \geq s) \rightarrow s \geq t + 1$ \\
+  arith-geq-tighten & $\neg (t \geq s) \rightarrow s \geq t + 1$ with $t$ and $s$ of sort \smtinline{Int}  \\
   arith-poly-norm & polynomial normalization \\
   evaluate & evaluate constant terms
   \end{tabular}
-
-  \caption{Linear arithmetic rules in Alethe supported in our encoding.}
+  \caption{Examples of linear arithmetic rules in Alethe.}
   \label{table:linear-arith-rules}
 \end{table}
 
-Proofs for linear arithmetic use several straightforward rules listed in \cref{table:linear-arith-rules}, such as \tt{la\_totality} that asserts totality of the ordering $\leq$.
+Proofs for linear arithmetic use several straightforward rules listed in \cref{table:linear-arith-rules}.
+For example, the rule \tt{la\_totality} asserts a totality of the ordering $\leq$.
 and the main rules \tt{la\_generic} and \tt{lia\_generic}, which describe an algorithm.
-A step of the rule \tt{la\_generic} represents a tautological clause of linear inequalities.
-That can be verified by demonstrating that the conjunction of the negated inequalities is unsatisfiable.
+A step of the rule \tt{la\_generic} represents a tautological clause of linear inequalities, and can be verified by demonstrating that the conjunction of the negated inequalities is unsatisfiable.
 While the \tt{la\_generic rule} is primarily intended for \textbf{LRA} logic, it is also applied in \textbf{LIA} proofs when all variables in the (in)equalities are of integer sort.
 The \cref{lst:smtexampleproof} shows an example of a linear arithmetic proof in Alethe.
 
@@ -457,7 +530,7 @@ $\lightning$
 
 \lstinputlisting[language=SMT,caption={Linear arithmetic proof},label={lst:smtexampleproof}]{Assets/example_lia.proof}
 
-The proofs begins with \tt{assume} steps \tt{a0}, \tt{a1}, \tt{a2} that restate the assertions from the \emph{input problem}. % (\cref{lst:smtexampleproof}).
+The proof begins with \tt{assume} steps \tt{a0}, \tt{a1}, \tt{a2} that restate the assertions from the \emph{input problem}. % (\cref{lst:smtexampleproof}).
 Step \tt{t1} transforms the disjunction \texttt{a0} into a clause by using the Alethe rule \tt{or}.
 Steps \tt{t2} and \tt{t5} are tautologies introduced by the main rule \tt{la\_generic}
 in Linear Real Arithmetic (LRA) logic and also used in LIA logic, where \colorbox{green!30}{$l_1, l_2,\dots, l_n$} represent linear inequalities.
@@ -470,20 +543,20 @@ A linear inequality is an expression of the form:
 \label{eqn:inequality}
 \end{equation}
 %
-where $\mathop{\bowtie} \mathrel{\in} \mathop{\{=, <, >, \leq, \geq\}}$, $m\geq n$, $c_i, d_1, d_2$ are either \lstinline[language=SMT,basicstyle=\ttfamily\footnotesize]{Int} or \lstinline[language=SMT,basicstyle=\ttfamily\footnotesize]{Real}
-constants, and where $c_i$ and $t_i$ have the same sort for all $i$.
-Checking the clause validity of \tt{t2} and \tt{t5} in \cref{lst:smtexampleproof}, amounts to checking the unsatisfiability of the system of linear equations e.g. $x < 3$ and $x = 2$ in \tt{t2}.
+where $\mathop{\bowtie} \mathrel{\in} \mathop{\{=, <, >, \leq, \geq\}}$, $m\geq n$, $c_i, d_1, d_2$ are constants either \lstinline[language=SMT,basicstyle=\ttfamily\footnotesize]{Int} or \lstinline[language=SMT,basicstyle=\ttfamily\footnotesize]{Real},
+and where $c_i$ and $t_i$ have the same sort for all $i$.
+Checking the clause validity of \tt{t2} and \tt{t5} in \cref{lst:smtexampleproof}, amounts to checking the unsatisfiability of the system of linear equations e.g. $3 < x$ and $x = 2$ in \tt{t2}.
 Coefficients for each inequality are passed as arguments e.g. $(\frac{1}{1},\frac{1}{1})$ in \tt{t2}.
 Steps \tt{t3} and \tt{t4} apply the \colorbox{purple!30}{\texttt{resolution}} rule to the premises \tt{a1}, \tt{t2} (respectively \tt{t1} and \tt{t3}).
 Finally, the step \texttt{t6} concludes the proof by generating the empty clause $\bot$, denoted as \kw{(cl)} in \cref{lst:smtexampleproof}.
 Notice that the contexts \colorbox{blue!30}{$\Gamma$} of each step are all empty in this proof.
 
-To elaborate on the \tt{la\_generic} rule, it can be verified by showing that the conjunction of the negated inequalities is unsatisfiable.
+The \tt{la\_generic} rule can be verified by showing that the negated inequalities are jointly unsatisfiable.
 After applying strengthening rules, the resulting conjunction is unsatisfiable,
 even when \lstinline[language=SMT,basicstyle=\ttfamily\footnotesize\upshape]{Int} variables are treated as \lstinline[language=SMT,basicstyle=\ttfamily\footnotesize\upshape]{Real} variables.
 Although the rule may introduce rational coefficients, they often reduce to integers—as shown in \cref{lst:smtexampleproof}, where the coefficients are $(\frac{1}{1}, \frac{1}{1})$.
 Cases where coefficients cannot be reduced to integers are rare in practice, however, we reduce them to integers by \emph{clearing denominators} using their least common denominator.
-Let $\varphi_1,\dots, \varphi_n$ be rational numbers linear inequalities and $a_1, \dots, a_n$ rational numbers. Then a \tt{la\_generic} step has the general form
+Let $\varphi_1,\dots, \varphi_n$ be rational numbers linear inequalities, but different from $s_1 \approx s_2$, and $a_1, \dots, a_n$ rational numbers. Then a \tt{la\_generic} step has the general form
 %
 \[
 \begin{matrix*}[c]
@@ -491,8 +564,14 @@ Let $\varphi_1,\dots, \varphi_n$ be rational numbers linear inequalities and $a_
 \end{matrix*}
 \]
 
-The constants $a_i$ are of sort \tt{Real}. To check the unsatisfiability of the negation of $\varphi_1, \dots, \varphi_n$ one performs the following steps for each literal. For each $i$, let $\varphi := \varphi_i$, $a := a_i$ and
-we write $s1 \bowtie s2$ to denotes the left and right-hand sides of an inequality of the form \eqref{eqn:inequality}.
+The constants $a_i$ are of sort \tt{Real}. To check the unsatisfiability of the negation of $\varphi_1, \dots, \varphi_n$ one performs the following steps for each literal.
+
+First, If all variables of $\varphi_1 \dots \varphi_n$ are integer-sorted and the coefficients $a_1 \dots a_n$ are in $\mathbb{Q}$,
+then $a_i \coloneq a_i \times \mathit{lcd}(a_1 \dots a_n)$ where $\mathit{lcd}$ is the least common denominator of $[a_1 \dots a_n]$.
+
+For each $i$, let $\varphi := \varphi_i$, $a := a_i$ and
+we write $s1 \bowtie s2$ to denote the left and right-hand sides of an inequality of the form \eqref{eqn:inequality}.
+
 
 \begin{enumerate}
     \item If $\varphi =  \neg (s_1 < s_2)$  or $s_1 \geq s_2$, then let $\varphi := \neg(- s_1 \geq - s_2)$.
@@ -502,7 +581,7 @@ we write $s1 \bowtie s2$ to denotes the left and right-hand sides of an inequali
     Otherwise, leave $\varphi$ unchanged.
     This step normalizes the literal by negating it if necessary.
     The goal is to produce a canonical form that uses only the operators $>$, $\geq$, and $=$.\\
-    Note that equalities are assumed to already be in negated form.
+    % Note that equalities are assumed to already be in negated form.
 
 
     \item Replace $\varphi = \neg (\sum_{i=0}^{n}c_i\times{}t_i + d_1 \bowtie \sum_{i=n+1}^{m} c_i\times{}t_i + d_2)$ by $\neg (\left(\sum_{i=0}^{n}c_i\times{}t_i\right) - \left(\sum_{i=n+1}^{m} c_i\times{}t_i\right)
@@ -511,9 +590,6 @@ we write $s1 \bowtie s2$ to denotes the left and right-hand sides of an inequali
     \item \label{la_generic:str}Now $\varphi$ has the form $\neg (s_1 \bowtie d)$. If all
     variables in $s_1$ are integer-sorted then replace $\neg (s_1 \bowtie d)$ by $\neg (s_1 \bowtie \lceil d \rceil)$,
     otherwise by $\neg (s_1 \bowtie \lfloor d\rfloor + 1)$.
-
-    \item If all variables of $\varphi$ are integer-sorted and the coefficients $a_1 \dots a_n$ are in $\mathbb{Q}$,
-    then $a_i \coloneq a_i \times \mathit{lcd}(a_1 \dots a_n)$ where $\mathit{lcd}$ is the least common denominator of $[a_1 \dots a_n]$.
 
     \item If $\bowtie$ is $=$, then replace $\varphi$ by
     $\neg (\sum_{i=0}^{m}a\times{}c_i\times{}t_i = a\times{}d)$, otherwise replace it by
@@ -524,7 +600,8 @@ we write $s1 \bowtie s2$ to denotes the left and right-hand sides of an inequali
         \sum_{k=1}^{n}\sum_{i=1}^{m}c_i^k*t_i^k \bowtie \sum_{k=1}^{n}d^k
     \]
   where $c_i^k$ and $t_i^k$ are the constant and term from the literal $\varphi_k$, and $d^k$ is the constant $d$ of $\varphi_k$.
-  The operator $\bowtie$ is $=$ if all operators are $=$, $>$ if all are either $=$ or $>$, and $\geq$ otherwise. Finally, the sum on the left-hand side is $0$ and the right-hand side is $>0$ (or $\geq 0$ if $\bowtie$ is $>$).
+  The operator $\bowtie$ is $=$ if all operators are $=$, $>$ if at least one is $>$, and $\geq$ otherwise.
+  Finally, the sum on the left-hand side is $0$ and the right-hand side is $>0$ (or $\geq 0$ if $\bowtie$ is $>$).
 
 \end{enumerate}
 
@@ -539,37 +616,56 @@ Consider the $\tt{la\_generic}$ step in the logic \tt{QF\_UFLIA} with the uninte
 \end{lstlisting}
 %
 The algorithm then performs the following steps:
+
+\smallskip
+
+First, we Replace $a = [\frac{1}{1}, \frac{1}{4}]$ by $a = [4, 1]$  due to clearing denominators. We then obtain
 \begin{align}
 &\neg (- f > 0),~ \neg(4f > 0) \label{eq:step2}\tag{Steps 1 and 2}\\
 &\neg (- f > 0),~ \neg(4f \geq 1) \label{eq:step3}\tag{Step 3}\\
-&\text{Replace } a = [\frac{1}{1}, \frac{1}{4}] \text{ by } a = [4, 1] \text{ due to clearing denominators} \label{eq:step4}\tag{Step 4}\\
-&\neg (|4| * - f > |4| * 0 ), ~ \neg(|1| * 4f \geq |1| * 1) \label{eq:step5}\tag{Step 5} \\
-&-4f + 4f \geq 1 \label{eq:step6}\tag{Step 6}
+&\neg (|4| * - f > |4| * 0 ), ~ \neg(|1| * 4f \geq |1| * 1) \label{eq:step5}\tag{Step 4} \\
+&-4f + 4f \geq 1 \label{eq:step6}\tag{Step 5}
 \end{align}
 Which sums to the contradiction  $0 \geq 1$.
 \label{ex:la_generic_example_red}
 \end{example}
 
-\begin{remark}
-The operator \lstinline[language=SMT,basicstyle=\ttfamily\footnotesize]{to_real} is used in the \tt{LIA} theory to embed integers into the reals.
-As a result, a proof for a problem formulated in \tt{LIA} may involve reasoning over real numbers.
-Since our approach does not support the \lstinline[language=SMT,basicstyle=\ttfamily\footnotesize\upshape]{Real} theory, we do not attempt to reconstruct such proofs and instead let the translation process fail in this case.
-\end{remark}
+\paragraph{Special rules.}
 
+\begin{equation}\label{eq:hole}
+\begin{tabular}{l c r}
+$i.\quad \triangleright$ & $\varphi$ & $(\kw{hole}~p_1, \dots p_n) [a_1, \dots a_m]$
+\end{tabular}
+\end{equation}
 
+where $\varphi$ is any well-formed formula.
+
+This rule serves as a placeholder for incomplete proof steps not yet covered by the defined rules.
+A proof checker must reject any proof containing this rule, even if it can be verified.
+Checkers may, however, assign a special status to otherwise valid proofs containing it.
+Other tools may choose whether to accept or reject such proofs.
+
+% \begin{remark}
+% The operator \lstinline[language=SMT,basicstyle=\ttfamily\footnotesize]{to_real} is used in the \tt{LIA} theory to embed integers into the reals.
+% As a result, a proof for a problem formulated in \tt{LIA} may involve reasoning over real numbers.
+% Since our approach does not support the \lstinline[language=SMT,basicstyle=\ttfamily\footnotesize\upshape]{Real} theory, we do not attempt to reconstruct such proofs and instead let the translation process fail in this case.
+% \end{remark}
 
 \section{Checking Alethe Proofs}
 
 \subsection{Abstract procedure}
 
-We present an abstract procedure to verify whether an Alethe proof
-is well-formed and valid. An Alethe proof is well-formed if and only if its anchors
-and steps are properly balanced. To check this property, we systematically replace innermost
-subproofs with holes until no subproof remains. If the resulting proof structure is
-free of anchors and steps that use concluding rules, then the proof is well-formed.
-Furthermore, if all steps within the subproofs satisfy the conditions prescribed by their
-respective rules, then each subproof is valid. Consequently, if all subproofs are valid,
-then the entire proof is valid.
+We present an abstract procedure to verify whether an Alethe proof is \emph{well-formed} and \emph{valid}.
+An Alethe proof is well-formed if and only if its anchors and steps are properly balanced.
+To check this property, we iteratively replace innermost subproofs by holes until no subproofs remain.
+If the resulting reduced proof is free of anchors and of steps that require a concluding rule, then the proof is well-formed.
+
+
+Beyond well-formedness, a proof must also be valid.
+By validity we mean that every inference step in the proof respects the conditions prescribed by its corresponding rule under the appropriate logical context.
+To check if a proof is valid we have to check if all steps of a subproof adhere to the conditions of their rules before replacing the subproof by a hole.
+If all subproofs are valid and all steps in the reduced proof adhere to the conditions of their rule, then the entire proof is valid.
+Consequently, a proof is valid if and only if all of its subproofs are valid and all of its top-level steps are valid.
 
 Formally, an Alethe proof $P$ is represented as a sequence $[C_1, \ldots, C_n]$ of steps and anchors.
 Since each step employs a unique index, we assume that step $C_i$ in $P$ uses
@@ -578,10 +674,6 @@ steps. Therefore, the step elements $C_1, \ldots, C_n$ are not directly associat
 with a context. Instead, the context can be computed from the preceding anchors,
 as anchors serve exclusively to extend the context.
 
-To validate an Alethe proof, we employ an iterative approach that eliminates the first-innermost
-subproof at each step. The first-innermost subproof is defined as the innermost subproof that does not
-follow a complete subproof. This restriction to first subproofs significantly simplifies the computation of
-the context for steps within the subproof.
 
 \begin{definition}[First-Innermost Subproof]\label{def:first-innermost}
 Let $P$ be the proof $[C_1, \ldots, C_n]$ and let $1 \leq \mathit{start} < \mathit{end} \leq n$ be two indices such
@@ -593,6 +685,29 @@ that:
 \item no $C_k$ with $\mathit{start} < k < \mathit{end}$ is an anchor or a step that uses a concluding rule.
 \end{itemize}
 Then $[C_{\mathit{start}}, \ldots, C_{\mathit{end}}]$ is called the \emph{first-innermost subproof} of $P$.
+We denotes as $P_{last}$ the final proof in the sequence obtained by iteratively eliminating first-innermost subproofs.
+\end{definition}
+
+\begin{definition}[Eliminate subproof]
+Let $P = [C_1, \ldots, C_n]$ be a proof. 
+A \emph{first-innermost subproof} of $P$ is $[C_{\mathit{start}}, \ldots, C_{\mathit{end}}]$ that contains no proper subproofs.
+If $P$ contains no first-innermost subproof, then eliminating subproofs leaves $P$ unchanged. 
+Otherwise, we eliminate the first-innermost subproof by replacing it with a single step $C'$  that uses the \kw{hole} rule and has the index, conclusion, and premises of $C_{\mathit{end}}$. 
+By repeatedly eliminating the first-innermost subproof of $P$, we obtain a finite sequence of proofs:
+
+\begin{equation*}
+[P_0, P_1, P_2, \ldots, P_{\mathit{last}}]  
+\end{equation*}
+
+where $P_0 = P$, each $P_{i+1}$ is obtained from $P_i$ by eliminating its 
+first-innermost subproof, and $P_{\mathit{last}}$ contains no subproofs. 
+Since $P$ is finite, this process always terminates after finitely many steps, 
+and $P_{\mathit{last}}$ is uniquely determined.
+\end{definition}
+
+\begin{definition}[Well-Formed Proof]
+An Alethe proof $P$ is well-formed if every step uses a unique index and $P_{last}$ contains no anchor or
+or step that uses a concluding rule (\tt{subproof}, \tt{bind}, etc.).
 \end{definition}
 
 \begin{definition}[Valid Alethe Proof]\label{def:valid-alethe-proof}
@@ -614,9 +729,9 @@ It is sometimes useful to speak about the steps that are not within a subproof.
 We call such a step an \emph{outermost step}. In a well-formed proof, these are precisely the steps of $P_{\mathit{last}}$.
 
 \begin{theorem}[Soundness of Concrete Alethe Proofs]
-If there is a valid proof $P = [C_1, \dots , C_n]$ that has the formulas $\varphi_1, \dots, \varphi_1$ as the conclusions of the outermost assume steps, then
+If there is a valid proof $P = [C_1, \dots , C_n]$ that has the formulas $\varphi_1, \dots, \varphi_n$ as the conclusions of the outermost assume steps, then
 \[
-  \varphi_1, \dots, \varphi_1 \models \bot
+  \varphi_1, \dots, \varphi_n \models \bot
 \]
 Here, $\models$ represents semantic consequence in the many-sorted first order logic of SMT-LIB with the theories of uninterpreted functions and linear arithmetic extended to clauses.
 \end{theorem}
