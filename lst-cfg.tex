@@ -45,21 +45,51 @@
   numberstyle=\footnotesize,
   tabsize=2,
   basicstyle={\ttfamily\scriptsize\upshape},
-  keywords=[1]{anchor,step, :step,assume, declare-fun, define-fun, declare-const, declare-sort, assert},
+  keywords=[1]{anchor,step, :step,assume, declare-fun, define-fun, declare-const, declare-sort, set-logic, assert},
   keywords=[2]{:rule, :args,:premises,get-proof, check-sat, set-logic},
   keywords=[3]{xor, and, or, not, distinct,forall, Int, Real, abs, div, mod, Bool, BitVec, bvand, bvor, bvadd, bvmul, @bbT},
-  keywords=[4]{true, false}
+  keywords=[4]{true, false},
   alsoletter={-,:,*,/},
   sensitive=true,
   keywordstyle={[1]\bfseries\color{mylpurple}},
   keywordstyle={[2]\bfseries\color{RoyalBlue}},
   keywordstyle={[3]\bfseries\color{mypurple}},
-  keywordstyle={[4]\bfseries\color{green}},
+  keywordstyle={[4]\bfseries\color{teal}},
   string=[b]{"},
   stringstyle=\color{orange},
   showstringspaces=false,
+  literate=
+  {∈}{$\in$}2
+  {∉}{$\notin$}2
+  {∨}{$\lor$}2
+  {→}{$\rightarrow$}2
 }
 
+\lstdefinelanguage{Eunoia}
+{
+  numbers=left,
+  numbersep=5pt,
+  inputencoding=utf8,
+  extendedchars=true,
+  numberstyle=\footnotesize,
+  tabsize=2,
+  basicstyle={\ttfamily\scriptsize\upshape},
+  keywords=[1]{:var, declare-sort, declare-parameterized-const, declare-rule, declare-type, declare-const, assume, step},
+  keywords=[2]{:rule, :conclusion, :args,:premises,get-proof, check-sat, set-logic, :implicit},
+  keywords=[3]{Bool, Type},
+  keywords=[4]{true, false},
+  alsoletter={-,:,*,/,@},
+  sensitive=true,
+  keywordstyle={[1]\bfseries\color{mylpurple}},
+  keywordstyle={[2]\bfseries\color{RoyalBlue}},
+  keywordstyle={[3]\bfseries\color{mypurple}},
+  keywordstyle={[4]\bfseries\color{teal}},
+  string=[b]{"},
+  stringstyle=\color{orange},
+  showstringspaces=false,
+  literate=
+  {→}{$\rightarrow$}2
+}
 
 \lstdefinelanguage{RARE}
 {
