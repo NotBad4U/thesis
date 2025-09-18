@@ -96,30 +96,7 @@ begin
 end;
 \end{lstlisting}
 
-
-\section{Resolution rule}
-\label{ssec:resolution}
-
-\change{Alessio}{The algorithm to reconstruct resolution will be modified}
-
-Binary resolution on ground clauses can be expressed as the following proof rule, which we have proved in Lambdapi.
-
-\begin{lemma}[Resolution]\label{lemma:resolution}
-Given $a,b: \texttt{Clause}$, and a pivot $x: \prop$, $\pid (x \veedot a)$ and $\pid (\neg x \veedot b)$ implies $\pid (a \veedot b)$.
-\end{lemma}
-
-\begin{figure}[]
-  \centering
-  \begin{tabular}{l c r}
-  $i_1.~\triangleright$  & \qquad $l_1^1,\, \dots,\, l_{k^1}^1$ \qquad & (\dots)  \\
-  $i_n.~\triangleright$  & \qquad $l_1^n,\, \dots,\, l_{k^n}^n$ \qquad & (\dots) \\
-    & \vdots  &  \\
-  $j.~~\triangleright$  & \qquad $l_{s_1}^{r_1},\, \dots,\, l_{s_m}^{r_m}$ \qquad & $(\kw{resolution}~i_1 \dots i_n)[]$
-  \end{tabular}
-  \caption{Resolution rule}
-  \label{fig:resolution-rule}
-\end{figure}
-
+\paragraph{resolution rule}
 
 However, Alethe's \kw{resolution} rule, shown in \cref{fig:resolution-rule}, represents hyper-resolution applied to a set of ground first-order clauses $i_1 \dots i_n$,
 where the resulting clause $l_{s_1}^{r_1} \dots l_{s_m}^{r_m}$ is obtained by a chain of predicate resolution steps that remove complementary literals from the input clauses, with double negations being removed implicitly.
@@ -131,7 +108,66 @@ In addition, pivots may appear anywhere in a clause rather than just as the head
 In \cite{ColtellacciMD24}, we simulated Alethe's \kw{resolution} rule as compositions of multiple binary resolution steps, combined with additional proof steps for justifying reasoning modulo AC used to move pivots to the heads of clauses.
 However, the practical application of this approach suffered from inefficiency and did not allow us to reconstruct proofs of some benchmarks in SMT-LIB that involved hundreds of clauses in a single resolution.
 In the following, we present an approach where we prove clause permutation through \emph{proof by reflection}\index{proof by reflection}, enabling more efficient pivot movement.
-Given the central role of \emph{proof by reflection} in our translation, we dedicate the following section to a more detailed introduction of this concept, which is key to reconstructing certain proof rules in the Alethe format.
+% Given the central role of \emph{proof by reflection} in our translation, we dedicate the following section to a more detailed introduction of this concept, which is key to reconstructing certain proof rules in the Alethe format.
+
+
+\begin{tabular}{l}
+  $\tt{resolution}~(ps\; qs : \tt{Clause})\; (i\; j : \mathbb{N})$ \\
+  $\quad (hps : \prfcl ps)$ \\ 
+  $\quad (hqs : \prfcl qs)$ \\ 
+  $\quad (hi  : \prf(i < \tt{size}\; ps))$ \\ 
+  $\quad (hj  : \prf(j < \tt{size}\; qs))$ \\ 
+  $\quad (hij : \prf((\tt{nth}\; ps\; i) = \lnot(\tt{nth}\; qs\; j)))$ \\
+  $\qquad : \prfcl(\tt{remove}\; ps\; i \mathrel{\pp} \tt{remove}\; qs\; j)$
+\end{tabular}
+
+% \begin{table}[]
+%   \centering
+%   \begin{tabular}{l c r}
+%   $i_1.~\triangleright$  & \qquad $l_1^1,\, \dots,\, l_{k^1}^1$ \qquad & (\dots)  \\
+%   $i_n.~\triangleright$  & \qquad $l_1^n,\, \dots,\, l_{k^n}^n$ \qquad & (\dots) \\
+%     & \vdots  &  \\
+%   $j.~~\triangleright$  & \qquad $l_{s_1}^{r_1},\, \dots,\, l_{s_m}^{r_m}$ \qquad & $(\kw{resolution}~i_1 \dots i_n)[]$
+%   \end{tabular}
+%   \caption{Resolution rule}
+%   \label{tab:resolution-rule}
+% \end{table}
+
+% \section{Resolution rule}
+% \label{ssec:resolution}
+
+% \change{Alessio}{The algorithm to reconstruct resolution will be modified}
+
+% Binary resolution on ground clauses can be expressed as the following proof rule, which we have proved in Lambdapi.
+
+% \begin{lemma}[Resolution]\label{lemma:resolution}
+% Given $a,b: \texttt{Clause}$, and a pivot $x: \prop$, $\pid (x \veedot a)$ and $\pid (\neg x \veedot b)$ implies $\pid (a \veedot b)$.
+% \end{lemma}
+
+% \begin{figure}[]
+%   \centering
+%   \begin{tabular}{l c r}
+%   $i_1.~\triangleright$  & \qquad $l_1^1,\, \dots,\, l_{k^1}^1$ \qquad & (\dots)  \\
+%   $i_n.~\triangleright$  & \qquad $l_1^n,\, \dots,\, l_{k^n}^n$ \qquad & (\dots) \\
+%     & \vdots  &  \\
+%   $j.~~\triangleright$  & \qquad $l_{s_1}^{r_1},\, \dots,\, l_{s_m}^{r_m}$ \qquad & $(\kw{resolution}~i_1 \dots i_n)[]$
+%   \end{tabular}
+%   \caption{Resolution rule}
+%   \label{fig:resolution-rule}
+% \end{figure}
+
+
+% However, Alethe's \kw{resolution} rule, shown in \cref{fig:resolution-rule}, represents hyper-resolution applied to a set of ground first-order clauses $i_1 \dots i_n$,
+% where the resulting clause $l_{s_1}^{r_1} \dots l_{s_m}^{r_m}$ is obtained by a chain of predicate resolution steps that remove complementary literals from the input clauses, with double negations being removed implicitly.
+% For example, the formulas $\neg \neg \neg P$ and $\neg \neg P$ can serve as pivots during resolution.
+% The first formula is interpreted as $\neg P$ and the second as just $P$ to perform resolution steps.
+% Alethe allows resolution steps without providing the pivots; however, Carcara's elaborated proof incorporates the pivots as arguments in the resolution rule, eliminating the need for an additional intermediate step to search for the pivots in our translation to Lambdapi.
+% In addition, pivots may appear anywhere in a clause rather than just as the head literal. Hence, Alethe \kw{resolution} involves reasoning modulo associativity and commutativity (AC) on clauses.
+
+% In \cite{ColtellacciMD24}, we simulated Alethe's \kw{resolution} rule as compositions of multiple binary resolution steps, combined with additional proof steps for justifying reasoning modulo AC used to move pivots to the heads of clauses.
+% However, the practical application of this approach suffered from inefficiency and did not allow us to reconstruct proofs of some benchmarks in SMT-LIB that involved hundreds of clauses in a single resolution.
+% In the following, we present an approach where we prove clause permutation through \emph{proof by reflection}\index{proof by reflection}, enabling more efficient pivot movement.
+% Given the central role of \emph{proof by reflection} in our translation, we dedicate the following section to a more detailed introduction of this concept, which is key to reconstructing certain proof rules in the Alethe format.
 
 \section{Proof by reflection}
 \label{ssec:reflection-intro}
@@ -200,126 +236,128 @@ Hence to prove that $P \lor Q$ and $Q \lor P$, are logically equivalent, it suff
 In this thesis, we make use of both classes of reflection to encode certain \texttt{Alethe} rules. For example, the reconstruction of arithmetic steps (\textbf{LIA} and \textbf{LRA}) and bitvector (\textbf{BV}) Alethe rules primarily relies on the first class,
 while the permutation of clauses for the \texttt{resolution} rule relies on the second class.
 
-\section{Computing hyper-resolvents with proof by reflection}
-\label{ssec:refl-reso}
 
 
-Whereas the technique described in \cref{ssec:resolution} can be used to reconstruct resolution proofs in Alethe proof traces, it suffers from poor scalability.
-Specifically, the permutation proof generated for pivot movement due to reasoning modulo AC may become excessively lengthy. We will now describe an alternative technique based on computational reflection that allows us to prove the permutation of clauses efficiently.
-Relying on the rewriting facilities of Lambdapi, we implemented a decision procedure that checks equality between clauses by rewriting modulo AC-canonization.
-
-The core idea is to put clauses with pivots in different positions into a canonical form, allowing them to be compared. To achieve this, we present a proof by reflection of the second class in the following.
-If two clauses are determined to be equal, the current clause can be substituted with one where the pivot is placed at the head position, allowing for the subsequent application of \cref{lemma:resolution}.
-To handle associative and commutative symbols, Lambdapi provides the modifiers \lpinline{associative commutative} \info{ac}{the introduction of Lambdapi will present AC and its builtin order},
-ensuring that terms are systematically placed into a canonical form given a builtin ordering relation, following the technique described in \cite{ACorigin} and \cite[\S 5]{univAC}.
-
-Additionally, as discussed in \cref{sect:elabration-resolution} \change{ac}{Need Alethe intro}, the solver can introduce implicit $\tt{contraction}$ steps between binary resolution steps.
-We leverage the elaboration process in Carcara to avoid implementing a proof by reflection for $\tt{contraction}$, which would require structures not present in the standard library of Lambdapi to reason about collections modulo duplicate terms, such as finite sets.
-
-\begin{figure}[t]
-  \centering
-  \begin{tikzcd}[column sep=tiny]
-    {C_1 =_{\bb{C}} C_2} & {\bb{C}} && {\bb{C}} & {[C_1] =_{\bb{C}} [C_2]} \\
-    \\
-    {c_1 =_{\tt{Clause}} c_2} & \kw{Clause} && \kw{Clause} & {\den{[C_1]} =_{\tt{Clause}} \den{[C_2]}}
-    \arrow["{{[\_]}}", dotted, from=1-2, to=1-4]
-    \arrow["{{\den{\_}}}", from=1-4, to=3-4]
-    \arrow["{{\reify{\_}}}"', from=3-2, to=1-2]
-    \arrow["{\Leftrightarrow}"{marking, allow upside down}, draw=none, from=3-2, to=3-4]
-  \end{tikzcd}
-  \caption{Checking resolution steps via reification in the algebra $\bb{C}$.}
-  \label{fig:reflective-process}
-\end{figure}
-
-The \cref{fig:reflective-process} provides an overview of the realization of this technique in Lambdapi.
-It relies on \emph{reifying} clauses into terms of an algebra $\bb{C}$, using the operator $\reify{}$ defined in \cref{def:reify-def},
-and we denote by $[t]$ the normalization of term $t$ based on the \lpinline{associative commutative} modifiers.
-This normalization corresponds to the function $g$ introduced in \cref{ssec:reflection-intro}.
-Since we rely on the built-in Lambdapi modifiers, normalization is implicitly handled by \lpm, and thus the function $[\_]: \bb{C} \rightarrow \bb{C} \coloneq \lambda x., x$ is simply the identity.
-
-\begin{definition}[The abstract type $\bb{C}$]
-The \emph{abstract type} $\bb{C}$ is an inductive type defined as follows:
-\begin{align*}
-&\bb{C} : \type \\
-&|~\eps: \bb{C} \\
-&|~\kw{P}: \prop \ra \bb{C} \\
-&|~\sqcup: \bb{C} \ra \bb{C} \ra \bb{C} \quad \text{(written infix)} \\
-&\kw{clauseAC} : \set \\
-&\el\, \kw{clauseAC} \re \bb{C} \\
-\end{align*}
-where the constructor $\eps: \bb{C}$ represents $\nil$ and the constructor $\sqcup$ is declared \lpinline{associative commutative}, which is the analogue of $\cons$.
-Propositions are injected into the algebra by the operator $\tt{P}$.
-\end{definition}
-
-\begin{definition}[reification function]
-\begin{align*}
-& \reify{}: \texttt{Clause} \ra \bb{C} \\
-&\reify{(x \cons y)} \re \kw{P}~x \,\sqcup \reify{y} \\
-&\reify{ \blacksquare } \re \epsilon \\
-\end{align*}
-\label{def:reify-def}
-\end{definition}
-
-It then remains to decide the equality of two terms in $\bb{C}$, and this is accomplished using the operator $=_\bb{C}$ introduced in \cref{def:eqC}.
-Its definition relies on Boolean conjunction \kw{andb} (written infix), which is predefined in Lambdapi's standard library, as well as on the operator \kw{eq} that checks equality of two terms of type $\prop$.
-
-\begin{definition}[decidable equivalence relation]
-The operator $=_\bb{C} : \bb{C} \ra \bb{C} \ra \kw{bool}$ is defined by the following rewrite rules.
-
-\begin{align*}
-&x_1 \sqcup y_1 =_\bb{C} x_2 \sqcup y_2 \re (x_1  =_\bb{C} x_2) ~\kw{andb}~ (y_1  =_\bb{C} y_2) \\
-&\_ \sqcup \_ =_\bb{C} \epsilon \re \false \\
-&\_ \sqcup \_ =_\bb{C} \kw{P}(\_) \re \false \\
-&\kw{P}(x) =_\bb{C} \kw{P}(y) \re (\kw{eq}~x~y) \\
-&\kw{P}(\_) =_\bb{C} \_ \sqcup \_ \re \false \\
-&\kw{P}(\_) =_\bb{C} \epsilon \re \false \\
-&\epsilon =_\bb{C} \epsilon \re \true \\
-&\epsilon =_\bb{C} \kw{P}(\_) \re \false \\
-&\epsilon =_\bb{C} \_ \sqcup \_ \re \false
-\end{align*}
-with:
-\begin{align*}
-&\eq~x~x~ \re \true  & \kw{andb}~\kw{true}~\kw{true} \re \kw{true} \\
-&\eq~x~y~ \re \false & \kw{andb}~\kw{false}~\_ \re \kw{false} \\
-& & \kw{andb}~\_~\kw{false} \re \kw{false}
-\end{align*}
-\label{def:eqC}
-The binary operator \kw{eq} is declared as \lpinline{sequential} so that the second rewrite rule will be applied only if the first one fails.
-Its definition ensures that $\kw{eq}~x~y$ holds if and only if the two propositions $x$ and $y$ are identical.
-\end{definition}
-
-We now state the correctness theorem, demonstrating that a given clause is a permutation of another.
-
-\begin{lemma}[P-injective]\label{lem:p-inj}
-For any $x, y: \prop$, if $\kw{istrue}(\cal{P}(x) =_{\bb{C}} \cal{P}(y))$ then $x = y$.
-\begin{proof}
-From the definition of $=_{\bb{C}}$ that uses a non-linear sequential rewriting rule,
-it follows directly that if $\cal{P}(x) =_{\bb{C}} \cal{P}(y)$ is true then $x$ and $y$ have to be the same.
-\end{proof}
-\end{lemma}
+% \section{Computing hyper-resolvents with proof by reflection}
+% \label{ssec:refl-reso}
 
 
-\begin{theorem}[Correctness]\label{lem:eq-C}
-For $c_1, c_2 : \tt{Clause}$, if $\tt{istrue} (\reify{c_1} =_{\bb{C}} \reify{c_2})$ then $\cal{F}\,c_1 = \cal{F}\,c_2$.
-\end{theorem}
-\begin{proof}
-By induction on $c_1$ and $c_2$.
-\begin{itemize}
-  \item First suppose $c_1 = \blacksquare$ and $c_2 = \blacksquare$. We must show that $\tt{istrue} (\epsilon =_{\bb{C}} \epsilon)$ implies $\cal{F}\, \blacksquare = \cal{F}\, \blacksquare$ which follows directly by reflexivity.
-  \item Next, suppose $c_1 = \blacksquare$ and $c_2 = x \veedot xs$. Then it follows from the the rewriting rules of $=_{\bb{C}}$ that we have a contradiction since we supposed that $\tt{istrue}(\epsilon =_{\bb{C}} \cal{P}(x) \sqcup \reify{xs})$.
-  \item The case where $c_1 = x \veedot xs$ and $c_2 = \blacksquare$ is symmetrical.
-  \item Lastly, suppose $c_1 = x \veedot xs$ and $c_2 = y \veedot ys$, and
-  assume that $\tt{istrue}(\reify{c_1} =_{\bb{C}} \reify{c_2})$.
-  Let $d_1 = \reify{(x \veedot xs)}$ and $d_2 = \reify{(y \veedot ys)}$, then $d_1$ must be of the form
-  $\cal{P}(u) \sqcup \reify{u'}$ and $d_2$ must be of the form $\cal{P}(v) \sqcup \reify{v'}$ where
-  the clauses $u'$ and $v'$ are shorter than $xs$ and $ys$, respectively, and such that
-  $\cal{F}\,(u \veedot u') = \cal{F}\,(c_1)$ and similarly
-  $\cal{F}\,(v \veedot v') = \cal{F}\,(c_2)$.
-  Moreover, from the assumption $\tt{istrue}(d_1 =_{\bb{C}} d_2)$ and \cref{lem:p-inj} it follows that
-  $u = v$, and by induction hypothesis we obtain that $\cal{F}\,u' = \cal{F}\,v'$. Taking everything
-  together, we finally obtain that $\cal{F}\,c_1 = \cal{F}\,c_2$.
-\end{itemize}
-\end{proof}
+% Whereas the technique described in \cref{ssec:resolution} can be used to reconstruct resolution proofs in Alethe proof traces, it suffers from poor scalability.
+% Specifically, the permutation proof generated for pivot movement due to reasoning modulo AC may become excessively lengthy. We will now describe an alternative technique based on computational reflection that allows us to prove the permutation of clauses efficiently.
+% Relying on the rewriting facilities of Lambdapi, we implemented a decision procedure that checks equality between clauses by rewriting modulo AC-canonization.
+
+% The core idea is to put clauses with pivots in different positions into a canonical form, allowing them to be compared. To achieve this, we present a proof by reflection of the second class in the following.
+% If two clauses are determined to be equal, the current clause can be substituted with one where the pivot is placed at the head position, allowing for the subsequent application of \cref{lemma:resolution}.
+% To handle associative and commutative symbols, Lambdapi provides the modifiers \lpinline{associative commutative} \info{ac}{the introduction of Lambdapi will present AC and its builtin order},
+% ensuring that terms are systematically placed into a canonical form given a builtin ordering relation, following the technique described in \cite{ACorigin} and \cite[\S 5]{univAC}.
+
+% Additionally, as discussed in \cref{sect:elabration-resolution} \change{ac}{Need Alethe intro}, the solver can introduce implicit $\tt{contraction}$ steps between binary resolution steps.
+% We leverage the elaboration process in Carcara to avoid implementing a proof by reflection for $\tt{contraction}$, which would require structures not present in the standard library of Lambdapi to reason about collections modulo duplicate terms, such as finite sets.
+
+% \begin{figure}[t]
+%   \centering
+%   \begin{tikzcd}[column sep=tiny]
+%     {C_1 =_{\bb{C}} C_2} & {\bb{C}} && {\bb{C}} & {[C_1] =_{\bb{C}} [C_2]} \\
+%     \\
+%     {c_1 =_{\tt{Clause}} c_2} & \kw{Clause} && \kw{Clause} & {\den{[C_1]} =_{\tt{Clause}} \den{[C_2]}}
+%     \arrow["{{[\_]}}", dotted, from=1-2, to=1-4]
+%     \arrow["{{\den{\_}}}", from=1-4, to=3-4]
+%     \arrow["{{\reify{\_}}}"', from=3-2, to=1-2]
+%     \arrow["{\Leftrightarrow}"{marking, allow upside down}, draw=none, from=3-2, to=3-4]
+%   \end{tikzcd}
+%   \caption{Checking resolution steps via reification in the algebra $\bb{C}$.}
+%   \label{fig:reflective-process}
+% \end{figure}
+
+% The \cref{fig:reflective-process} provides an overview of the realization of this technique in Lambdapi.
+% It relies on \emph{reifying} clauses into terms of an algebra $\bb{C}$, using the operator $\reify{}$ defined in \cref{def:reify-def},
+% and we denote by $[t]$ the normalization of term $t$ based on the \lpinline{associative commutative} modifiers.
+% This normalization corresponds to the function $g$ introduced in \cref{ssec:reflection-intro}.
+% Since we rely on the built-in Lambdapi modifiers, normalization is implicitly handled by \lpm, and thus the function $[\_]: \bb{C} \rightarrow \bb{C} \coloneq \lambda x., x$ is simply the identity.
+
+% \begin{definition}[The abstract type $\bb{C}$]
+% The \emph{abstract type} $\bb{C}$ is an inductive type defined as follows:
+% \begin{align*}
+% &\bb{C} : \type \\
+% &|~\eps: \bb{C} \\
+% &|~\kw{P}: \prop \ra \bb{C} \\
+% &|~\sqcup: \bb{C} \ra \bb{C} \ra \bb{C} \quad \text{(written infix)} \\
+% &\kw{clauseAC} : \set \\
+% &\el\, \kw{clauseAC} \re \bb{C} \\
+% \end{align*}
+% where the constructor $\eps: \bb{C}$ represents $\nil$ and the constructor $\sqcup$ is declared \lpinline{associative commutative}, which is the analogue of $\cons$.
+% Propositions are injected into the algebra by the operator $\tt{P}$.
+% \end{definition}
+
+% \begin{definition}[reification function]
+% \begin{align*}
+% & \reify{}: \texttt{Clause} \ra \bb{C} \\
+% &\reify{(x \cons y)} \re \kw{P}~x \,\sqcup \reify{y} \\
+% &\reify{ \blacksquare } \re \epsilon \\
+% \end{align*}
+% \label{def:reify-def}
+% \end{definition}
+
+% It then remains to decide the equality of two terms in $\bb{C}$, and this is accomplished using the operator $=_\bb{C}$ introduced in \cref{def:eqC}.
+% Its definition relies on Boolean conjunction \kw{andb} (written infix), which is predefined in Lambdapi's standard library, as well as on the operator \kw{eq} that checks equality of two terms of type $\prop$.
+
+% \begin{definition}[decidable equivalence relation]
+% The operator $=_\bb{C} : \bb{C} \ra \bb{C} \ra \kw{bool}$ is defined by the following rewrite rules.
+
+% \begin{align*}
+% &x_1 \sqcup y_1 =_\bb{C} x_2 \sqcup y_2 \re (x_1  =_\bb{C} x_2) ~\kw{andb}~ (y_1  =_\bb{C} y_2) \\
+% &\_ \sqcup \_ =_\bb{C} \epsilon \re \false \\
+% &\_ \sqcup \_ =_\bb{C} \kw{P}(\_) \re \false \\
+% &\kw{P}(x) =_\bb{C} \kw{P}(y) \re (\kw{eq}~x~y) \\
+% &\kw{P}(\_) =_\bb{C} \_ \sqcup \_ \re \false \\
+% &\kw{P}(\_) =_\bb{C} \epsilon \re \false \\
+% &\epsilon =_\bb{C} \epsilon \re \true \\
+% &\epsilon =_\bb{C} \kw{P}(\_) \re \false \\
+% &\epsilon =_\bb{C} \_ \sqcup \_ \re \false
+% \end{align*}
+% with:
+% \begin{align*}
+% &\eq~x~x~ \re \true  & \kw{andb}~\kw{true}~\kw{true} \re \kw{true} \\
+% &\eq~x~y~ \re \false & \kw{andb}~\kw{false}~\_ \re \kw{false} \\
+% & & \kw{andb}~\_~\kw{false} \re \kw{false}
+% \end{align*}
+% \label{def:eqC}
+% The binary operator \kw{eq} is declared as \lpinline{sequential} so that the second rewrite rule will be applied only if the first one fails.
+% Its definition ensures that $\kw{eq}~x~y$ holds if and only if the two propositions $x$ and $y$ are identical.
+% \end{definition}
+
+% We now state the correctness theorem, demonstrating that a given clause is a permutation of another.
+
+% \begin{lemma}[P-injective]\label{lem:p-inj}
+% For any $x, y: \prop$, if $\kw{istrue}(\cal{P}(x) =_{\bb{C}} \cal{P}(y))$ then $x = y$.
+% \begin{proof}
+% From the definition of $=_{\bb{C}}$ that uses a non-linear sequential rewriting rule,
+% it follows directly that if $\cal{P}(x) =_{\bb{C}} \cal{P}(y)$ is true then $x$ and $y$ have to be the same.
+% \end{proof}
+% \end{lemma}
+
+
+% \begin{theorem}[Correctness]\label{lem:eq-C}
+% For $c_1, c_2 : \tt{Clause}$, if $\tt{istrue} (\reify{c_1} =_{\bb{C}} \reify{c_2})$ then $\cal{F}\,c_1 = \cal{F}\,c_2$.
+% \end{theorem}
+% \begin{proof}
+% By induction on $c_1$ and $c_2$.
+% \begin{itemize}
+%   \item First suppose $c_1 = \blacksquare$ and $c_2 = \blacksquare$. We must show that $\tt{istrue} (\epsilon =_{\bb{C}} \epsilon)$ implies $\cal{F}\, \blacksquare = \cal{F}\, \blacksquare$ which follows directly by reflexivity.
+%   \item Next, suppose $c_1 = \blacksquare$ and $c_2 = x \veedot xs$. Then it follows from the the rewriting rules of $=_{\bb{C}}$ that we have a contradiction since we supposed that $\tt{istrue}(\epsilon =_{\bb{C}} \cal{P}(x) \sqcup \reify{xs})$.
+%   \item The case where $c_1 = x \veedot xs$ and $c_2 = \blacksquare$ is symmetrical.
+%   \item Lastly, suppose $c_1 = x \veedot xs$ and $c_2 = y \veedot ys$, and
+%   assume that $\tt{istrue}(\reify{c_1} =_{\bb{C}} \reify{c_2})$.
+%   Let $d_1 = \reify{(x \veedot xs)}$ and $d_2 = \reify{(y \veedot ys)}$, then $d_1$ must be of the form
+%   $\cal{P}(u) \sqcup \reify{u'}$ and $d_2$ must be of the form $\cal{P}(v) \sqcup \reify{v'}$ where
+%   the clauses $u'$ and $v'$ are shorter than $xs$ and $ys$, respectively, and such that
+%   $\cal{F}\,(u \veedot u') = \cal{F}\,(c_1)$ and similarly
+%   $\cal{F}\,(v \veedot v') = \cal{F}\,(c_2)$.
+%   Moreover, from the assumption $\tt{istrue}(d_1 =_{\bb{C}} d_2)$ and \cref{lem:p-inj} it follows that
+%   $u = v$, and by induction hypothesis we obtain that $\cal{F}\,u' = \cal{F}\,v'$. Taking everything
+%   together, we finally obtain that $\cal{F}\,c_1 = \cal{F}\,c_2$.
+% \end{itemize}
+% \end{proof}
 
 \begin{example}
 The code in \cref{lst:new-reso} demonstrates how \cref{lem:eq-C} is used to move the pivot within a clause.
