@@ -372,21 +372,6 @@ All operations are total, since results are wrapped modulo $2^n$.
 
 \section{Solving SMT Problems}
 
-The core idea of SMT solving is to combine propositional reasoning with theory reasoning.
-The standard method for propositional reasoning is \emph{conflict-driven clause learning} (CDCL) \cite{dpll}.
-In its extension CDCL($\mathcal{T}$), propositional reasoning is separated from theory reasoning by constructing an abstract version of the input problem in which every literal is replaced by a propositional variable.
-The CDCL engine then decides which propositional variables, and hence which literals, must hold.
-The theory solver checks whether these literals are consistent with the background theory.
-If they are, the problem is solved; otherwise, the theory solver generates new clauses that are added back into the propositional search.
-When the problem contains quantifiers, an additional instantiation component is required.
-
-\begin{remark}
-This style of SMT solving is known as the \emph{lazy} approach.
-By contrast, the \emph{eager} approach encodes the entire input problem directly into propositional logic, ensuring that satisfiability is preserved by the translation.
-The resulting propositional formula can then be handed to any standard SAT solver.
-\end{remark}
-
-
 \begin{figure}
 \begin{tikzpicture}[
   node distance=8pt and 8pt, font=\scriptsize
@@ -438,7 +423,9 @@ The resulting propositional formula can then be handed to any standard SAT solve
 \label{fig:CDCL}
 \end{figure}
 
-\cref{fig:CDCL} illustrates the operation of a CDCL($\mathcal{T}$)-based SMT solver on a problem with quantifiers.
+The core idea of SMT solving is to combine propositional reasoning with theory reasoning.
+The standard method for propositional reasoning is \emph{conflict-driven clause learning} (CDCL) \cite{dpll}.
+The \cref{fig:CDCL} illustrates the operation of a CDCL($\mathcal{T}$)-based SMT solver on a problem with quantifiers.
 The solver first preprocesses the input.
 Then two procedures cooperate to refute the problem: the ground solver, i.e. the combination of the propositional CDCL engine with the theory solvers restricted to quantifier-free formulas, either refutes it at the ground level or produces a ground model.
 For quantifier-free problems this is sufficient, whereas in the presence of quantifiers the instantiation procedure is applied to the ground model, either producing new ground lemmas or establishing satisfiability.
@@ -450,7 +437,6 @@ This produces an equisatisfiable problem $F$ in clause normal form.
 To optimize the ground solver, ground subformulas are fully clausified.
 Quantified formulas, however, are treated differently: they are usually neither converted into prenex form nor clausified, and strong quantifiers \cite{BAAZ2001273} are typically not fully Skolemized.
 Preserving the original structure of quantified formulas is crucial for certain instantiation techniques.
-
 
 Preprocessing also includes lightweight rewriting of formulas.
 For example, the term $(\bot \to \varphi_1) \to \varphi_2$ is simplified to $\varphi_2$.
@@ -470,6 +456,102 @@ Otherwise, the propositional model is passed to the theory solvers.
 Their operation depends on the background theories involved, and their calculi may differ substantially.
 When multiple theories are present, their solvers must also be combined.
 In all cases, the theory solver evaluates the candidate model: if it is consistent with the theories, the literals constitute a ground model of the quantifier-free fragment of the sentence; otherwise, contradictions are reported back.
+
+\begin{remark}
+This style of SMT solving is known as the \emph{lazy} approach.
+By contrast, the \emph{eager} approach encodes the entire input problem directly into propositional logic, ensuring that satisfiability is preserved by the translation.
+The resulting propositional formula can then be handed to any standard SAT solver.
+\end{remark}
+
+
+\begin{algorithm}
+\caption{CDCL: algorithmic view}
+\label{alg:cdcl}
+\begin{algorithmic}[1]
+\Procedure{SAT}{$C$}
+  \While{$\top$}
+    \If{Propagate()}
+      \If{$\lnot$Decide()}
+        \State \textbf{return} SAT
+      \EndIf
+      \State \textbf{continue}
+    \EndIf
+    \If{level = 0}
+      \State \textbf{return} UNSAT
+    \EndIf
+    \State Analyse()
+    \State Backtrack()
+  \EndWhile
+\EndProcedure
+\end{algorithmic}
+\begin{itemize}
+  \item[] \textbf{Propagate}: find unit clauses repeatedly and push literals on the stack. Returns $\perp$ iff unsatisfied clause
+  \item[] \textbf{Decide}: chooses one non-assigned literal, push on stack. Returns $\perp$ iff no literal
+  \item[] \textbf{Analyse}: analyse the conflict from propagate, create conflict clause, add it in the set of clauses
+  \item[] \textbf{Backtrack}: backtrack (eliminate literals from stack) until conflict clause is unit
+\end{itemize}
+\end{algorithm}
+
+
+The \cref{alg:cdcl} outlines the high-level workflow of CDCL, which iteratively:
+\begin{enumerate}
+    \item decide a truth value to an unassigned variable,
+    \item perform \emph{unit propagation},
+    \item On conflict, derive a clause to block this and related conflicts, then
+    \item backjumps non-chronologically using conflict analysis to skip irrelevant decisions.
+\end{enumerate}
+where \emph{unit propagation} automatically assigns the only remaining literal in a clause to satisfy it (e.g., if $(\neg x \lor y)$ has $x = \true$, then $y$ must be true).
+This repeats until no such literals exist or a conflict is found.
+
+\begin{example}[CDCL execution]
+To illustrate the procedure, consider the trace generated from the clause set below: 
+\[
+\begin{array}{ll}
+C_{1}: & x_{1} \lor x_{2} \\
+C_{2}: & \lnot x_{2} \lor \lnot x_{3} \\
+C_{3}: & \lnot x_{2} \lor \lnot x_{4} \lor \lnot x_{5} \\
+C_{4}: & x_{3} \lor x_{5} \lor x_{6} \\
+C_{5}: & x_{7} \lor \lnot x_{6} \lor \lnot x_{8} \\
+C_{6}: & \lnot x_{4} \lor x_{8} \lor x_{9} \\
+C_{7}: & x_{10} \lor \lnot x_{9} \lor x_{11} \\
+C_{8}: & \lnot x_{11} \lor x_{8} \lor \lnot x_{12} \\
+C_{9}: & x_{12} \lor \lnot x_{13} \\
+C_{10}: & x_{7} \lor x_{12} \lor x_{14} \\
+C_{11}: & \lnot x_{6} \lor x_{12} \lor x_{15} \\
+C_{12}: & x_{13} \lor \lnot x_{14} \lor \lnot x_{16} \\
+C_{13}: & \lnot x_{15} \lor \lnot x_{14} \lor x_{16} \\
+\end{array}
+\]
+We have the trace:
+\[
+\begin{tabular}{l l}
+\textcolor{RoyalBlue}{$\blacktriangleright$} No unit clause: decide $\lnot x_{1}$ & $\lnot x_{1}$ \\
+\textcolor{RoyalBlue}{$\blacktriangleright$} $C_{1}$: propagate $x_{2}$ & $x_{2}/C_{1}$ \\
+\textcolor{RoyalBlue}{$\blacktriangleright$} $C_{2}$: propagate $\lnot x_{3}$ & $\lnot x_{3}/C_{2}$ \\
+\textcolor{RoyalBlue}{$\blacktriangleright$} No unit clause: decide $x_{4}$ & $x_{4}$ \\
+\textcolor{RoyalBlue}{$\blacktriangleright$} $C_{3}$: propagate $\lnot x_{5}$ & $\lnot x_{5}/C_{3}$ \\
+\textcolor{RoyalBlue}{$\blacktriangleright$} $C_{4}$: propagate $x_{6}$ & $x_{6}/C_{4}$ \\
+\textcolor{RoyalBlue}{$\blacktriangleright$} No unit clause: decide $\lnot x_{7}$ & $\lnot x_{7}$ \\
+\textcolor{RoyalBlue}{$\blacktriangleright$} $C_{5}$: propagate $\lnot x_{8}$ & $\lnot x_{8}/C_{5}$ \\
+\textcolor{RoyalBlue}{$\blacktriangleright$} $C_{6}$: propagate $x_{9}$ & $x_{9}/C_{6}$ \\
+\textcolor{RoyalBlue}{$\blacktriangleright$} No unit clause: decide $\lnot x_{10}$ & $\lnot x_{10}$ \\
+\textcolor{RoyalBlue}{$\blacktriangleright$} $C_{7}$: propagate $x_{11}$ & $x_{11}/C_{7}$ \\
+\textcolor{RoyalBlue}{$\blacktriangleright$} $C_{8}$: propagate $\lnot x_{12}$ & $\lnot x_{12}/C_{8}$ \\
+\textcolor{RoyalBlue}{$\blacktriangleright$} $C_{9}$: propagate $\lnot x_{13}$ & $\lnot x_{13}/C_{9}$ \\
+\textcolor{RoyalBlue}{$\blacktriangleright$} $C_{10}$: propagate $x_{14}$ & $x_{14}/C_{10}$ \\
+\textcolor{RoyalBlue}{$\blacktriangleright$} $C_{11}$: propagate $x_{15}$ & $x_{15}/C_{11}$ \\
+\textcolor{RoyalBlue}{$\blacktriangleright$} $C_{12}$: propagate $\lnot x_{16}$ & $\lnot x_{16}/C_{12}$ \\
+\textcolor{RoyalBlue}{$\blacktriangleright$} $C_{13}$: propagate $x_{16}$ & $x_{16}/C_{13}$ \\
+\textcolor{RoyalBlue}{$\blacktriangleright$} \textcolor{red}{Conflict} & \\
+\end{tabular}
+\]
+The solver first decides $\lnot x_{1}$, which by unit propagation yields $x_{2}$ from clause $C_{1}$ and subsequently $\lnot x_{3}$ from clause $C_{2}$. 
+A new decision $x_{4}$ is then made; clause $C_{3}$ forces $\lnot x_{5}$, and clause $C_{4}$ forces $x_{6}$. 
+Since no further unit clauses are available, the solver decides $\lnot x_{7}$, which triggers $\lnot x_{8}$ from $C_{5}$ and $x_{9}$ from $C_{6}$. 
+Next, the decision $\lnot x_{10}$ initiates a series of propagations: $x_{11}$ from $C_{7}$, $\lnot x_{12}$ from $C_{8}$, $\lnot x_{13}$ from $C_{9}$, $x_{14}$ from $C_{10}$, and $x_{15}$ from $C_{11}$. 
+Finally, clause $C_{12}$ propagates $\lnot x_{16}$, while clause $C_{13}$ simultaneously requires $x_{16}$, producing a direct contradiction. 
+This conflict demonstrates that the assignment trail cannot be extended further, and the explored branch is therefore unsatisfiable.
+\end{example}
 
 \section{SMT proof}
 \label{sec:smt-proof}
