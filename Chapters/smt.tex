@@ -3,7 +3,7 @@
 
 \section{SMT Solvers}
 
-Satisfiability Modulo Theories (SMT) \cite{Barrett2021SatisfiabilityMT} solvers are automated reasoning tools that extend SAT solving \cite{chaff,minitsat}, combining propositional search with reasoning in background theories.
+Satisfiability Modulo Theories (SMT) \cite{Barrett2021SatisfiabilityMT} extend SAT solving \cite{chaff,minitsat}, combining propositional search with reasoning in background theories.
 These theories formalize some fundamental data types of computer science, including integers and rationals, floating-point numbers, strings, arrays, sequences, records, and finite sets.
 By incorporating the essential algebraic properties of such types as built-in reasoning modules, SMT solvers can handle them natively rather than treating them as uninterpreted.
 SMT solvers are widely used in software and hardware verification \cite{application-smt-hardware}, constraint solving \cite{awssmt,application-smt2}, and are integrated into interactive theorem prover for automated theorem proving \cite{coqhammer1,Sledgehammer, fstar,dafny, vyper}.
@@ -253,8 +253,6 @@ Equality, denoted by $\simeq$ (= in SMT-LIB), is also part of this theory.
 The \emph{Core theory} does not contain a dedicated ``if and only if'' connective.
 Instead equality with Boolean sorts is used.
 
-\question{ac}{add distinct + ite def?}
-
 \begin{remark}
 Since SMT-LIB is restricted to ASCII characters, it uses the strings \smtinline{and, or, not, =>, xor} for boolean  connectives. 
 \end{remark}
@@ -321,51 +319,51 @@ The same consideration applies to integer division (\texttt{div}).
 \toprule
 \textbf{Symbol} & \textbf{String} & \textbf{Rank} \\
 \midrule
-$\sim$ & \tt{bvnot} & \(\mathrm{BitVec}\;n\)\; \(\mathrm{BitVec}\;n\) \\
-$!$   & \tt{bvneg} & \(\mathrm{BitVec}\;n\)\; \(\mathrm{BitVec}\;n\) \\
-$\&\&$ & \tt{bvand} & \(\mathrm{BitVec}\;n\)\; \(\mathrm{BitVec}\;n\)\; \(\mathrm{BitVec}\;n\) \\
-$||$  & \tt{bvor}  & \(\mathrm{BitVec}\;n\)\; \(\mathrm{BitVec}\;n\)\; \(\mathrm{BitVec}\;n\) \\
-$\oplus$& \tt{bvxor} & \(\mathrm{BitVec}\;n\)\; \(\mathrm{BitVec}\;n\)\; \(\mathrm{BitVec}\;n\) \\
-$\uparrow$ & \tt{bvnand} & \(\mathrm{BitVec}\;n\)\; \(\mathrm{BitVec}\;n\)\; \(\mathrm{BitVec}\;n\) \\
-$\downarrow$ & \tt{bvnor}  & \(\mathrm{BitVec}\;n\)\; \(\mathrm{BitVec}\;n\)\; \(\mathrm{BitVec}\;n\) \\
-$\odot$ & \tt{bvxnor} & \(\mathrm{BitVec}\;n\)\; \(\mathrm{BitVec}\;n\)\; \(\mathrm{BitVec}\;n\) \\
-$+$ & \tt{bvadd} & \(\mathrm{BitVec}\;n\)\; \(\mathrm{BitVec}\;n\)\; \(\mathrm{BitVec}\;n\) \\
-$-$ & \tt{bvsub} & \(\mathrm{BitVec}\;n\)\; \(\mathrm{BitVec}\;n\)\; \(\mathrm{BitVec}\;n\) \\
-$\times$ & \tt{bvmul} & \(\mathrm{BitVec}\;n\)\; \(\mathrm{BitVec}\;n\)\; \(\mathrm{BitVec}\;n\) \\
-/\(_u\) & \tt{bvudiv} & \(\mathrm{BitVec}\;n\)\; \(\mathrm{BitVec}\;n\)\; \(\mathrm{BitVec}\;n\) \\
-/\(_s\) & \tt{bvsdiv} & \(\mathrm{BitVec}\;n\)\; \(\mathrm{BitVec}\;n\)\; \(\mathrm{BitVec}\;n\) \\
-$\bmod_u$ & \tt{bvurem} & \(\mathrm{BitVec}\;n\)\; \(\mathrm{BitVec}\;n\)\; \(\mathrm{BitVec}\;n\) \\
-$\bmod_s$ & \tt{bvsrem} & \(\mathrm{BitVec}\;n\)\; \(\mathrm{BitVec}\;n\)\; \(\mathrm{BitVec}\;n\) \\
-$\mathrm{mod}_s$ & \tt{bvsmod} & \(\mathrm{BitVec}\;n\)\; \(\mathrm{BitVec}\;n\)\; \(\mathrm{BitVec}\;n\) \\
-$\ll$ & \tt{bvshl}  & \(\mathrm{BitVec}\;n\)\; \(\mathrm{BitVec}\;n\)\; \(\mathrm{BitVec}\;n\) \\
-$\gg_u$ & \tt{bvlshr} & \(\mathrm{BitVec}\;n\)\; \(\mathrm{BitVec}\;n\)\; \(\mathrm{BitVec}\;n\) \\
-$\gg_s$ & \tt{bvashr} & \(\mathrm{BitVec}\;n\)\; \(\mathrm{BitVec}\;n\)\; \(\mathrm{BitVec}\;n\) \\
-$\circ$ & \tt{concat} & \(\mathrm{BitVec}\;n\)\; \(\mathrm{BitVec}\;m\)\; \(\mathrm{BitVec}\;(n{+}m)\) \\
-— & \tt{(\_ extract i j)} & \(\mathrm{BitVec}\;n\)\; \(\mathrm{BitVec}\;(i{-}j{+}1)\) \\
-— & \tt{(\_ repeat k)} & \(\mathrm{BitVec}\;n\)\; \(\mathrm{BitVec}\;(k\cdot n)\) \\
-— & \tt{(\_ zero\_extend k)} & \(\mathrm{BitVec}\;n\)\; \(\mathrm{BitVec}\;(n{+}k)\) \\
-— & \tt{(\_ sign\_extend k)} & \(\mathrm{BitVec}\;n\)\; \(\mathrm{BitVec}\;(n{+}k)\) \\
-— & \tt{(\_ rotate\_left k)} & \(\mathrm{BitVec}\;n\)\; \(\mathrm{BitVec}\;n\) \\
-— & \tt{(\_ rotate\_right k)} & \(\mathrm{BitVec}\;n\)\; \(\mathrm{BitVec}\;n\) \\
-$<$\(_u\) & \tt{bvult} & \(\mathrm{BitVec}\;n\)\; \(\mathrm{BitVec}\;n\)\; Bool \\
-$\le$\(_u\) & \tt{bvule} & \(\mathrm{BitVec}\;n\)\; \(\mathrm{BitVec}\;n\)\; Bool \\
-$>$\(_u\) & \tt{bvugt} & \(\mathrm{BitVec}\;n\)\; \(\mathrm{BitVec}\;n\)\; Bool \\
-$\ge$\(_u\) & \tt{bvuge} & \(\mathrm{BitVec}\;n\)\; \(\mathrm{BitVec}\;n\)\; Bool \\
-$<$\(_s\) & \tt{bvslt} & \(\mathrm{BitVec}\;n\)\; \(\mathrm{BitVec}\;n\)\; Bool \\
-$\le$\(_s\) & \tt{bvsle} & \(\mathrm{BitVec}\;n\)\; \(\mathrm{BitVec}\;n\)\; Bool \\
-$>$\(_s\) & \tt{bvsgt} & \(\mathrm{BitVec}\;n\)\; \(\mathrm{BitVec}\;n\)\; Bool \\
-$\ge$\(_s\) & \tt{bvsge} & \(\mathrm{BitVec}\;n\)\; \(\mathrm{BitVec}\;n\)\; Bool \\
-\tt{bvcomp} & \tt{bvcomp} & \(\mathrm{BitVec}\;n\)\; \(\mathrm{BitVec}\;n\)\; \(\mathrm{BitVec}\;1\) \\
-\tt{int2bv} & \tt{((\_ \tt{int2bv}~n))} & Int \;\(\mathrm{BitVec}\;n\) \\
-\tt{bv2int} & \tt{bv2int} & \(\mathrm{BitVec}\;n\)\; Int \\
+$\sim$ & \tt{bvnot} & \(\mathrm{BV}\;n\)\; \(\mathrm{BV}\;n\) \\
+$!$   & \tt{bvneg} & \(\mathrm{BV}\;n\)\; \(\mathrm{BV}\;n\) \\
+$\&\&$ & \tt{bvand} & \(\mathrm{BV}\;n\)\; \(\mathrm{BV}\;n\)\; \(\mathrm{BV}\;n\) \\
+$||$  & \tt{bvor}  & \(\mathrm{BV}\;n\)\; \(\mathrm{BV}\;n\)\; \(\mathrm{BV}\;n\) \\
+$\oplus$& \tt{bvxor} & \(\mathrm{BV}\;n\)\; \(\mathrm{BV}\;n\)\; \(\mathrm{BV}\;n\) \\
+$\uparrow$ & \tt{bvnand} & \(\mathrm{BV}\;n\)\; \(\mathrm{BV}\;n\)\; \(\mathrm{BV}\;n\) \\
+$\downarrow$ & \tt{bvnor}  & \(\mathrm{BV}\;n\)\; \(\mathrm{BV}\;n\)\; \(\mathrm{BV}\;n\) \\
+$\odot$ & \tt{bvxnor} & \(\mathrm{BV}\;n\)\; \(\mathrm{BV}\;n\)\; \(\mathrm{BV}\;n\) \\
+$+$ & \tt{bvadd} & \(\mathrm{BV}\;n\)\; \(\mathrm{BV}\;n\)\; \(\mathrm{BV}\;n\) \\
+$-$ & \tt{bvsub} & \(\mathrm{BV}\;n\)\; \(\mathrm{BV}\;n\)\; \(\mathrm{BV}\;n\) \\
+$\times$ & \tt{bvmul} & \(\mathrm{BV}\;n\)\; \(\mathrm{BV}\;n\)\; \(\mathrm{BV}\;n\) \\
+/\(_u\) & \tt{bvudiv} & \(\mathrm{BV}\;n\)\; \(\mathrm{BV}\;n\)\; \(\mathrm{BV}\;n\) \\
+/\(_s\) & \tt{bvsdiv} & \(\mathrm{BV}\;n\)\; \(\mathrm{BV}\;n\)\; \(\mathrm{BV}\;n\) \\
+$\bmod_u$ & \tt{bvurem} & \(\mathrm{BV}\;n\)\; \(\mathrm{BV}\;n\)\; \(\mathrm{BV}\;n\) \\
+$\bmod_s$ & \tt{bvsrem} & \(\mathrm{BV}\;n\)\; \(\mathrm{BV}\;n\)\; \(\mathrm{BV}\;n\) \\
+$\mathrm{mod}_s$ & \tt{bvsmod} & \(\mathrm{BV}\;n\)\; \(\mathrm{BV}\;n\)\; \(\mathrm{BV}\;n\) \\
+$\ll$ & \tt{bvshl}  & \(\mathrm{BV}\;n\)\; \(\mathrm{BV}\;n\)\; \(\mathrm{BV}\;n\) \\
+$\gg_u$ & \tt{bvlshr} & \(\mathrm{BV}\;n\)\; \(\mathrm{BV}\;n\)\; \(\mathrm{BV}\;n\) \\
+$\gg_s$ & \tt{bvashr} & \(\mathrm{BV}\;n\)\; \(\mathrm{BV}\;n\)\; \(\mathrm{BV}\;n\) \\
+$\circ$ & \tt{concat} & \(\mathrm{BV}\;n\)\; \(\mathrm{BV}\;m\)\; \(\mathrm{BV}\;(n{+}m)\) \\
+— & \tt{extract i j} & \(\mathrm{BV}\;n\)\; \(\mathrm{BV}\;(i{-}j{+}1)\) \\
+— & \tt{repeat k} & \(\mathrm{BV}\;n\)\; \(\mathrm{BV}\;(k\cdot n)\) \\
+— & \tt{zero\_extend k} & \(\mathrm{BV}\;n\)\; \(\mathrm{BV}\;(n{+}k)\) \\
+— & \tt{sign\_extend k} & \(\mathrm{BV}\;n\)\; \(\mathrm{BV}\;(n{+}k)\) \\
+— & \tt{rotate\_left k} & \(\mathrm{BV}\;n\)\; \(\mathrm{BV}\;n\) \\
+— & \tt{rotate\_right k} & \(\mathrm{BV}\;n\)\; \(\mathrm{BV}\;n\) \\
+$<$\(_u\) & \tt{bvult} & \(\mathrm{BV}\;n\)\; \(\mathrm{BV}\;n\)\; Bool \\
+$\le$\(_u\) & \tt{bvule} & \(\mathrm{BV}\;n\)\; \(\mathrm{BV}\;n\)\; Bool \\
+$>$\(_u\) & \tt{bvugt} & \(\mathrm{BV}\;n\)\; \(\mathrm{BV}\;n\)\; Bool \\
+$\ge$\(_u\) & \tt{bvuge} & \(\mathrm{BV}\;n\)\; \(\mathrm{BV}\;n\)\; Bool \\
+$<$\(_s\) & \tt{bvslt} & \(\mathrm{BV}\;n\)\; \(\mathrm{BV}\;n\)\; Bool \\
+$\le$\(_s\) & \tt{bvsle} & \(\mathrm{BV}\;n\)\; \(\mathrm{BV}\;n\)\; Bool \\
+$>$\(_s\) & \tt{bvsgt} & \(\mathrm{BV}\;n\)\; \(\mathrm{BV}\;n\)\; Bool \\
+$\ge$\(_s\) & \tt{bvsge} & \(\mathrm{BV}\;n\)\; \(\mathrm{BV}\;n\)\; Bool \\
+\tt{bvcomp} & \tt{bvcomp} & \(\mathrm{BV}\;n\)\; \(\mathrm{BV}\;n\)\; \(\mathrm{BV}\;1\) \\
+\tt{int2bv} & \tt{((\_ \tt{int2bv}~n))} & Int \;\(\mathrm{BV}\;n\) \\
+\tt{bv2int} & \tt{bv2int} & \(\mathrm{BV}\;n\)\; Int \\
 \bottomrule
 \end{tabular}
-\caption{SMT-LIB Bit-Vector theory function symbols (sizes \(n,m,k,i,j\) are numerals).}
+\caption{SMT-LIB Bit-Vector (BV) theory function symbols\\ (sizes \(n,m,k,i,j\) are numerals).}
 \label{tab:bv-funs}
 \end{table}
 
 Bitvectors in SMT-LIB are defined by the theory \textbf{BV}.
-Its signature introduces the sort \smtinline{(BitVec n)} for every fixed width $n \geq 1$, together with the function symbols listed in \cref{tab:bv-funs}.
+Its signature introduces the sort \smtinline{(BV n)} for every fixed width $n \geq 1$, together with the function symbols listed in \cref{tab:bv-funs}.
 The semantics of these operations follow standard fixed-width, two's complement bitvector arithmetic, including modular addition, subtraction, multiplication, and division, as well as bitwise logical and shift operators.
 All operations are total, since results are wrapped modulo $2^n$.
 
