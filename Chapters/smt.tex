@@ -15,7 +15,7 @@ Formally, this amounts to proving that $F$ is \emph{valid}. To verify validity w
 if the \emph{negation} of the formula, $\neg F$,  is false in all cases i.e. \emph{unsatisfiable}. A proof of the \emph{unsatisfiability} of $\neg F$ provides evidence that $F$ is valid.
 Thus, SMT solvers provide not only a means of solving constraints but also a method for establishing theorems, since valid formulas are commonly referred to as theorems.
 
-Modern \emph{hammer} tools, such as CoqHammer \cite{coqhammer1} for Rocq \cite{Rocq-refman}, Sledgehammer \cite{Sledgehammer} for Isabelle/HOL \cite{isabelle-hol-ref}, and the SMT integration in Lean \cite{lean-smt}, make systematic use of SMT solvers to automate proof search.
+Modern \emph{hammer} tools, such as CoqHammer \cite{coqhammer1} for Rocq \cite{Rocq-refman} or Sledgehammer \cite{Sledgehammer} for Isabelle/HOL \cite{isabelle-hol-ref}, and the SMT integration in Lean \cite{lean-smt}, use of SMT solvers to automate proof search.
 Their purpose is to bridge interactive theorem provers with powerful automated reasoning backends.
 Given a conjecture, the hammer translates the goal and relevant lemmas into a form suitable for external solvers, including SMT solvers, and then attempts to discharge the proof obligation automatically.
 If the SMT solver succeeds in showing that the translated problem is valid, the hammer reconstructs or certifies a corresponding proof inside the interactive prover.
@@ -42,7 +42,7 @@ t ::= x \pipe f~t^* \pipe f^\sigma t^* \pipe \exists (x: \sigma)^+. t \pipe \for
 The notation $()^*$ denotes a possibly empty and finite list, and $()^+$ a finite list with at least one member.
 \end{definition}
 
-A sort designates the logical type associated with terms, variables, and functions, thereby defining the domain of discourse within a given theory.
+A sort designates the logical type associated with terms, variables, and functions, thereby defining the domain of discourse for a given theory.
 Sorts provide the formal structure necessary to ensure that formulas are well-formed, preventing ill-formed operations across incompatible domains.
 Since the SMT-LIB logic is many-sorted, every term has an associated sort $\sigma$.
 To avoid ambiguous sorts, there is a syntax to concretize the sort of a function symbol $f^\sigma$.
@@ -136,7 +136,7 @@ To define the semantics of the SMT-LIB logic, we use the notion of $\Theta$-stru
     The mapping is such that $U = \bigcup_{\sigma \in \Theta^{S}} I(\sigma)$.
     \item For each sort $\sigma_1 \dots \sigma_n \sigma$, $I(\sigma_1 \dots \sigma_n \sigma)$ is the set of total functions from $I(\sigma_1) \times \dots \times I(\sigma_n)$ to $I(\sigma)$.
     \item $I(\mathsf{Bool}) = \{\mathsf{true}, \mathsf{false}\}$, where $\mathsf{true}$ and $\mathsf{false}$ are distinct and both are elements of $U$.
-    \item Each ranked function symbol $f : \sigma$ (i.e., each constant) is mapped such that $I(f : \sigma) \in I(\sigma)$.
+    \item Each ranked function symbol $f:\sigma$ (i.e. constant) is mapped such that $I(f : \sigma) \in I(\sigma)$.
     \item Each ranked function symbol $f : \sigma_1 \dots \sigma_n \sigma \in \Theta$ is mapped to a total function in $I(\sigma_1 \dots \sigma_n \sigma)$.
 \end{itemize}
 \end{definition}
@@ -238,9 +238,9 @@ that belong to $\cal{T}$.
 
 Defining theories this way gives us the flexibility to declare theories as either specific models, or as the $\Theta$-structures that satisfies a set of sentences which are called axioms.
 
-\begin{definition}[Satisfiability and Entailment In a Theory]
-A $\Theta$-sequence is satisfiable in a theory $\cal{T}$ if and only if it is satisfied by one of the models
-of $\cal{T}$. A set $\Gamma$ of $\Theta$-sequences $\cal{T}$-entails a $\Theta$-sequence $\varphi$ denoted
+\begin{definition}[Satisfiability in a theory]
+A $\Theta$-sequence is satisfiable in a theory $\cal{T}$ if and only if it is satisfied by one of the models of $\cal{T}$.
+A set $\Gamma$ of $\Theta$-sequences $\cal{T}$-entails a $\Theta$-sequence $\varphi$ denoted
 $\Gamma \models_{\cal{T}} \varphi$ if and only if every model of $\cal{T}$ that satisfies all sentences in $\Gamma$ satisfies $\varphi$ as well.
 \end{definition}
 
