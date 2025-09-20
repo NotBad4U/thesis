@@ -680,7 +680,7 @@ Let $x : \Z$ be an arithmetic expression. Then reifying $x$ yields a pair $(t, l
 \begin{example}[Application of outer normalisation]\label{ex:outer-recon-example}
 The normalisation of inequalities of steps 1-4 from $\kw{la\_generic}$ algorithm is done simmilarly than \cref{lst:inner-recon-example}.
 
-\lstinputlisting[language=Lambdapi,mathescape=true]{Assets/outer_lia.lp}
+\lstinputlisting[language=Lambdapi,mathescape=true,caption={LIA reconstruction example},label={lst:ex-lia-recon}]{Assets/outer_lia.lp}
 
 To conclude the proof using reflection, both $l$ and $r$ are reified using the $\reify{}$ function at line 20-21, yielding a pair consisting of a syntactic term and a list of variable values.
 The correctness of this reification step is ensured by the \cref{thm:reify-correct} (\texttt{reify\_correct}).

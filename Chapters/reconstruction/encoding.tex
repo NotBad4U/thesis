@@ -217,200 +217,211 @@ CSI \cite{CSI} automatically proves the confluence of $\ra_\bb{Z}$ and $\ra_\bb{
 \label{lemma:confluenceZP}
 \end{lemma}
 
-\section{Representing Linear Arithmetic (\textbf{LA})}
+\section{Representing Linear Arithmetic (\uppercase{\textbf{LA})}}
 \label{ssec:encoding-la}
 
-
-% Rational numbers are formalized using a datatype called rat. This datatype is designed to represent rational numbers as fractions in their reduced form, ensuring mathematical precision and efficiency in proofs.
-% The rat type is defined using a single constructor, Rat, which takes two arguments: an integer numerator and a positive integer denominator.
-% The key aspect of this construction is the enforcement of the invariant that the denominator must always be positive and coprime with the numerator.
-% This invariant guarantees that each rational number is represented uniquely, which simplifies comparisons and arithmetic operations.
-
-% We define the rat type in Lambdapi is as follows:
-
 SMT solver define the sort \smtinline{Real}, but in practice the reconstruction of Alethe proof with the logic \textbf{LA} only require the rational number (\Q) for most of the case.
-In \cref{def:rat}, we follows the encoding of rational from Rocq \cite{Rocq-refman} \textsc{MathComp} library \cite{mathcomp}.
-Rational numbers are represented as an inductive type with a single constructor $\kw{Rat}$, containing a pair of integers and a proof that they are coprime and that the second one is positive.
-This invariant guarantees that each rational number is represented uniquely, which simplifies comparisons and arithmetic operations.
+Our encoding of rationals (\cref{def:rat}) adapts the approach from~\cite{frac-rw}, which employs a balanced ternary numeral system
+\footnote{Balanced ternary is a ternary numeral system (i.e. base $3$ with three digits) that uses a balanced signed digit representation of the integers in which the digits have the values $-1$, $0$, and $1$.}
+to define integers and rationals.
+This representation ensures convergence (modulo AC for addition/multiplication), unique normal forms, and efficient reduction—minimizing the number of steps required to reach normal form.
+However, we replace the ternary encoding with our binary integer representation (\cref{sec:encoding-helper-operator}).
+Our encoding of rational numbers is still a work in progress.
+While core properties, such as normalization and basic arithmetic operations have been formalized, certain lemmas including the associativity of addition and multiplication, are currently accepted and remain to be proven.
 
 \begin{definition}[Rational]\label{def:rat}
-We first define the boolean predicate of being \kw{coprime}. Two integers a and b are coprime if the only positive integer that is a divisor of both of them is $1$.
-\begin{equation*}
-\kw{coprime} (a~b: \el\,\kw{int}): \B \is  \kw{isEq}~(\kw{Zgcd}~|a|~|b| \doteq 1)
-\end{equation*}
-The function $\kw{Zgcd}$ returns the Greatest Common Divisor $(\mathop{GCD})$ between two terms of type $\Z$, and $|\_|$ is the absolute value function.
-We then defines the inductive type:
+We define the type of rationals and some operators as follows:
 \begin{align*}
-& \Q: \type \\
-& |~\kw{Rat}: \Pi\,[a~b: \el\,\kw{int}],\\
-& \quad \prf\, (\kw{istrue} (\kw{isLt} (0 \doteq b) \mathbin{and} \kw{coprime}\,a\,b)) \ra \Q \\[1em]
-&\kw{rat}: \set{} \\
-&\el~\kw{rat} \re \Q
+& \Q: \type            & &\kw{frac}: \Z \ra \Z \ra \Q \\
+& \kw{rat}: \set       & &\slash: \Z \ra \Z \ra \Q \quad \text{(infix)} \\
+& \el\,\kw{rat} \re \Q & &+_\Q : \Q \ra \Q \ra \Q \quad \text{(infix)}\\
+&                      & &*_\Q : \Q \ra \Q \ra \Q \quad \text{(infix)}\\
 \end{align*}
+The symbol \kw{frac} denotes any fraction, while $\slash$ denotes irreducible fractions.
+Since the SMT-LIB standard (\cref{ssec:smt-la}) allows denominators to be zero, , we use $\Z$ instead of $\bb{P}$ but normalize such cases via rewrite rules.
 \end{definition}
 
-In the Following, we will use the notation $\frac{n}{d}$ to denotes a fractional pair of integers.
+The Mathematical Components library \textsc{MathComp} \cite{mathcomp}  in Rocq \cite{Rocq-refman}, and the mathlib library \cite{mathlib} in Lean \cite{lean4:2021} encode rational numbers as pairs of integers reduced by their greatest common divisor (GCD), accompanied by a proof certifying their coprimality and the positivity of the denominator.
+This invariant ensures a canonical representation of each rational number, which simplifies comparisons and arithmetic operations.
 
+In contrast, our approach exploits Lambdapi’s rewrite rules to define normalization rules that automatically yield a canonical form for rational numbers, obviating the need for explicit proofs of the invariant.
+Consequently, our construction consists solely of a pair of integers, eliminating the overhead of carrying invariant proof, unlike the MathComp library’s design.
 
-\begin{example}
-We can define $\frac{0}{1}$ as $(\kw{Rat}~0~1~\top_i)$ since:
-\[
-\prf\, \kw{istrue} (\kw{isLt} (0 \doteq 1) \mathbin{and} \kw{coprime}\,0\,1) \equivL \prf\,\top
-\]
-with $\top_i : \prf\,\top$.
-\end{example}
+A well-known method for reducing a rational number $\frac{x}{y}$ to its normal form is to divide both $x$ and $y$ by their GCD.
+We avoid this due to two complications:
+\begin{enumerate}
+\item Introducing a division operator (risking division-by-zero errors)
+\item Implementing GCD computation separately.
+\end{enumerate}
+Instead, we introduce $\mathop{rgcd}$  in \cref{def:frac}, which simultaneously computes the GCD and divides the inputs by exploiting J. Stein's algorithm \cite{knuth}, an efficient division-free method adapted to binary representations.
 
-This \emph{canonical representation} ensures uniqueness of representation (no two different pairs represent the same rational) and yields a decidable equality.
-Next, we will define a constructor function that will compute reduced fraction from a pair of integers.
-
-The constructor function $\kw{fracq}$, in \cref{def:fracq-def}, normalizes any integer pair to its reduced form and a proof that the invariant holds, so if two inputs represent the same rational number,
-the function $\kw{fracq}$ returns exactly the same $\Q$ value (with identical numerator/denominator and proof) e.g. $\kw{fracq} (2,4) \equivL \kw{fracq} (3,6)$.
-
-\question{ac}{Should I go so much into details or just mention fracq without giving its def?}
-\begin{definition}[fracq constructor]\label{def:fracq-def}
+\begin{definition}[irreducible fractions]\label{def:frac}
+The auxiliary operator $\mathop{stein}$ implements for positive binary integers ($\bb{P}$) the logic to computes the GCD and divides the first inputs, while $\mathop{rgcd}$ extends it to $\Z$ by handling signs:
 \begin{align*}
-& \kw{fracq} : \Z \ra \Z \ra \Q \\
-& \kw{fracq}~\_~Z0 \re \kw{Rat}~0~1~(\kw{fracq\_subproof}~1~0) \\
-& \kw{fracq}~n~d \re \mathop{let} r \is \kw{fracq\_subdef}~(n, d)~\mathbin{in}\\
-& \qquad \qquad \kw{Rat}~r_1~r_2~(\kw{fracq\_subproof}~n~d) \\
+&\kw{frac}~x~y \re ((\mathop{sign}~y) * \mathop{rgcd}~x~y) \slash ((\mathop{sign}~y) * \mathop{rgcd}~y~x) \\[1em]
+& \mathop{stein}: \bb{P} \ra \bb{P} \ra \Z \\
+& \mathop{stein}~H~\_ \;\re\; H \\
+& \mathop{stein}~a~H \;\re\; a \\
+& \mathop{stein}~(\kw{O}~a)~(\kw{O}~b) 
+   \;\re\; \mathop{stein}~a~b \\
+& \mathop{stein}~(\kw{O}~a)~(\kw{I}~b) 
+   \;\re\; \kw{O}~(\mathop{stein}~a~(\kw{I}~b)) \\
+& \mathop{stein}~(\kw{I}~a)~(\kw{O}~b) 
+   \;\re\; \mathop{stein}~(\kw{I}~a)~b \\
+& \mathop{stein}~(\kw{I}~a)~(\kw{I}~b) \\
+&   \;\re\; \begin{cases}
+       H & a = b \\
+       \mathop{stein}~(\kw{I}~a)~(\kw{sub}~(\kw{I}~b)~(\kw{I}~a)) & a < b \\
+       \mathop{stein}~(\kw{I}~a)~(\kw{sub}~(\kw{I}~a)~(\kw{I}~b)) &  a > b
+     \end{cases} \\[1em]
+& \mathop{rgcd}: \Z \ra \Z \ra \Z \\
+& \mathop{rgcd}~\kw{Z0}~\_ \;\re\; \kw{Z0} \\
+& \mathop{rgcd}~a~\kw{Z0} \;\re\; \kw{sign}~a \\
+& \mathop{rgcd}~(\kw{Zpos}~a)~(\kw{Zpos}~b) 
+  \;\re\; \kw{Zpos}~(\mathop{stein}~a~b) \\
+& \mathop{rgcd}~(\kw{Zpos}~a)~(\kw{Zneg}~b) 
+  \;\re\; \kw{Zpos}~(\mathop{stein}~a~b) \\
+& \mathop{rgcd}~(\kw{Zneg}~a)~(\kw{Zpos}~b) 
+  \;\re\; \kw{Zneg}~(\mathop{stein}~a~b) \\
+& \mathop{rgcd}~(\kw{Zneg}~a)~(\kw{Zneg}~b) 
+  \;\re\; \kw{Zneg}~(\mathop{stein}~a~b)
 \end{align*}
-The implementation involves several helper functions and lemmas:
-\begin{align*}
-&\kw{fracq\_subproof} (x~y : \el~int): \\
-& \quad \mathop{let} p \is (\kw{fracq\_subdef}~x~y)~ \mathbin{in}\\
-& \qquad \prf (\kw{istrue} (\kw{isLt} (0 \doteq p\,{}_2) \mathbin{and} \kw{coprime}\,p\,{}_1\,p\,{}_2)) \\
-&\text{and}\\
-& \kw{fracq\_subdef} (x : \el (\kw{int} \times \kw{int})): \el (\kw{int} \times \kw{int}) \\
-& \kw{fracq\_subdef}~(x, y) \re\\
-& \quad \kw{if}~(\kw{isLt} (0 \doteq y) \mathbin{and} \kw{coprime}\,x\,y)\\
-& \quad \mathop{then}~(x,y) \\
-& \quad \mathop{else}~\mathop{if}~(y \neq 0)~\mathop{then} \\
-& \qquad \mathop{let}~g \is \kw{Zgcd}(x,y)~ \mathbin{in}  \\
-& \qquad\qquad (-1^{(IsLt0(x) + IsLt0(y)))} * \mathop{div}~|x|~g‚ \mathop{div}~|y|~g) \\
-& \qquad \mathop{else}~(0,1) \\
-\end{align*}
-Where
-\begin{itemize}
-\item $\kw{fracq\_subproof}$ :  A lemma proving that the result of:\\
-  $\kw{fracq\_subdef}$ satisfies the required invariant,
-\item $\kw{fracq\_subdef}$ : A helper function that computes the fractional part of a pair of integers.
-It returns a positive denominator, and a sign encoded in the numerator. If the numerator is zero, the pair is replaced by $(0, 1)$.
-Following the approach of \textsc{MathComp}, we imposes a computational normalization convention: whenever an invalid pair $(n, 0)$ is encountered, it is systematically mapped to a default rational $\frac{0}{1}$.
-This ensures the normalization operation is total, deterministic, and easily computable without special case-handling downstream.
-
-\item $\kw{IsLt0}: \Z \ra \Z$, a function that return $1$ if the argument is lower than $0$, and $0$ otherwise.
-\end{itemize}
+Here, $\kw{sign}$ returns the sign of the argument in $\{-1, 1\}$, and $\kw{sub}: \bb{P} \ra \bb{P} \ra \bb{P}$ implements subtraction on binary numbers.
 \end{definition}
 
-Finally, we can then define the regular arithmetic operator over $\Q$ by using the $\kw{fracq}$ function.
-For example, we define the addition $+_\Q$ symbol as follows:
-
-\begin{align*}
-&+_\Q : \Q \ra \Q \ra \Q \quad (\textit{written infix})\\
-&(\kw{Rat}~n_1~d_1~\_) +_\Q (\kw{Rat}~n_2~d_2~\_) \re\\
-&\qquad \kw{fracq}~(n_1 *_\Z d_2 +_\Z n_2 *_\Z d_1) (d_1 *_\Z d_2) \\
-\end{align*}
-
-
-\section{Encoding bitvectors (\textbf{\uppercase{BV}})}
-\label{ssec:encoding-bv}
-
-We interpret the sort of bitvectors \smtinline{ (_ BitVec w)} from the SMT logic \textbf{BV} as a number less than $2^w$. We use the type $\mathop{Fin}$ as the internal representation of a bitvector
-that represents the set of natural numbers less than an arbitrary $w$. We use a dependent pair type (\cref{dep-pair-def}) in Lambdapi necessary to encode \kw{Fin}.
-
-\begin{definition}[Fin]\label{def:fin-def}
-The type $\mathop{Fin} n$ is the type of natural numbers $i$ with the constraint that $i < n$.
-It is the canonical type with $n$ elements.
-\begin{align*}
-& Fin~(n: \N) \coloneq \Sigma~(\lambda\,x, istrue(x < n)) \\
-& FinMk~(n: \N) (m: \N) (islt: \prf (m < n)) : Fin~n \\
-&\quad\is exist~(\lambda\,x, istrue(x <n))~m~islt\\
-&\mathop{val}~[n]: \mathop{Fin} n \ra \N \is \lambda e, e~s\_1 \\
-&\mathop{isLt}~[n] (f: \mathop{Fin} n): \prf (f~s_1 < n) \is f~s_2\\
-\end{align*}
+\begin{definition}[Normalization rules]
+The following rewrite rules normalise fractions written with $\slash$.
+To account for division by zero (allowed by SMT solvers), rule \cref{eq:div-0} rewrites such terms to the canonical form $\tfrac{0}{1}$.
+Rules \cref{eq:red-0}–\cref{eq:red-0-end} reduce denominators to $1$ whenever the numerator is $0$, while rule \cref{eq:neg-den} and \cref{eq:neg-den2} ensures that the denominator is always positive by moving the negative sign to the numerator.
+\begin{align}
+& \_ \slash 0 \re 0 \slash 1 \label{eq:div-0}\\
+& 0 \slash \ZPos~(\kw{I}~\_) \re 0 \slash 1 \label{eq:red-0}\\
+& 0 \slash \ZPos~(\kw{O}~\_) \re 0 \slash 1 \\
+& 0 \slash \ZNeg~(\kw{I}~\_) \re 0 \slash 1 \\
+& 0 \slash \ZNeg~(\kw{O}~\_) \re 0 \slash 1 \label{eq:red-0-end}\\
+& (\ZPos~x) \slash (\ZNeg~y) \re (\ZNeg~x) \slash (\ZPos~y) \label{eq:neg-den}\\
+& (\ZNeg~x) \slash (\ZNeg~y) \re (\ZPos~x) \slash (\ZPos~y) \label{eq:neg-den2}
+\end{align}
+These rules ensure that algebraic operators on rational numbers are total functions, handling all edge cases (e.g., division by zero) by mapping them to the canonical form $\frac{0}{1}$.
 \end{definition}
 
-\begin{definition}[Bitvector]\label{def:bv-def}
-We define bitvectors as natural numbers bounded by powers of two and modular arithmetic representation.
-We first introduce an infix exponentiation function $\_\,\hat{}\,\_$ on $\N$.
-Using this, we define the type $BitVec~n$ as the finite type $Fin~(2~\hat~n)$ (written $Fin~2^n$), representing the set of natural numbers strictly less than $2^n$.
-\begin{align*}
-& \hat{}: \N \ra \N \ra \N \qquad \text{(written inﬁx)}\\
-& 0 ~\hat{}~ 1 \re 1 \N\\
-& n ~\hat{}~ (m + 1) \re n * (n ~\hat{}~ m)\\[1em]
-&BitVec~n \is Fin~(2^n) \\
-& mkBv: \Pi(n~m: \N)(p: \prf~(istrue(n < 2^n))): BitVec~n\\
-&\quad\is FinMk~(2^n)~m~p
-\end{align*}
-Each bitvector of size $n$ is thus a natural number modulo $2^n$, capturing the behavior of (unsigned) integers with $n$ bits.
-The function $mkBv$ then takes a size $n: \N$, an element $m$, and a proof $p$ that $m < 2^n$, and returns a bitvector of type $BitVec~n$.
-Internally, this is constructed using $FinMk$, the constructor for the finite type $Fin~(2^n)$, ensuring that only values within the correct range can inhabit the bitvector type.
-\end{definition}
+We can then define the rational operators as usual:
 
-Alternative representations could include a vector of \B{},
-formally $\mathop{BitVec}(w: \mathbb{N}) := \Sigma(\mathop{List\,\B})(\lambda(l: \mathop{List\,\B}),\mathop{length}l = w)$,
-or a binary natural number encoding: $\mathop{BitVec}(w: \mathbb{N}) := \Sigma\,(\mathop{Bin\N})(\lambda (n:\mathop{Bin\N}), \mathop{size}\,n = w)$, where $\mathop{Bin\N}$
-is an inductive type representing binary natural numbers greater than zero, built on top of $\mathbb{N}$.
-However, like $\mathop{Fin}$, these structures are not currently available in Lambdapi's standard library.
-We chose the $\mathop{Fin}$ representation over other possible encodings due to its relative efficiency.
-If, in the future, Lambdapi's kernel adds support for efficient representations of natural numbers e.g.,
-via overriding them with arbitrary-precision arithmetic libraries like GMP\footnote{\url{https://gmplib.org/}} bitvectors encoded with $\mathop{Fin}$ would likewise benefit from such optimizations.
-We therefore chose to implement $\mathop{Fin}\,n$, as we believe it provides the most suitable and future-proof foundation for representing the $\mathop{BitVec}$ type,
-particularly in light of potential enhancements to the kernel.
-
-
-We recall that the constructor for bitvector in Alethe: $$\mathtt{bbT}\ \enum[n-1]{x}[][0]$$ with $x_i: \B$, for $0\leq i< n$,
-is the Boolean equivalent of the $i$-th bit of $x$ (from least to most significant). Thus $\enum[n-1]{x}[][0]$ is the Boolean bit-level interpretation corresponding to the bit-vector.
-
-\begin{example}[Bitvector construction]
-The binary number $\#b0010$ is equivalent to:
-
-\begin{lstlisting}[language=SMT]
-(@bbT false true false false)
-\end{lstlisting}
-\end{example}
-
-\begin{definition}[bbT Alethe constructor]
-The function \kw{bbT} maps a list of Boolean values ($\bb{L}~\kw{bool}$) to a bitvector whose size is determined by the length of the list.
-\begin{equation*}
-\kw{bbT} : \bb{L}~\kw{bool} \ra BitVec~(\kw{size}~l)
-\end{equation*}
-\end{definition}
-
-\subsection{Bitvectors arithmetic}
-
-The SMT-LIB language offers arithmetic operations on bitvectors, such as $\mathop{bvadd}$.
-Some of these operations are signed, while others are unsigned. In the Lambdapi representation, bitvectors are represented as a wrapper around a $Fin$ type with an appropriate bound.
-Since $\mathop{Fin}$ itself wraps a natural number (\N), bitvector operations rely on corresponding functions and proofs defined over \N.
-Arithmetic functions on bitvectors return results modulo the size of the bitvector, ensuring that computations wrap around according to the fixed width.
-In order to illustrate the principle, we provide the definition of $\mathop{bvadd}$ in \cref{def:bv-add-def}.
-
-\begin{definition}[Bitvector addition]\label{def:bv-add-def}
-\begin{align*}
-&\mathop{bvadd}\,[n : \mathbb{N}] : \mathop{BitVec}(n) \ra \mathop{BitVec}(n) \ra \mathop{BitVec}(n) \\
-&\quad\coloneq\; \lambda x, \lambda y, \; \mathop{Fin.add}~2^n~x~y \\
-&\mathop{Fin.add}~: \mathop{Fin}~n \ra \mathop{Fin}~n \ra \mathop{Fin}~n \\
-&\mathop{Fin.add}~: (\mathbin{exist}~x~p_x) (\mathbin{exist}~y~p_y) \\
-&\re \mathop{FinMk}~n~((x + y) \mathbin{mod} n)~(modulo\_lt~(x * y)~x~n~p_x)
-\end{align*}
-The operator $\mathbin{mod}$ implement the modulo function for natural numbers and the lemma $modulo\_lt$
-show that for any $x * y$ and $x$, if $x * y < n$, then $x \mathbin{\%} n < n$.
+\begin{definition}[operator fractions]\label{def:ops-frac}
+\begin{align}
+&x \slash y +_\Q u \slash v \re \kw{frac}~((x * v) + (u * y))~(y * v) \\
+&x \slash y *_\Q u \slash v \re \kw{frac}~(x * u)~(y * v)
+\end{align}
 \end{definition}
 
 
-\subsection{Bitwise Operators}
+% \section{Encoding bitvectors (\textbf{\uppercase{BV}})}
+% \label{ssec:encoding-bv}
 
-SMT-LIB define bitwise operators such as $\mathop{bvand}$ or $\mathop{bvlshr}$  (which shifts a bitvector to the right) for manipulating the individual bits of one or more bitvectors.
-Following a similar strategy, we encoded these operations over $\N$ and wrap the bitvector operations on them. We details our approach in \cref{app:bf-defs}.
+% We interpret the sort of bitvectors \smtinline{ (_ BitVec w)} from the SMT logic \textbf{BV} as a number less than $2^w$. We use the type $\mathop{Fin}$ as the internal representation of a bitvector
+% that represents the set of natural numbers less than an arbitrary $w$. We use a dependent pair type (\cref{dep-pair-def}) in Lambdapi necessary to encode \kw{Fin}.
+
+% \begin{definition}[Fin]\label{def:fin-def}
+% The type $\mathop{Fin} n$ is the type of natural numbers $i$ with the constraint that $i < n$.
+% It is the canonical type with $n$ elements.
+% \begin{align*}
+% & Fin~(n: \N) \coloneq \Sigma~(\lambda\,x, istrue(x < n)) \\
+% & FinMk~(n: \N) (m: \N) (islt: \prf (m < n)) : Fin~n \\
+% &\quad\is exist~(\lambda\,x, istrue(x <n))~m~islt\\
+% &\mathop{val}~[n]: \mathop{Fin} n \ra \N \is \lambda e, e~s\_1 \\
+% &\mathop{isLt}~[n] (f: \mathop{Fin} n): \prf (f~s_1 < n) \is f~s_2\\
+% \end{align*}
+% \end{definition}
+
+% \begin{definition}[Bitvector]\label{def:bv-def}
+% We define bitvectors as natural numbers bounded by powers of two and modular arithmetic representation.
+% We first introduce an infix exponentiation function $\_\,\hat{}\,\_$ on $\N$.
+% Using this, we define the type $BitVec~n$ as the finite type $Fin~(2~\hat~n)$ (written $Fin~2^n$), representing the set of natural numbers strictly less than $2^n$.
+% \begin{align*}
+% & \hat{}: \N \ra \N \ra \N \qquad \text{(written inﬁx)}\\
+% & 0 ~\hat{}~ 1 \re 1 \N\\
+% & n ~\hat{}~ (m + 1) \re n * (n ~\hat{}~ m)\\[1em]
+% &BitVec~n \is Fin~(2^n) \\
+% & mkBv: \Pi(n~m: \N)(p: \prf~(istrue(n < 2^n))): BitVec~n\\
+% &\quad\is FinMk~(2^n)~m~p
+% \end{align*}
+% Each bitvector of size $n$ is thus a natural number modulo $2^n$, capturing the behavior of (unsigned) integers with $n$ bits.
+% The function $mkBv$ then takes a size $n: \N$, an element $m$, and a proof $p$ that $m < 2^n$, and returns a bitvector of type $BitVec~n$.
+% Internally, this is constructed using $FinMk$, the constructor for the finite type $Fin~(2^n)$, ensuring that only values within the correct range can inhabit the bitvector type.
+% \end{definition}
+
+% Alternative representations could include a vector of \B{},
+% formally $\mathop{BitVec}(w: \mathbb{N}) := \Sigma(\mathop{List\,\B})(\lambda(l: \mathop{List\,\B}),\mathop{length}l = w)$,
+% or a binary natural number encoding: $\mathop{BitVec}(w: \mathbb{N}) := \Sigma\,(\mathop{Bin\N})(\lambda (n:\mathop{Bin\N}), \mathop{size}\,n = w)$, where $\mathop{Bin\N}$
+% is an inductive type representing binary natural numbers greater than zero, built on top of $\mathbb{N}$.
+% However, like $\mathop{Fin}$, these structures are not currently available in Lambdapi's standard library.
+% We chose the $\mathop{Fin}$ representation over other possible encodings due to its relative efficiency.
+% If, in the future, Lambdapi's kernel adds support for efficient representations of natural numbers e.g.,
+% via overriding them with arbitrary-precision arithmetic libraries like GMP\footnote{\url{https://gmplib.org/}} bitvectors encoded with $\mathop{Fin}$ would likewise benefit from such optimizations.
+% We therefore chose to implement $\mathop{Fin}\,n$, as we believe it provides the most suitable and future-proof foundation for representing the $\mathop{BitVec}$ type,
+% particularly in light of potential enhancements to the kernel.
+
+
+% We recall that the constructor for bitvector in Alethe: $$\mathtt{bbT}\ \enum[n-1]{x}[][0]$$ with $x_i: \B$, for $0\leq i< n$,
+% is the Boolean equivalent of the $i$-th bit of $x$ (from least to most significant). Thus $\enum[n-1]{x}[][0]$ is the Boolean bit-level interpretation corresponding to the bit-vector.
+
+% \begin{example}[Bitvector construction]
+% The binary number $\#b0010$ is equivalent to:
+
+% \begin{lstlisting}[language=SMT]
+% (@bbT false true false false)
+% \end{lstlisting}
+% \end{example}
+
+% \begin{definition}[bbT Alethe constructor]
+% The function \kw{bbT} maps a list of Boolean values ($\bb{L}~\kw{bool}$) to a bitvector whose size is determined by the length of the list.
+% \begin{equation*}
+% \kw{bbT} : \bb{L}~\kw{bool} \ra BitVec~(\kw{size}~l)
+% \end{equation*}
+% \end{definition}
+
+% \subsection{Bitvectors arithmetic}
+
+% The SMT-LIB language offers arithmetic operations on bitvectors, such as $\mathop{bvadd}$.
+% Some of these operations are signed, while others are unsigned. In the Lambdapi representation, bitvectors are represented as a wrapper around a $Fin$ type with an appropriate bound.
+% Since $\mathop{Fin}$ itself wraps a natural number (\N), bitvector operations rely on corresponding functions and proofs defined over \N.
+% Arithmetic functions on bitvectors return results modulo the size of the bitvector, ensuring that computations wrap around according to the fixed width.
+% In order to illustrate the principle, we provide the definition of $\mathop{bvadd}$ in \cref{def:bv-add-def}.
+
+% \begin{definition}[Bitvector addition]\label{def:bv-add-def}
+% \begin{align*}
+% &\mathop{bvadd}\,[n : \mathbb{N}] : \mathop{BitVec}(n) \ra \mathop{BitVec}(n) \ra \mathop{BitVec}(n) \\
+% &\quad\coloneq\; \lambda x, \lambda y, \; \mathop{Fin.add}~2^n~x~y \\
+% &\mathop{Fin.add}~: \mathop{Fin}~n \ra \mathop{Fin}~n \ra \mathop{Fin}~n \\
+% &\mathop{Fin.add}~: (\mathbin{exist}~x~p_x) (\mathbin{exist}~y~p_y) \\
+% &\re \mathop{FinMk}~n~((x + y) \mathbin{mod} n)~(modulo\_lt~(x * y)~x~n~p_x)
+% \end{align*}
+% The operator $\mathbin{mod}$ implement the modulo function for natural numbers and the lemma $modulo\_lt$
+% show that for any $x * y$ and $x$, if $x * y < n$, then $x \mathbin{\%} n < n$.
+% \end{definition}
+
+
+% \subsection{Bitwise Operators}
+
+% SMT-LIB define bitwise operators such as $\mathop{bvand}$ or $\mathop{bvlshr}$  (which shifts a bitvector to the right) for manipulating the individual bits of one or more bitvectors.
+% Following a similar strategy, we encoded these operations over $\N$ and wrap the bitvector operations on them. We details our approach in \cref{app:bf-defs}.
 
 \section{SMT-LIB helper operators}
 \label{sec:encoding-helper-operator}
 
-SMT-LIB provides the operator \smtinline{(par (A) (distinct A A Bool :pairwise))} that denotes the function that
-returns true if its two arguments are not identical as defined in \cref{tab:distinct-spec}, and \smtinline{(par (A) (ite Bool A A A))} denotes the function that
+SMT-LIB provides the operator \smtinline{(distinct A A Bool)} that denotes the function that
+returns true if its two arguments are not identical as defined in \cref{tab:distinct-spec}, and \smtinline{(ite Bool A A A)} denotes the function that
 returns its second argument or its third depending on whether its first argument is true or not.
 
-\begin{table}
+\begin{definition}[Distinctness predicate]
+We encode the distinct parameter of SMT by introducing a predicate over dependent vectors \cref{def:dependent-vector},
+since both the size of the collection and the type of its elements influence how the predicate is computed.
+\begin{equation*}
+\kw{distinct}~[a: Set] [n: \N] : \kw{Vec}~a~n \ra \prop
+\end{equation*}
+\end{definition}
+
+\begin{table}[tb]
 \caption{Specification of the \tt{distinct\_elim}rule in Alethe.}
 \begin{tabular}{@{}ll@{}}
 \multicolumn{2}{@{}l@{}}{\textbf{Rule 93:} R = \tt{distinct\_elim}} \\[0.5em]
@@ -425,14 +436,6 @@ returns its second argument or its third depending on whether its first argument
 \end{tabular}
 \label{tab:distinct-spec}
 \end{table}
-
-\begin{definition}[Distinctness predicate]
-We encode the distinct parameter of SMT by introducing a predicate over dependent vectors \cref{def:dependent-vector},
-since both the size of the collection and the type of its elements influence how the predicate is computed.
-\begin{equation*}
-\kw{distinct}~[a: Set] [n: \N] : \kw{Vec}~a~n \ra \prop
-\end{equation*}
-\end{definition}
 
 \begin{definition}[Distinctness eliminator]
 To implement the behavior specified in \cref{tab:distinct-spec}, we formalize the elimination of distinct through a series of rewriting rules.
