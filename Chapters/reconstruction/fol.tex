@@ -220,12 +220,12 @@ Suppose $i < (\mathrm{size} ps)$ and $j < (\mathrm{size} qs)$, and assume that t
 Then the clause obtained by removing these two complementary literals and  concatenating the remaining parts of $ps$ and $qs$ is also provable, that is:
 \[
 \begin{array}{l}
-  \tt{resolution}~(ps, qs : \tt{Clause})\; (i, j : \mathbb{N}) \\[4pt]
-  (hps : \prfcl(ps)) \\[4pt]
-  (hqs : \prfcl(qs)) \\[4pt]
-  (hi  : \prf(i < \tt{size} ps) \\[4pt]
-  (hj  : \prf(j < \tt{size} qs) \\[4pt]
-  (hij : \prf(ps[i] = \lnot(qs[j]))) \\[4pt]
+  \tt{resolution}~(ps, qs : \tt{Clause})\; (i, j : \mathbb{N}) \\
+  (hps : \prfcl(ps)) \\
+  (hqs : \prfcl(qs)) \\
+  (hi  : \prf(i < \tt{size} ps) \\
+  (hj  : \prf(j < \tt{size} qs) \\
+  (hij : \prf(ps[i] = \lnot(qs[j]))) \\
   : \prfcl((\tt{remove}~ps~i) \pp (\tt{remove}~qs~j))
 \end{array}
 \]
@@ -891,3 +891,129 @@ begin eval tauto; end;
 
 As shown in \cref{lst:tauto-ex}, we define a new tactic \kw{tauto} using a tactic script at line 5, and demonstrate its usage at lines 8-9.
 \todo{ac: improve presentation of tauto tactic, but it is not a priority for now}
+
+
+\section{The \texttt{\upshape{contraction}} rule}
+\label{ssec:contraction-recon}
+
+The Alethe rule \kw{contraction} removes duplicate literals from a clause without changing its truth.
+
+\begin{tabular}{l c r}
+$i.~\triangleright$  & $l_1,\, \dots,\, l_{n}$ & (\dots)  \\
+$j.~\triangleright$  & $l_{k_1},\, \dots,\, l_{k_m}$ & (\kw{contraction}~i) 
+\end{tabular}
+
+where $m \leq n$ and $k_1 \dots k_m$ is a monotonic map to $1 \dots n$ such that: $l_{k_1},\, \dots,\, l_{k_m}$ are pairwise distinct, and Hence, this rule removes duplicated literals.
+
+In our reconstruction we assume an assignment $\sigma$ computed automatically from the literals of the clause $l_{k_1},\, \dots,\, l_{k_m}$.
+This assignment not only interprets propositional variables as truth values but also  induces an order on terms through their identifiers.  
+We exploit this order to define a canonical representation of clauses: we turn a clause into a list of literal identifiers, stably sort this list using mergesort,  and then delete adjacent duplicates.  
+Correctness follows from three ingredients: a denotational interpreter $\Downarrow$ parameterized by $\sigma$, a mergesort whose denotation is extensionally equal to its input, and a duplicate-removal pass whose denotation is idempotent with respect to disjunction.
+
+We first encode a canonical algebra of literals:
+
+\begin{align*}
+&\cal{C} : \type & \kw{cl}: \set  \\
+&| p: \N \ra \cal{C} & \el~\kw{cl} \re \cal{C}
+\end{align*}
+
+A clause is then represented as a list of elements of $\cal{C}$.
+
+\begin{definition}[split]
+The function \kw{split} divides a list into two sublists by alternating elements:
+\begin{align*}
+&\kw{split}: \bb{L}~\kw{cl} \ra \el (\kw{list}~\kw{cl} \times \kw{list}~\kw{cl})\\
+&\kw{split}\,\Box \re (\Box , \Box) \\
+&\kw{split}\,(x::\Box) \re (\,x::\Box , \Box\,) \\
+&\kw{split}\,(x::y::\ell) \re \bigl(x::(\kw{split}\,\ell)_1, y::(\kw{split}\,\ell)_2 \bigr)
+\end{align*}
+\end{definition}
+
+To reason semantically about these lists, we define $\Downarrow\,\sigma\,g$ as the denotation of $g$ under assignment $\sigma$.  
+The following two lemmas show that $\Downarrow$ interacts well with list concatenation and with the splitting procedure.
+
+
+\begin{lemma}[Concatenation distributes over \(\Downarrow\)]\label{lem:den-cat}
+For all lists \(x,y\) of identifiers and any assignment \(\sigma\),
+\[
+\prf\bigl(\Downarrow\,\sigma\,(x \concat y) = \Downarrow\,\sigma\,x \ \vee\ \Downarrow\,\sigma\,y\bigr).
+\]
+\end{lemma}
+
+\begin{lemma}[Split preserves denotation]\label{lem:split-correct}
+For all identifier lists \(g\) and assignments \(\sigma\),
+\[
+  \prf\bigl(\Downarrow\,\sigma\,((\kw{split} g)_1 \concat (\kw{split} g)_2) = \Downarrow\,\sigma\,g\bigr).
+\]
+\end{lemma}
+
+\begin{definition}[merge]
+The merge function combines two sorted lists into a single sorted list:
+\begin{align*}
+& \kw{merge}: \bb{L}~\kw{cl} \ra \bb{L}~\kw{cl} \ra \bb{L}~\kw{cl} \\
+&\kw{merge}~\Box~\ell \re \ell \\
+&\kw{merge}~\ell~\Box \re \ell \\
+&\kw{merge}~(p~i :: \ell_1)~(p~j::\ell_2) \re
+\begin{cases}
+p~i :: p~j :: \kw{merge}(\ell_1,\ell_2) & \text{if } i = j \\
+p~i :: \kw{merge}(\ell_1, p~j::\ell_2) & \text{if } i < j \\
+p~j :: \kw{merge}(p~i::\ell_1, \ell_2) & \text{if } i > j
+\end{cases}
+\end{align*}
+\end{definition}
+
+\begin{lemma}[Merge is denotationally additive]\label{lem:merge-correct}
+For all \(g_1,g_2\) and any context \(\sigma\),
+\[
+\prf\bigl(\Downarrow\,\sigma\,(\kw{merge}\,g_1\,g_2) = \Downarrow\,\sigma\,g_1 \ \vee\ \Downarrow\,\sigma\,g_2 \bigr).
+\]
+\end{lemma}
+
+With \kw{split} and \kw{merge}, we can now define mergesort.
+
+
+\begin{definition}[mergesort]
+\begin{align*}
+&\kw{mergesort}~\Box \re \Box \\
+&\kw{mergesort}~(x :: \Box) \re x :: \Box \\
+&\kw{mergesort}~(x :: y :: \ell) \re \\
+  & \quad \text{let } (l_1,l_2) \coloneqq \kw{split}~(x :: y :: \ell)\ \text{ in }\ \\
+  & \qquad \kw{merge}~(\kw{mergesort}~l_1)~(\kw{mergesort}~l_2)
+\end{align*}
+\end{definition}
+
+After sorting, duplicate literals appear as adjacent elements. We now define a function that removes these duplicates.
+
+
+\begin{definition}[remove identical literals]
+\begin{align*}
+&\kw{remove}~\Box \re \Box \\
+&\kw{remove}~(p\,i :: \Box) \re p\,i :: \Box \\
+&\kw{remove}~(p\,i :: p\,j :: tl) \re
+\begin{cases}
+  \kw{remove}~(p\,j :: tl) & \text{if } i = j, \\
+  p\,i :: \kw{remove}(p\,j :: tl) & \text{if } i \neq j
+\end{cases}
+\end{align*}
+\end{definition}
+
+\begin{theorem}[Mergesort correctness]\label{thm:mergesort-correct}
+For all \(g\) and context \(\sigma\),
+\[
+  \prf\bigl(\Downarrow\,\sigma\,(\kw{mergesort}\,g) \;=\; \Downarrow\,\sigma\,g\bigr).
+\]
+\end{theorem}
+
+\begin{theorem}[Contraction correctness]\label{thm:contraction-correct}
+Define
+\[
+  \kw{contraction}\,g \coloneq \kw{remove} (\kw{mergesort}\,g).
+\]
+Then, for all \(g\) and \(\sigma\),
+\[
+\prf\bigl(\Downarrow\,\sigma\,(\kw{contraction}\,g) = \Downarrow\,\sigma\,g\bigr).
+\]
+\begin{proof}
+By size-bounded induction on \(g\), using \cref{lem:split-correct,lem:merge-correct} and the distributivity \cref{lem:den-cat} in the combine step.
+\end{proof}
+\end{theorem}
