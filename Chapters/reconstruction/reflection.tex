@@ -1,0 +1,66 @@
+\section{Proof by reflection}
+\label{ssec:reflection-intro}
+
+Proof by reflection~\cite{reflection-origin-coq} is a technique for constructing certified procedures for automated reasoning by reducing the verification of a logical statement to a symbolic computation.
+This method is particularly applicable to two broad classes of problems. In the first class, we consider a predicate $P \colon T \to \prop$, where $T$ is a data type,
+together with a semi-decision procedure $f: T \ra \mathbb{B}$ (or $T \ra \tt{Comp}$) such that, whenever $f$ returns $\tt{true}$ on input $x$, the predicate $P(x)$ holds.
+Formally, this relationship is captured by the following correctness theorem:
+
+\begin{equation*}
+\mathop{f\_correct} \colon \Pi x \colon T, \prf (f~x = \tt{true}) \ra \prf (P~x).
+\end{equation*}
+
+Hence, to establish $P~y$ for a particular value $y$, it suffices to verify that $f~y$ reduces to  $\tt{true}$.
+In that case, we can simply apply the lemma $\mathop{f\_correct}$ to $y$ along with a proof that $true = true$ i.e. $(\mathop{eq\_refl} \tt{true})$ with $eq\_refl: \Pi [a \colon \set], \Pi (x: \el\,a), \prf (x = x)$.
+The resulting proof of $P~y$ is thus given by:
+
+\begin{equation*}
+\mathop{f\_correct} ~y~ (\mathop{eq\_refl} \tt{true}) \colon \prf\,(P~y)
+\end{equation*}
+
+As an illustration, consider the property of a natural number being even. In Lambdapi, this can be expressed using a computable boolean function $\texttt{even} \colon \N \ra \B$ that checks whether a given number is even.
+\begin{definition}[Even decidable predicate]
+\begin{align*}
+& \kw{even} : \N \ra \B \\
+& \kw{even}~0 \re \true \\
+& \kw{even}~1 \re \false \\
+& \kw{even}~(x + 2) \re \kw{even}~x
+\end{align*}
+\end{definition}
+The connection between the boolean value and the logical property is established through a correctness lemma stating that if \texttt{even n = true}, then $n$ is even.
+Thus, to prove that a specific number, such as $4$, is even, one can reduce the goal to the boolean check \texttt{even 4 = true}, which is decidable by computation.
+Applying the correctness lemma then lifts this computational fact back into the logical framework to conclude that $4$ is even.
+This approach automates routine reasoning steps involving decidable predicates, allowing for concise and efficient proofs.
+This first class of proofs by reflection is particularly suited for properties such as arithmetic equalities, inequalities, and simple inductive predicates.
+
+The size of such a proof only depends on the size of a particular argument $y$ and does not depend on the number of implicit $\equivL$ steps: explicit rewriting steps have been replaced by implicit $\equivL$ reductions.
+The efficiency of this technique of course strongly depends on the efficiency of the system to reduce the application of the decision procedure $f(y)$, hence on the efficiency of the decision procedure ($f$) itself.
+
+
+Moreover, while the proof term of the correctness lemma for $f$ may be large, it needs to be constructed only once. This proof can be shared across all instantiations and does not require rechecking by the type-checker in subsequent uses.
+
+\medskip
+
+The second class of problems where computation can help is the class of algebraic proofs such as proofs relying on rewriting modulo the associativity or the commutativity of some operators e.g. disjunction $(\lor)$ or conjunction $(\land)$.
+For these proofs, we again consider a type $B: \set$ and we exhibit an "abstract type" $A: \set$, with two functions $\mathop{denote} \colon {\el}\,A \ra {\el}\,B$ and $g: \el{}\,A \ra \el{}\,A$.
+The function $\mathop{denote}$ is an interpretation function that we can use to associate terms in the concrete type $B$ with abstract terms of type $A$.
+The function $g$ reasons on the abstract terms. The reflection process relies on a theorem that expresses that the function $g$ does not change the value of the interpreted
+term:
+
+\begin{equation*}
+  g\_ident : \Pi\,x: A, \prf (\mathop{denote}~(g~x) = \mathop{denote} x)
+\end{equation*}
+
+Thus, to prove that two terms $t_1$ and $t_2$ are equal in $B$ , we only need to show that they are the images of two terms $a_1$ and $a_2$ in $A$ such that $g\,a_1 = g\,a_2$.
+As an illustration of this second class of proofs by reflection, consider the commutativity of disjunction: for any two propositions $P$ and $Q$, we wish to prove that $P \lor Q$ is logically equivalent to $Q \lor P$.
+To apply reflection, we first define an \emph{abstract} syntax for formulas, for instance, a type $\mathsf{Monoid}$ with constructors for atomic propositions and for disjunction.
+We then define an \emph{interpretation function} $\mathsf{denote} \colon \mathsf{Monoid} \to \prop$ that maps abstract formulas to their logical meaning.
+Next, we define a normalization function $\mathop{norm}: \mathsf{Monoid} \to \mathsf{Monoid}$ that rewrites disjunctions into a canonical order, such as ordering operands lexicographically.
+The key theorem states that this normalization preserves meaning:
+\[
+\mathsf{norm\_mono} : \forall x : \mathsf{Monoid}, \mathsf{denote}(\mathop{norm} x) = \mathsf{denote}(x).
+\]
+Hence to prove that $P \lor Q$ and $Q \lor P$, are logically equivalent, it suffices to represent them as abstract expressions $m_1$ and $m_2$ of type $\mathsf{Monoid}$, apply the function $\mathop{norm}$ with the lemma $\mathsf{norm\_mono}$ to normalize both, and check that $\mathop{norm}(m_1) = \mathop{norm}(m_2)$.
+
+In this thesis, we make use of both classes of reflection to encode certain \texttt{Alethe} rules. For example, the reconstruction of arithmetic steps (\textbf{LIA} and \textbf{LRA}) and bitvector (\textbf{BV}) Alethe rules primarily relies on the first class,
+while the permutation of clauses for the \texttt{resolution} rule relies on the second class.

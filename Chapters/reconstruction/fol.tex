@@ -1,11 +1,11 @@
 %*****************************************
-\chapter{Reconstructing first order proofs}\label{ch:reconstruction-ul}
+\chapter{Reconstructing FOL proofs}\label{ch:reconstruction-ul}
 %*****************************************
 
 \section{Tautologous rules and simple deduction}
 \label{sec:elem-rules}
 
-\begin{figure}
+\begin{figure}[t]
   \scriptsize
   \begin{tabular}{@{}l|l@{}}
   \hline
@@ -62,6 +62,188 @@ The definitions use the following lemmas proved in our Lambdapi encoding:
 \end{itemize}\todo{cong might move due to nary-function, so no more details here}
 
 
+
+\paragraph{resolution rule}
+
+\begin{figure}[t]
+  \centering
+  \begin{tabular}{l c r}
+  $i_1.~\triangleright$  & \qquad $l_1^1,\, \dots,\, l_{k^1}^1$ \qquad & (\dots)  \\
+  $i_n.~\triangleright$  & \qquad $l_1^n,\, \dots,\, l_{k^n}^n$ \qquad & (\dots) \\
+    & \vdots  &  \\
+  $j.~~\triangleright$  & \qquad $l_{s_1}^{r_1},\, \dots,\, l_{s_m}^{r_m}$ \qquad & $(\kw{resolution}~i_1 \dots i_n)[]$
+  \end{tabular}
+  \caption{Resolution rule}
+  \label{fig:resolution-rule}
+\end{figure}
+
+However, Alethe's \kw{resolution} rule, shown in \cref{fig:resolution-rule}, represents hyper-resolution applied to a set of ground first-order clauses $i_1 \dots i_n$,
+where the resulting clause $l_{s_1}^{r_1} \dots l_{s_m}^{r_m}$ is obtained by a chain of predicate resolution steps that remove complementary literals from the input clauses, with double negations being removed implicitly.
+For example, the formulas $\neg \neg \neg P$ and $\neg \neg P$ can serve as pivots during resolution.
+The first formula is interpreted as $\neg P$ and the second as just $P$ to perform resolution steps.
+Alethe allows resolution steps without providing the pivots; however, Carcara's elaborated proof incorporates the pivots as arguments in the resolution rule, eliminating the need for an additional intermediate step to search for the pivots in our translation to Lambdapi.
+In addition, pivots may appear anywhere in a clause rather than just as the head literal.
+We first prove the following lemmas necessary to prove our resolution rule. We present here an informal proof but the lemmas and theorem have been proven in Lambdapi.
+
+\begin{lemma}[Sublist disjunction]\label{lem:orN_subList}
+Let $ps$ and $qs$ be two Clause and two index $i,j \in \mathbb{N}$. If 
+\[
+\prfcl\bigl(ps\bigr)
+\quad\text{and}\quad
+\prf\bigl(ps = \mathrm{sublist}(qs,i,j)\bigr),
+\]
+then
+\[
+\prf\bigl(qs\bigr).
+\]
+Here $\mathrm{sublist}(qs,i,j)$ abbreviates $\mathrm{drop}~i~\bigl(\mathrm{take}~j~qs\bigr)$ which take the part of the clause $qs$ between positions $i$ and $j-1$.
+So the result is simply the slice of $qs$ starting at index  $i$ and ending right before $j$.
+\begin{proof}
+The proof proceeds by structural induction on $qs$.
+\begin{itemize}
+  \item[] Case $qs=\nil$, the second premise forces $ps=\nil$; hence the hypothesis $\prfcl(ps)$ is $\prf(\bot)$, thus the goal follows immediately by \emph{ex falso quodlibet}.
+  \item[] Case $qs=t \veedot \ell$ with the induction hypothesis saying that for every clause $xs$ and every pair of indices $n,m$, if $\prfcl(xs)$ and $xs$ is equal to the sublist of $\ell$ from position $n$ up to $m$, then $\prfcl(\ell)$.
+    Now we must show that:
+    \[
+        \prfcl (t \veedot \ell).
+    \]
+    We reasons by cases on the index $j$ and then $i$.
+    \begin{itemize}
+      \item For $j=0$ we have $\mathrm{take}\,0\,(t \veedot \ell)=\nil$, hence the sublist $ps$ of $qs$ is empty i.e. $ps = \nil$.
+      Similar to the previous case, the hypothesis $\prfcl(ps)$ is $\prf(\bot)$, thus the goal follows immediately by \emph{ex falso quodlibet}.
+      
+      \item When $j > 0$ we then analyze $i$.
+        \begin{itemize}
+          \item If $i=0$, then $\mathrm{sublist}(t \veedot \ell,0,j{+}1)= t \veedot \mathrm{sublist}(\ell,0,j)$.
+            The equality hypothesis yields
+            \[
+              \prfcl\bigl(p = t \veedot \mathrm{take}\,j\,\ell\bigr).
+            \]
+            Thus, there are two subcases to consider.
+            If $\prf(t)$ holds, we immediately obtain $\prfcl(t \veedot \ell)$ by left introduction.
+            Otherwise, $\prfcl(\mathrm{take}\,j\,\ell)$ holds; by the induction hypothesis we lift provability to $\prfcl(\ell)$, and then conclude $\prfcl(t \veedot \ell)$ by right introduction.
+          \item If $i > 0$, we peel one element from both $\mathrm{drop}$ and $qs$.
+            The equality premise specializes to $ps=\mathrm{sublist}(\ell,i,j)$, and the desired claim follows from the induction hypothesis on $\ell$.
+          \end{itemize}
+    \end{itemize}
+  In all cases we infer $\prfcl(qs)$, as required.
+\end{itemize}
+\end{proof}
+\end{lemma}
+
+\begin{lemma}[Append preserves right disjunct]\label{lem:orN_append_right}
+Let $ps,qs \in \bb{L}o$. If 
+\[
+\prf(\mathrm{disj}(qs)),
+\]
+then also 
+\[
+\prf(\mathrm{disj}(ps ++ qs)).
+\]
+\begin{proof}
+The list $qs$ appears as a sublist of $ps{++}qs$, starting at position $\mathrm{size}(ps)$.  
+By Lemma~\ref{lem:orN_subList}, provability of the disjunction of a sublist lifts to provability of the whole list.  
+Therefore from $\prf(\mathrm{disj}(qs))$ we conclude $\prf(\mathrm{disj}(ps{++}qs))$.  
+
+Concretely, if 
+\[
+\mathrm{disj}(qs) = q_1 \lor q_2 \lor \cdots \lor q_m,
+\]
+then
+\[
+\mathrm{disj}(ps{++}qs) = p_1 \lor \cdots \lor p_n \lor q_1 \lor \cdots \lor q_m.
+\]
+Since $q_1 \lor \cdots \lor q_m$ is provable, the longer disjunction that includes all the $p_i$ as additional disjuncts is also provable.  
+This captures the monotonicity of $\lor$ under extension of the list.
+\end{proof}
+\end{lemma}
+
+\begin{lemma}[Append preserves right disjunct]\label{lem:orN_append_left}
+Let $ps,qs \in \bb{L}o$. If 
+\[
+\prf(\mathrm{disj}(ps)),
+\]
+then also 
+\[
+\prf(\mathrm{disj}(ps ++ qs)).
+\]
+\begin{proof}
+The proof is similar to the one of \cref{lem:orN_append_right}.
+\end{proof}
+\end{lemma}
+
+
+
+We can then prove the resolution rule.
+
+\begin{theorem}[Resolution]
+Let $ps$ and $qs$ be two clauses such that $\prfcl(ps)$ and $\prfcl(qs)$ hold. 
+Suppose $i < \mathrm{size}(ps)$ and $j < \mathrm{size}(qs)$, and assume that the $i$-th literal of $ps$ is the negation of the $j$-th literal of $qs$. 
+Then the clause obtained by removing these two complementary literals and  concatenating the remaining parts of $ps$ and $qs$ is also provable, that is:
+\[
+\begin{array}{l}
+  \tt{resolution}~(ps, qs : \tt{Clause})\; (i, j : \mathbb{N}) \\[4pt]
+  (hps : \prfcl(ps)) \\[4pt]
+  (hqs : \prfcl(qs)) \\[4pt]
+  (hi  : \prf(i < \tt{size} ps) \\[4pt]
+  (hj  : \prf(j < \tt{size} qs) \\[4pt]
+  (hij : \prf(\tt{nth}~ps~i = \lnot(\tt{nth}~qs~j))) \\[4pt]
+  : \prfcl((\tt{remove}~ps~i) \pp (\tt{remove}~qs~j))
+\end{array}
+\]
+\begin{proof}
+Let $P$ and $Q$ be the $i$-ith $(\tt{nth}~ps~i)$ and $j$-th $(\tt{nth}~qs~j)$ element of $ps$ and $qs$ respectively.
+We reason by case analysis on the pivot literal truth.  
+
+\begin{itemize}
+\item[Case 1] \(\prf(P)\).  
+Then by the relation $P = \lnot Q$, we immediately obtain $\prf(\lnot Q)$.  
+% From Lemma~\ref{lem:orN} applied to $(qs,j)$ we know that
+% \[
+% \prf\bigl(\mathrm{disj}(qs)\bigr) \;\Rightarrow\;
+% \prf\bigl(\mathrm{disj}(\kw{remove(qs,j)) \lor Q\bigr).
+% \]
+% Since $\prf(\mathrm{disj}(qs))$ is given, this yields  
+% $\prf(\mathrm{disj}(\kw{remove(qs,j)) \lor Q)$.  
+% But under the assumption $\lnot Q$, the disjunct $Q$ is false, so the disjunction reduces to
+% $\prf(\mathrm{disj}(\kw{remove(qs,j)))$ (by Lemma~\ref{lem:or_identity_r}).  
+% Now we combine this with $\kw{remove(ps,i)$ using the preservation lemma
+% (Lemma~\ref{lem:orN_append_right}), which states that appending a list with a
+% provable disjunction preserves provability.  
+% Hence we obtain
+% \[
+% \prf\bigl(\mathrm{disj}(\kw{remove(ps,i){++}\kw{remove(qs,j))\bigr).
+% \]
+% \(\prf\bigl(\mathrm{disj}(\kw{remove}(ps,i){++}\kw{remove}(qs,j))\bigr)\).
+
+\item[Case 2] \(\prf(\lnot P)\).  
+% Then again by the relation $P = \lnot Q$ we deduce $\prf(Q)$.  
+% From Lemma~\ref{lem:orN} applied to $(ps,i)$ we know that
+% \[
+% \prf\bigl(\mathrm{disj}(ps)\bigr) \;\Rightarrow\;
+% \prf\bigl(\mathrm{disj}(\kw{remove(ps,i)) \lor P\bigr).
+% \]
+% Since $\prf(\mathrm{disj}(ps))$ is given, this yields the disjunction
+% $\prf(\mathrm{disj}(\kw{remove(ps,i)) \lor P)$.  
+% Under the assumption $\lnot P$, the right disjunct $P$ is false, so the disjunction reduces to
+% $\prf(\mathrm{disj}(\kw{remove(ps,i)))$.  
+% Now by Lemma~\ref{lem:orN_append_left}, which allows us to append a provable
+% disjunction on the left, we conclude
+% \[
+% \prf\bigl(\mathrm{disj}(\kw{remove(ps,i){++}\kw{remove(qs,j))\bigr).
+% \]
+\end{itemize}
+
+% Since in both cases the conclusion holds, we have shown that whenever
+% $ps$ and $qs$ are provable and contain complementary literals at positions $i$
+% and $j$, the resolvent clause obtained by removing these literals and joining
+% the remainders is also provable.  
+% By the isomorphism $\bb{L}o \cong \Clause$, this is precisely the usual
+% resolution rule at the level of clauses.
+\end{proof}
+\end{theorem}
+
+
 \begin{example}
   \cref{lst:smtexamplelambdapi} illustrates the result of our main function $\mathcal{C}$ applied to the first steps in the running example of \cref{lst:smtexampleinput-fol}.
   In the code below, all the \texttt{assume} commands (corresponding to the \texttt{assert}s of the input problem) are transformed into constants by~$\mathcal{C}$. A symbol without a definition is considered as an axiom.
@@ -75,316 +257,27 @@ symbol p5 ≔ p a;
 symbol a0 : Prf$\textcolor{purple}{\smash{^\bullet}}$ (p5 ⟇ ▩);
 symbol a1 : Prf$\textcolor{purple}{\smash{^\bullet}}$ (a = b ⟇ ▩);
 symbol a2 : Prf$\textcolor{purple}{\smash{^\bullet}}$ (¬ p b ⟇ ▩);
-opaque symbol t1 : Prf$\textcolor{purple}{\smash{^\bullet}}$ (¬ p4 ⟇ ¬ p5 ⟇ p2 ⟇ ▩) ≔
-  begin apply equiv_pos2; end;
-opaque symbol t2 : Prf$\textcolor{purple}{\smash{^\bullet}}$ (p4 ⟇ ▩) ≔
-  begin apply $\smash{\lor_{i1}}$; apply cong$_1$ p ($\smash{\dot{\pi}_l}$ a1); end;
+opaque symbol t1 : Prf$\textcolor{purple}{\smash{^\bullet}}$ ((¬ ((p_5 = p_2))) ⟇ (¬ (p_5)) ⟇ p_2 ⟇ ▩) ≔
+begin apply equiv_pos2; end;
 
-opaque symbol t3 : Prf$\textcolor{purple}{\smash{^\bullet}}$ (p4 ⟇ ▩) ≔
+opaque symbol t2 : Prf$\textcolor{purple}{\smash{^\bullet}}$ (p_4 ⟇ ▩) ≔
+begin apply ∨ᵢ₁; apply feq (p) (Prf$\textcolor{purple}{\smash{^\bullet}}$ₗ a1) end;
+
+opaque symbol t3 : Prf$\textcolor{purple}{\smash{^\bullet}}$ (p_2 ⟇ ▩) ≔
 begin
-  have t0_t1 : Prf$\textcolor{purple}{\smash{^\bullet}}$ (¬ p1 ⟇ p4 ⟇ ▩)
-  { apply resolution t0 t1 };
-  have t0_t1_a0 : Prf$\textcolor{purple}{\smash{^\bullet}}$ (p4 ⟇ ▩)
-  { apply resolution t0_t1 a0 };
-  refine t0_t1_a0;
+have t0_t1 : Prf$\textcolor{purple}{\smash{^\bullet}}$ ((¬ (p_5))  ⟇ p_2 ⟇ ▩) {
+  apply resolution 0 0 t1 t2 ⊤ᵢ ⊤ᵢ (eq_refl _)
+};
+have t0_t1_a0 : Prf$\textcolor{purple}{\smash{^\bullet}}$ (p_2 ⟇ ▩) {
+    apply resolution 0 0 t0_t1 a0 ⊤ᵢ ⊤ᵢ (eq_refl _)
+}; refine t0_t1_a0;
 end;
 
 opaque symbol t4 : Prf$\textcolor{purple}{\smash{^\bullet}}$ ▩ ≔
 begin
-  have a2_t2 : Prf$\textcolor{purple}{\smash{^\bullet}}$ ▩ { apply resolution a2 t2 };
-  refine a2_t2;
+  apply resolution 0 0 a2 t3 ⊤ᵢ ⊤ᵢ (eq_refl _);
 end;
 \end{lstlisting}
-
-\paragraph{resolution rule}
-
-However, Alethe's \kw{resolution} rule, shown in \cref{fig:resolution-rule}, represents hyper-resolution applied to a set of ground first-order clauses $i_1 \dots i_n$,
-where the resulting clause $l_{s_1}^{r_1} \dots l_{s_m}^{r_m}$ is obtained by a chain of predicate resolution steps that remove complementary literals from the input clauses, with double negations being removed implicitly.
-For example, the formulas $\neg \neg \neg P$ and $\neg \neg P$ can serve as pivots during resolution.
-The first formula is interpreted as $\neg P$ and the second as just $P$ to perform resolution steps.
-Alethe allows resolution steps without providing the pivots; however, Carcara's elaborated proof incorporates the pivots as arguments in the resolution rule, eliminating the need for an additional intermediate step to search for the pivots in our translation to Lambdapi.
-In addition, pivots may appear anywhere in a clause rather than just as the head literal. Hence, Alethe \kw{resolution} involves reasoning modulo associativity and commutativity (AC) on clauses.
-
-In \cite{ColtellacciMD24}, we simulated Alethe's \kw{resolution} rule as compositions of multiple binary resolution steps, combined with additional proof steps for justifying reasoning modulo AC used to move pivots to the heads of clauses.
-However, the practical application of this approach suffered from inefficiency and did not allow us to reconstruct proofs of some benchmarks in SMT-LIB that involved hundreds of clauses in a single resolution.
-In the following, we present an approach where we prove clause permutation through \emph{proof by reflection}\index{proof by reflection}, enabling more efficient pivot movement.
-% Given the central role of \emph{proof by reflection} in our translation, we dedicate the following section to a more detailed introduction of this concept, which is key to reconstructing certain proof rules in the Alethe format.
-
-
-\begin{tabular}{l}
-  $\tt{resolution}~(ps\; qs : \tt{Clause})\; (i\; j : \mathbb{N})$ \\
-  $\quad (hps : \prfcl ps)$ \\ 
-  $\quad (hqs : \prfcl qs)$ \\ 
-  $\quad (hi  : \prf(i < \tt{size}\; ps))$ \\ 
-  $\quad (hj  : \prf(j < \tt{size}\; qs))$ \\ 
-  $\quad (hij : \prf((\tt{nth}\; ps\; i) = \lnot(\tt{nth}\; qs\; j)))$ \\
-  $\qquad : \prfcl(\tt{remove}\; ps\; i \mathrel{\pp} \tt{remove}\; qs\; j)$
-\end{tabular}
-
-% \begin{table}[]
-%   \centering
-%   \begin{tabular}{l c r}
-%   $i_1.~\triangleright$  & \qquad $l_1^1,\, \dots,\, l_{k^1}^1$ \qquad & (\dots)  \\
-%   $i_n.~\triangleright$  & \qquad $l_1^n,\, \dots,\, l_{k^n}^n$ \qquad & (\dots) \\
-%     & \vdots  &  \\
-%   $j.~~\triangleright$  & \qquad $l_{s_1}^{r_1},\, \dots,\, l_{s_m}^{r_m}$ \qquad & $(\kw{resolution}~i_1 \dots i_n)[]$
-%   \end{tabular}
-%   \caption{Resolution rule}
-%   \label{tab:resolution-rule}
-% \end{table}
-
-% \section{Resolution rule}
-% \label{ssec:resolution}
-
-% \change{Alessio}{The algorithm to reconstruct resolution will be modified}
-
-% Binary resolution on ground clauses can be expressed as the following proof rule, which we have proved in Lambdapi.
-
-% \begin{lemma}[Resolution]\label{lemma:resolution}
-% Given $a,b: \texttt{Clause}$, and a pivot $x: \prop$, $\pid (x \veedot a)$ and $\pid (\neg x \veedot b)$ implies $\pid (a \veedot b)$.
-% \end{lemma}
-
-% \begin{figure}[]
-%   \centering
-%   \begin{tabular}{l c r}
-%   $i_1.~\triangleright$  & \qquad $l_1^1,\, \dots,\, l_{k^1}^1$ \qquad & (\dots)  \\
-%   $i_n.~\triangleright$  & \qquad $l_1^n,\, \dots,\, l_{k^n}^n$ \qquad & (\dots) \\
-%     & \vdots  &  \\
-%   $j.~~\triangleright$  & \qquad $l_{s_1}^{r_1},\, \dots,\, l_{s_m}^{r_m}$ \qquad & $(\kw{resolution}~i_1 \dots i_n)[]$
-%   \end{tabular}
-%   \caption{Resolution rule}
-%   \label{fig:resolution-rule}
-% \end{figure}
-
-
-% However, Alethe's \kw{resolution} rule, shown in \cref{fig:resolution-rule}, represents hyper-resolution applied to a set of ground first-order clauses $i_1 \dots i_n$,
-% where the resulting clause $l_{s_1}^{r_1} \dots l_{s_m}^{r_m}$ is obtained by a chain of predicate resolution steps that remove complementary literals from the input clauses, with double negations being removed implicitly.
-% For example, the formulas $\neg \neg \neg P$ and $\neg \neg P$ can serve as pivots during resolution.
-% The first formula is interpreted as $\neg P$ and the second as just $P$ to perform resolution steps.
-% Alethe allows resolution steps without providing the pivots; however, Carcara's elaborated proof incorporates the pivots as arguments in the resolution rule, eliminating the need for an additional intermediate step to search for the pivots in our translation to Lambdapi.
-% In addition, pivots may appear anywhere in a clause rather than just as the head literal. Hence, Alethe \kw{resolution} involves reasoning modulo associativity and commutativity (AC) on clauses.
-
-% In \cite{ColtellacciMD24}, we simulated Alethe's \kw{resolution} rule as compositions of multiple binary resolution steps, combined with additional proof steps for justifying reasoning modulo AC used to move pivots to the heads of clauses.
-% However, the practical application of this approach suffered from inefficiency and did not allow us to reconstruct proofs of some benchmarks in SMT-LIB that involved hundreds of clauses in a single resolution.
-% In the following, we present an approach where we prove clause permutation through \emph{proof by reflection}\index{proof by reflection}, enabling more efficient pivot movement.
-% Given the central role of \emph{proof by reflection} in our translation, we dedicate the following section to a more detailed introduction of this concept, which is key to reconstructing certain proof rules in the Alethe format.
-
-\section{Proof by reflection}
-\label{ssec:reflection-intro}
-
-Proof by reflection~\cite{reflection-origin-coq} is a technique for constructing certified procedures for automated reasoning by reducing the verification of a logical statement to a symbolic computation.
-This method is particularly applicable to two broad classes of problems. In the first class, we consider a predicate $P \colon T \to \prop$, where $T$ is a data type,
-together with a semi-decision procedure $f: T \ra \mathbb{B}$ (or $T \ra \tt{Comp}$) such that, whenever $f$ returns $\tt{true}$ on input $x$, the predicate $P(x)$ holds.
-Formally, this relationship is captured by the following correctness theorem:
-
-\begin{equation*}
-\mathop{f\_correct} \colon \Pi x \colon T, \prf (f~x = \tt{true}) \ra \prf (P~x).
-\end{equation*}
-
-Hence, to establish $P~y$ for a particular value $y$, it suffices to verify that $f~y$ reduces to  $\tt{true}$.
-In that case, we can simply apply the lemma $\mathop{f\_correct}$ to $y$ along with a proof that $true = true$ i.e. $(\mathop{eq\_refl} \tt{true})$ with $eq\_refl: \Pi [a \colon \set], \Pi (x: \el\,a), \prf (x = x)$.
-The resulting proof of $P~y$ is thus given by:
-
-\begin{equation*}
-\mathop{f\_correct} ~y~ (\mathop{eq\_refl} \tt{true}) \colon \prf\,(P~y)
-\end{equation*}
-
-As an illustration, consider the property of a natural number being even. In Lambdapi, this can be expressed using a computable boolean function $\texttt{even} \colon \N \ra \B$ that checks whether a given number is even.
-\begin{definition}[Even decidable predicate]
-\begin{align*}
-& \kw{even} : \N \ra \B \\
-& \kw{even}~0 \re \true \\
-& \kw{even}~1 \re \false \\
-& \kw{even}~(x + 2) \re \kw{even}~x
-\end{align*}
-\end{definition}
-The connection between the boolean value and the logical property is established through a correctness lemma stating that if \texttt{even n = true}, then $n$ is even.
-Thus, to prove that a specific number, such as $4$, is even, one can reduce the goal to the boolean check \texttt{even 4 = true}, which is decidable by computation.
-Applying the correctness lemma then lifts this computational fact back into the logical framework to conclude that $4$ is even.
-This approach automates routine reasoning steps involving decidable predicates, allowing for concise and efficient proofs.
-This first class of proofs by reflection is particularly suited for properties such as arithmetic equalities, inequalities, and simple inductive predicates.
-
-The size of such a proof only depends on the size of a particular argument $y$ and does not depend on the number of implicit $\equivL$ steps: explicit rewriting steps have been replaced by implicit $\equivL$ reductions.
-The efficiency of this technique of course strongly depends on the efficiency of the system to reduce the application of the decision procedure $f(y)$, hence on the efficiency of the decision procedure ($f$) itself.
-
-
-Moreover, while the proof term of the correctness lemma for $f$ may be large, it needs to be constructed only once. This proof can be shared across all instantiations and does not require rechecking by the type-checker in subsequent uses.
-
-\medskip
-
-The second class of problems where computation can help is the class of algebraic proofs such as proofs relying on rewriting modulo the associativity or the commutativity of some operators e.g. disjunction $(\lor)$ or conjunction $(\land)$.
-For these proofs, we again consider a type $B: \set$ and we exhibit an "abstract type" $A: \set$, with two functions $\mathop{denote} \colon {\el}\,A \ra {\el}\,B$ and $g: \el{}\,A \ra \el{}\,A$.
-The function $\mathop{denote}$ is an interpretation function that we can use to associate terms in the concrete type $B$ with abstract terms of type $A$.
-The function $g$ reasons on the abstract terms. The reflection process relies on a theorem that expresses that the function $g$ does not change the value of the interpreted
-term:
-
-\begin{equation*}
-  g\_ident : \Pi\,x: A, \prf (\mathop{denote}~(g~x) = \mathop{denote} x)
-\end{equation*}
-
-Thus, to prove that two terms $t_1$ and $t_2$ are equal in $B$ , we only need to show that they are the images of two terms $a_1$ and $a_2$ in $A$ such that $g\,a_1 = g\,a_2$.
-As an illustration of this second class of proofs by reflection, consider the commutativity of disjunction: for any two propositions $P$ and $Q$, we wish to prove that $P \lor Q$ is logically equivalent to $Q \lor P$.
-To apply reflection, we first define an \emph{abstract} syntax for formulas, for instance, a type $\mathsf{Monoid}$ with constructors for atomic propositions and for disjunction.
-We then define an \emph{interpretation function} $\mathsf{denote} \colon \mathsf{Monoid} \to \prop$ that maps abstract formulas to their logical meaning.
-Next, we define a normalization function $\mathop{norm}: \mathsf{Monoid} \to \mathsf{Monoid}$ that rewrites disjunctions into a canonical order, such as ordering operands lexicographically.
-The key theorem states that this normalization preserves meaning:
-\[
-\mathsf{norm\_mono} : \forall x : \mathsf{Monoid}, \mathsf{denote}(\mathop{norm} x) = \mathsf{denote}(x).
-\]
-Hence to prove that $P \lor Q$ and $Q \lor P$, are logically equivalent, it suffices to represent them as abstract expressions $m_1$ and $m_2$ of type $\mathsf{Monoid}$, apply the function $\mathop{norm}$ with the lemma $\mathsf{norm\_mono}$ to normalize both, and check that $\mathop{norm}(m_1) = \mathop{norm}(m_2)$.
-
-In this thesis, we make use of both classes of reflection to encode certain \texttt{Alethe} rules. For example, the reconstruction of arithmetic steps (\textbf{LIA} and \textbf{LRA}) and bitvector (\textbf{BV}) Alethe rules primarily relies on the first class,
-while the permutation of clauses for the \texttt{resolution} rule relies on the second class.
-
-
-
-% \section{Computing hyper-resolvents with proof by reflection}
-% \label{ssec:refl-reso}
-
-
-% Whereas the technique described in \cref{ssec:resolution} can be used to reconstruct resolution proofs in Alethe proof traces, it suffers from poor scalability.
-% Specifically, the permutation proof generated for pivot movement due to reasoning modulo AC may become excessively lengthy. We will now describe an alternative technique based on computational reflection that allows us to prove the permutation of clauses efficiently.
-% Relying on the rewriting facilities of Lambdapi, we implemented a decision procedure that checks equality between clauses by rewriting modulo AC-canonization.
-
-% The core idea is to put clauses with pivots in different positions into a canonical form, allowing them to be compared. To achieve this, we present a proof by reflection of the second class in the following.
-% If two clauses are determined to be equal, the current clause can be substituted with one where the pivot is placed at the head position, allowing for the subsequent application of \cref{lemma:resolution}.
-% To handle associative and commutative symbols, Lambdapi provides the modifiers \lpinline{associative commutative} \info{ac}{the introduction of Lambdapi will present AC and its builtin order},
-% ensuring that terms are systematically placed into a canonical form given a builtin ordering relation, following the technique described in \cite{ACorigin} and \cite[\S 5]{univAC}.
-
-% Additionally, as discussed in \cref{sect:elabration-resolution} \change{ac}{Need Alethe intro}, the solver can introduce implicit $\tt{contraction}$ steps between binary resolution steps.
-% We leverage the elaboration process in Carcara to avoid implementing a proof by reflection for $\tt{contraction}$, which would require structures not present in the standard library of Lambdapi to reason about collections modulo duplicate terms, such as finite sets.
-
-% \begin{figure}[t]
-%   \centering
-%   \begin{tikzcd}[column sep=tiny]
-%     {C_1 =_{\bb{C}} C_2} & {\bb{C}} && {\bb{C}} & {[C_1] =_{\bb{C}} [C_2]} \\
-%     \\
-%     {c_1 =_{\tt{Clause}} c_2} & \kw{Clause} && \kw{Clause} & {\den{[C_1]} =_{\tt{Clause}} \den{[C_2]}}
-%     \arrow["{{[\_]}}", dotted, from=1-2, to=1-4]
-%     \arrow["{{\den{\_}}}", from=1-4, to=3-4]
-%     \arrow["{{\reify{\_}}}"', from=3-2, to=1-2]
-%     \arrow["{\Leftrightarrow}"{marking, allow upside down}, draw=none, from=3-2, to=3-4]
-%   \end{tikzcd}
-%   \caption{Checking resolution steps via reification in the algebra $\bb{C}$.}
-%   \label{fig:reflective-process}
-% \end{figure}
-
-% The \cref{fig:reflective-process} provides an overview of the realization of this technique in Lambdapi.
-% It relies on \emph{reifying} clauses into terms of an algebra $\bb{C}$, using the operator $\reify{}$ defined in \cref{def:reify-def},
-% and we denote by $[t]$ the normalization of term $t$ based on the \lpinline{associative commutative} modifiers.
-% This normalization corresponds to the function $g$ introduced in \cref{ssec:reflection-intro}.
-% Since we rely on the built-in Lambdapi modifiers, normalization is implicitly handled by \lpm, and thus the function $[\_]: \bb{C} \rightarrow \bb{C} \coloneq \lambda x., x$ is simply the identity.
-
-% \begin{definition}[The abstract type $\bb{C}$]
-% The \emph{abstract type} $\bb{C}$ is an inductive type defined as follows:
-% \begin{align*}
-% &\bb{C} : \type \\
-% &|~\eps: \bb{C} \\
-% &|~\kw{P}: \prop \ra \bb{C} \\
-% &|~\sqcup: \bb{C} \ra \bb{C} \ra \bb{C} \quad \text{(written infix)} \\
-% &\kw{clauseAC} : \set \\
-% &\el\, \kw{clauseAC} \re \bb{C} \\
-% \end{align*}
-% where the constructor $\eps: \bb{C}$ represents $\nil$ and the constructor $\sqcup$ is declared \lpinline{associative commutative}, which is the analogue of $\cons$.
-% Propositions are injected into the algebra by the operator $\tt{P}$.
-% \end{definition}
-
-% \begin{definition}[reification function]
-% \begin{align*}
-% & \reify{}: \texttt{Clause} \ra \bb{C} \\
-% &\reify{(x \cons y)} \re \kw{P}~x \,\sqcup \reify{y} \\
-% &\reify{ \blacksquare } \re \epsilon \\
-% \end{align*}
-% \label{def:reify-def}
-% \end{definition}
-
-% It then remains to decide the equality of two terms in $\bb{C}$, and this is accomplished using the operator $=_\bb{C}$ introduced in \cref{def:eqC}.
-% Its definition relies on Boolean conjunction \kw{andb} (written infix), which is predefined in Lambdapi's standard library, as well as on the operator \kw{eq} that checks equality of two terms of type $\prop$.
-
-% \begin{definition}[decidable equivalence relation]
-% The operator $=_\bb{C} : \bb{C} \ra \bb{C} \ra \kw{bool}$ is defined by the following rewrite rules.
-
-% \begin{align*}
-% &x_1 \sqcup y_1 =_\bb{C} x_2 \sqcup y_2 \re (x_1  =_\bb{C} x_2) ~\kw{andb}~ (y_1  =_\bb{C} y_2) \\
-% &\_ \sqcup \_ =_\bb{C} \epsilon \re \false \\
-% &\_ \sqcup \_ =_\bb{C} \kw{P}(\_) \re \false \\
-% &\kw{P}(x) =_\bb{C} \kw{P}(y) \re (\kw{eq}~x~y) \\
-% &\kw{P}(\_) =_\bb{C} \_ \sqcup \_ \re \false \\
-% &\kw{P}(\_) =_\bb{C} \epsilon \re \false \\
-% &\epsilon =_\bb{C} \epsilon \re \true \\
-% &\epsilon =_\bb{C} \kw{P}(\_) \re \false \\
-% &\epsilon =_\bb{C} \_ \sqcup \_ \re \false
-% \end{align*}
-% with:
-% \begin{align*}
-% &\eq~x~x~ \re \true  & \kw{andb}~\kw{true}~\kw{true} \re \kw{true} \\
-% &\eq~x~y~ \re \false & \kw{andb}~\kw{false}~\_ \re \kw{false} \\
-% & & \kw{andb}~\_~\kw{false} \re \kw{false}
-% \end{align*}
-% \label{def:eqC}
-% The binary operator \kw{eq} is declared as \lpinline{sequential} so that the second rewrite rule will be applied only if the first one fails.
-% Its definition ensures that $\kw{eq}~x~y$ holds if and only if the two propositions $x$ and $y$ are identical.
-% \end{definition}
-
-% We now state the correctness theorem, demonstrating that a given clause is a permutation of another.
-
-% \begin{lemma}[P-injective]\label{lem:p-inj}
-% For any $x, y: \prop$, if $\kw{istrue}(\cal{P}(x) =_{\bb{C}} \cal{P}(y))$ then $x = y$.
-% \begin{proof}
-% From the definition of $=_{\bb{C}}$ that uses a non-linear sequential rewriting rule,
-% it follows directly that if $\cal{P}(x) =_{\bb{C}} \cal{P}(y)$ is true then $x$ and $y$ have to be the same.
-% \end{proof}
-% \end{lemma}
-
-
-% \begin{theorem}[Correctness]\label{lem:eq-C}
-% For $c_1, c_2 : \tt{Clause}$, if $\tt{istrue} (\reify{c_1} =_{\bb{C}} \reify{c_2})$ then $\cal{F}\,c_1 = \cal{F}\,c_2$.
-% \end{theorem}
-% \begin{proof}
-% By induction on $c_1$ and $c_2$.
-% \begin{itemize}
-%   \item First suppose $c_1 = \blacksquare$ and $c_2 = \blacksquare$. We must show that $\tt{istrue} (\epsilon =_{\bb{C}} \epsilon)$ implies $\cal{F}\, \blacksquare = \cal{F}\, \blacksquare$ which follows directly by reflexivity.
-%   \item Next, suppose $c_1 = \blacksquare$ and $c_2 = x \veedot xs$. Then it follows from the the rewriting rules of $=_{\bb{C}}$ that we have a contradiction since we supposed that $\tt{istrue}(\epsilon =_{\bb{C}} \cal{P}(x) \sqcup \reify{xs})$.
-%   \item The case where $c_1 = x \veedot xs$ and $c_2 = \blacksquare$ is symmetrical.
-%   \item Lastly, suppose $c_1 = x \veedot xs$ and $c_2 = y \veedot ys$, and
-%   assume that $\tt{istrue}(\reify{c_1} =_{\bb{C}} \reify{c_2})$.
-%   Let $d_1 = \reify{(x \veedot xs)}$ and $d_2 = \reify{(y \veedot ys)}$, then $d_1$ must be of the form
-%   $\cal{P}(u) \sqcup \reify{u'}$ and $d_2$ must be of the form $\cal{P}(v) \sqcup \reify{v'}$ where
-%   the clauses $u'$ and $v'$ are shorter than $xs$ and $ys$, respectively, and such that
-%   $\cal{F}\,(u \veedot u') = \cal{F}\,(c_1)$ and similarly
-%   $\cal{F}\,(v \veedot v') = \cal{F}\,(c_2)$.
-%   Moreover, from the assumption $\tt{istrue}(d_1 =_{\bb{C}} d_2)$ and \cref{lem:p-inj} it follows that
-%   $u = v$, and by induction hypothesis we obtain that $\cal{F}\,u' = \cal{F}\,v'$. Taking everything
-%   together, we finally obtain that $\cal{F}\,c_1 = \cal{F}\,c_2$.
-% \end{itemize}
-% \end{proof}
-
-\begin{example}
-The code in \cref{lst:new-reso} demonstrates how \cref{lem:eq-C} is used to move the pivot within a clause.
-It introduces a proof of clause permutation using a cut at line 8, where \cref{lem:eq-C} is used to show, by computation, that the clause of step $t1$ is a permutation of another clause with the pivot at the head.
-Line 10, the $\tt{trivial}$ is the constructor for the proposition $\top$, and it concludes the proof if the $=_{\bb{C}}$ of \cref{lem:eq-C} returns $\tt{true}$. % AC: Should we mention again that this is because (istrue true) -> True?
-Additionally, we utilize the lemma $\tt{subst\_equiv\_clause}$, which states that for any clauses $c_1$ and $c_2$, if $\cal{F}(c_1) = \cal{F}(c_2)$ and there exists a proof of $c_1$, then we can derive a proof of $c_2$.
-Thus, we combine in the $\tt{resolution}$ (line 12) this lemma with the permutation proof of $t1$ and the clause of $t2$ to derive the clause asserted by $t3$.
-
-\begin{lstlisting}[mathescape=true, caption={Reflective resolutions}, label={lst:new-reso}, language=Lambdapi]
-opaque symbol t1 : Prf$\textcolor{purple}{\smash{^\bullet}}$ (a ⟇ b ⟇ p ⟇ ▩) ≔  begin ... end;
-
-opaque symbol t2 : Prf$\textcolor{purple}{\smash{^\bullet}}$ ((¬ (p)) ⟇ c ⟇ d ⟇ ▩) ≔  begin ... end;
-
-opaque symbol t3 : Prf$\textcolor{purple}{\smash{^\bullet}}$ (a ⟇ b ⟇ c ⟇ d ⟇ ▩) ≔
-begin
-have t1_t2 : Prf$\textcolor{purple}{\smash{^\bullet}}$ (a  ⟇ b  ⟇ c  ⟇ d ⟇ ▩) {
-have t1_perm : Prf$\textcolor{purple}{\smash{}}$ (($\cal{F}$ (a ⟇ b ⟇ p ⟇ ▩)) = ($\cal{F}$ (p ⟇ a ⟇ b ⟇ ▩))) {
-  apply cl_perm_correct (a  ⟇ b  ⟇ p ⟇ ▩) (p  ⟇ a  ⟇ b ⟇ ▩);
-  apply trivial;
-};
-apply resolution (subst_equiv_clause t1_perm t1) t2;
-};
-refine t1_t2;
-end;
-\end{lstlisting}
-
-\end{example}
 
 \section{Simplification rules}
 
@@ -756,6 +649,8 @@ Given an arbitrary $a : \kw{Clause}$ and predicates $p, q : \el{}\,a \ra \prop$,
 \begin{lemma}[bind$\exists$]\label{lem:bind-exists}
   Given an arbitrary $a : \kw{Clause}$ and predicates $p, q : \el{}\,a \ra \prop$, if $\Pi x : \el{}\,a,~ \prf (p~x = q~x)$ then $\prf ((\exists x, p~x) = (\exists y, q~y))$.
 \end{lemma}
+
+\input{Chapters/reconstruction/reflection}
 
 \section{The \texttt{\upshape{evaluate}} cvc5 rule}
 \label{ssec:eval-recon}
