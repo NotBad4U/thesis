@@ -83,7 +83,10 @@ For example, the formulas $\neg \neg \neg P$ and $\neg \neg P$ can serve as pivo
 The first formula is interpreted as $\neg P$ and the second as just $P$ to perform resolution steps.
 Alethe allows resolution steps without providing the pivots; however, Carcara's elaborated proof incorporates the pivots as arguments in the resolution rule, eliminating the need for an additional intermediate step to search for the pivots in our translation to Lambdapi.
 In addition, pivots may appear anywhere in a clause rather than just as the head literal.
-We first prove the following lemmas necessary to prove our resolution rule.
+To prove our resolution rule, we first establish a sequence of auxiliary lemmas.
+Each lemma captures a structural property of disjunctions at the clause level,
+and together they provide the tools needed for the final resolution argument.
+We recall that clause of literals can be rewrite into disjunctions.
 
 \begin{lemma}[Sublist disjunction]\label{lem:orN_subList}
 Let $ps$ and $qs$ be two Clause and two index $i,j \in \mathbb{N}$. If
@@ -114,16 +117,19 @@ The proof proceeds by structural induction on $qs$.
 
       \item When $j > 0$ we then analyze $i$.
         \begin{itemize}
-          \item If $i=0$, then $\mathrm{subclause}(t \veedot \ell,0,j{+}1)= t \veedot \mathrm{subclause}(\ell,0,j)$.
-            The equality hypothesis yields
+          \item If $i=0$, then
+            \[
+              \mathrm{subclause}(t \veedot \ell,0,j{+}1)= t \veedot \mathrm{subclause}(\ell,0,j).
+            \]
+            and the equality hypothesis yields
             \[
               \prfcl\bigl(p = t \veedot \mathrm{take}\,j\,\ell\bigr).
             \]
             Thus, there are two subcases to consider.
-            If $\prf(t)$ holds, we immediately obtain $\prfcl(t \veedot \ell)$ by left introduction.
+            When $\prf(t)$ holds, we immediately obtain $\prfcl(t \veedot \ell)$ by left introduction.
             Otherwise, $\prfcl(\mathrm{take}\,j\,\ell)$ holds; by the induction hypothesis we lift provability to $\prfcl(\ell)$, and then conclude $\prfcl(t \veedot \ell)$ by right introduction.
           \item If $i > 0$, we peel one element from both $\mathrm{drop}$ and $qs$.
-            The equality premise specializes to $ps=\mathrm{subclause}(\ell,i,j)$, and the desired claim follows from the induction hypothesis on $\ell$.
+            So the hypothesis specializes to $ps=\mathrm{subclause}(\ell,i,j)$, and the desired claim follows from the induction hypothesis on $\ell$.
           \end{itemize}
     \end{itemize}
   In all cases we infer $\prfcl(qs)$, as required.
@@ -131,15 +137,11 @@ The proof proceeds by structural induction on $qs$.
 \end{proof}
 \end{lemma}
 
+The next two lemmas show that provability is stable under appending clauses on either side.
+These capture the monotonicity of disjunction ($\veedot$) with respect to clause concatenation.
+
 \begin{lemma}[Append preserves right disjunct]\label{lem:orN_append_right}
-Let $ps,qs$ two clauses. If
-\[
-\prfcl(qs),
-\]
-then also
-\[
-\prfcl(ps \concat qs).
-\]
+Let $ps,qs$ two clauses. If $\prfcl(qs)$ then also $\prfcl(ps \concat qs)$.
 \begin{proof}
 The clause $qs$ appears as a subclause of $ps \concat qs$, starting at position $\mathrm{size}(ps)$.
 By Lemma~\ref{lem:orN_subList}, provability of the disjunction of a subclause lifts to provability of the whole clause.
@@ -159,58 +161,58 @@ This captures the monotonicity of $\veedot$ under extension of the clause.
 \end{lemma}
 
 \begin{lemma}[Append preserves right disjunct]\label{lem:orN_append_left}
-Let $ps,qs$ two clauses. If
-\[
-\prfcl(ps),
-\]
-then also
-\[
-\prfcl(ps \concat qs).
-\]
+Let $ps,qs$ two clauses. If $\prfcl(ps)$, then also $\prfcl(ps \concat qs)$.
 \begin{proof}
-The proof is similar to the one of \cref{lem:orN_append_right}.
+The proof follows analogously to that of \cref{lem:orN_append_right}.
 \end{proof}
 \end{lemma}
 
-\begin{lemma}[Remove disjunction]\label{lem:orN_remove}
-Let $qs$ be a clause and $j < \mathrm{size}(qs)$. Then
-\[
-  \prf\Bigl(qs[j] \veedot \kw{remove}(qs,j) = qs\Bigr).
-\]
-Here $(\kw{remove}~qs~j)$ denotes the clause $qs$ with its $j$-th literal removed, and 
-$qs[j]$ denotes the $j$-th literal of $qs$ (with $\bot$ as default if $j$ is out of bounds).
-\end{lemma}
+The final auxiliary lemma explains how a clause can be decomposed into the disjunction
+of any chosen literal and the clause obtained by removing it.
 
+\begin{lemma}[Remove disjunction]\label{lem:orN_remove}
+Let $qs$ be a clause and an index $j$ with the condition that $j < \mathrm{size}(qs)$. Then
+\[
+  \prf\Bigl((qs[j] \veedot \kw{remove}(qs,j)) = qs\Bigr).
+\]
+Here $(\kw{remove}~qs~j)$ denotes the clause $qs$ with its $j$-th literal removed, and
+$qs[j]$ denotes the $j$-th literal of $qs$ (with $\bot$ as default if $j$ is out of bounds).
 \begin{proof}
 We proceed by induction on the structure of $qs$.
 
 \begin{itemize}
-  \item[] Case $qs=\nil$.  The assumption $j < \mathrm{size}(qs)$ cannot hold, so this case is impossible.   
- 
+  \item[] Case $qs=\nil$.  The assumption $j < \mathrm{size}(qs)$ cannot hold, so this case is impossible.
+
   \item[] Case $qs= t \veedot \ell$. We must show that:
   \[
-    \prfcl((t \veedot \ell)[j] \veedot \kw{remove}(t \veedot \ell,j) = t \veedot \ell).
+    \prf((t \veedot \kw{remove}(t \veedot \ell,j) = t \veedot \ell).
   \]
-  We proceed by a case analysis on $i$.
+  We distinguish two subcases according to $j$.
   \begin{itemize}
-    \item with $j=0$. Then $\kw{remove}(qs,0)=\ell$ and $qs[0] = t$.
-    \item When $j>0$,
-      then $\kw{remove}~qs~j = t \veedot (\kw{remove}~\ell~j-1)$ and 
-      $\kw{nth}(\bot,qs,j)=\kw{nth}(\bot,\ell,j-1)$.  
-      By the induction hypothesis on $\ell$ at position $j-1$, we have
+    \item If $j=0$, then $\kw{remove}(qs,0)=\ell$ and $qs[0]=t$.
+    Removing the head element $t$ and then reintroducing it yields the same clause.
+    Hence the equality holds immediately.
+    \item If $j>0$, then we have the identities
       \[
-        \prfcl(\kw{remove}(\ell,j-1)) \;\veedot\; \kw{nth}(\bot,\ell,j-1) \;=\; \prfcl(\ell).
+        \kw{remove}(t \veedot \ell,j) = t \veedot \kw{remove}(\ell,j-1)\\
+        (t \veedot \ell)[j] = \ell[j-1].
       \]
-      Adding $t$ on the left and using associativity of $\veedot$, we conclude that
+      By the induction hypothesis applied to $\ell$ at index $j-1$, we know that
       \[
-        \prfcl(\kw{remove}(qs,j)) \;\veedot\; \kw{nth}(\bot,qs,j) \;=\; \prfcl(qs).
+        \prf\bigl(\,\ell[j-1] \veedot \kw{remove}(\ell,j-1) = \ell\,\bigr).
       \]
+      Combining this with the identities above, we obtain
+      \[
+        \prf\bigl(\,t \veedot \kw{remove}(t \veedot \ell,j) = t \veedot \ell\,\bigr),
+      \]
+      as required.
   \end{itemize}
 \end{itemize}
-In all cases we obtain the desired equality.
+In all cases we obtain the desired equality
 \end{proof}
+\end{lemma}
 
-We can then prove the resolution rule.
+With these lemmas in hand, we are ready to state and prove the main resolution rule.
 
 \begin{theorem}[Resolution]
 Let $ps$ and $qs$ be two clauses such that $\prfcl(ps)$ and $\prfcl(qs)$ hold.
@@ -232,49 +234,29 @@ We reason by case analysis on the pivot literal truth.
 
 \begin{itemize}
 \item[] Case 1: \(\prf(ps[i])\).
-% Then by the relation $P = \lnot Q$, we immediately obtain $\prf(\lnot Q)$.
-% From Lemma~\ref{lem:orN} applied to $(qs,j)$ we know that
-% \[
-%   \prf\bigl(\mathrm{disj}(qs)\bigr) \;\Rightarrow\;
-%   \prf\bigl(\mathrm{disj}(\kw{remove(qs,j)) \lor Q\bigr).
-% \]
-% Since $\prf(\mathrm{disj}(qs))$ is given, this yields
-% $\prf(\mathrm{disj}(\kw{remove(qs,j)) \lor Q)$.
-% But under the assumption $\lnot Q$, the disjunct $Q$ is false, so the disjunction reduces to
-% $\prf(\mathrm{disj}(\kw{remove(qs,j)))$ (by Lemma~\ref{lem:or_identity_r}).
-% Now we combine this with $\kw{remove(ps,i)$ using the preservation lemma
-% (Lemma~\ref{lem:orN_append_right}), which states that appending a list with a
-% provable disjunction preserves provability.
-% Hence we obtain
-% \[
-% \prf\bigl(\mathrm{disj}(\kw{remove(ps,i){++}\kw{remove(qs,j))\bigr).
-% \]
-% \(\prf\bigl(\mathrm{disj}(\kw{remove}(ps,i){++}\kw{remove}(qs,j))\bigr)\).
+  Then by the relation $ps[i] = \lnot ps[j]$, we immediately obtain $\prf(\lnot ps[j])$.
+  But under this assumption and by a classical reasoning the $ps[j]$ is false.
 
-\item[] Case 2: \(\prf(\lnot ps[i])\).
-% Then again by the relation $P = \lnot Q$ we deduce $\prf(Q)$.
-% From Lemma~\ref{lem:orN} applied to $(ps,i)$ we know that
-% \[
-% \prf\bigl(\mathrm{disj}(ps)\bigr) \;\Rightarrow\;
-% \prf\bigl(\mathrm{disj}(\kw{remove(ps,i)) \lor P\bigr).
-% \]
-% Since $\prf(\mathrm{disj}(ps))$ is given, this yields the disjunction
-% $\prf(\mathrm{disj}(\kw{remove(ps,i)) \lor P)$.
-% Under the assumption $\lnot P$, the right disjunct $P$ is false, so the disjunction reduces to
-% $\prf(\mathrm{disj}(\kw{remove(ps,i)))$.
-% Now by Lemma~\ref{lem:orN_append_left}, which allows us to append a provable
-% disjunction on the left, we conclude
-% \[
-% \prf\bigl(\mathrm{disj}(\kw{remove(ps,i){++}\kw{remove(qs,j))\bigr).
-% \]
+  From \cref{lem:orN_remove} we know that
+  \[
+      ps = ps[i] \veedot \kw{remove}~ps~i\\
+      qs = qs[j] \veedot \kw{remove}~qs~j
+  \].
+  Combining this with the fact that $qs[j]$ is false, we deduce $\prfcl(\kw{remove}(qs,j))$.
+  Now observe that $\kw{remove}(qs,j)$ is appended on the right to $\kw{remove}(ps,i)$
+  in the resolvent clause
+  \[
+    \kw{remove}(ps,i) \pp \kw{remove}(qs,j).
+  \]
+  By \cref{lem:orN_append_right}, whenever the right-hand clause is provable,
+  appending it to any left-hand clause preserves provability.
+  Therefore, applying the lemma with $ps =\kw{remove}~ps~i$ and $qs =\kw{remove}~qs~j$,
+  we conclude
+  \[
+    \prfcl(\kw{remove}(ps,i) \pp \kw{remove}(qs,j)).
+  \]
+\item[] Case 2: \(\prf(\lnot ps[i])\). This case is analogous to the first, but uses \cref{lem:orN_append_left} instead.
 \end{itemize}
-
-% Since in both cases the conclusion holds, we have shown that whenever
-% $ps$ and $qs$ are provable and contain complementary literals at positions $i$
-% and $j$, the resolvent clause obtained by removing these literals and joining
-% the remainders is also provable.
-% By the isomorphism $\bb{L}o \cong \Clause$, this is precisely the usual
-% resolution rule at the level of clauses.
 \end{proof}
 \end{theorem}
 
