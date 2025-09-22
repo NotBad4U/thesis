@@ -138,7 +138,7 @@
 \newcommand\RsAC{\longrightarrow_{\mathcal{R} \slash AC}}
 \newcommand\R{\longrightarrow_{\mathcal{R}}}
 \newcommand\RRAC{\twoheadrightarrow^{AC}}
-\newcommand\Var[2]{\mathop{\mathtt{var}}(#1, #2)}
+\newcommand\Var[2]{(\mathop{\mathtt{var}}~#1~#2)}
 \newcommand\Den[1]{ \tau(#1)}
 \newcommand\deno[1]{ \Downarrow #1  }
 \newcommand\Deno[1]{ \Downarrow #1  }
@@ -173,6 +173,9 @@
 \newcommand\eqb[0]{\kw{eqb}}
 \newcommand\andb[0]{\kw{andb}}
 \newcommand\eq[0]{\kw{eq}}
+
+\newcommand\tlist[1]{\kw{list}~\texttt{#1}}
+\newcommand\List[1]{\bb{L}~\texttt{#1}}
 
 \newcommand\Q{\ensuremath{\bb{Q}}}
 \newcommand\Ring{\ensuremath{\bb{R}}}
@@ -225,9 +228,9 @@
 \begin{minipage}[c]{#1}
 % \centering
 \begin{tikzpicture}[scale=.9, node distance=2em]
-\node[scale=.9] (root) { \scriptsize $\overline{#2}$ };
-\node[scale=.9] (left) at ($(root.south) + (-3,-2)$) {\scriptsize $#3$};
-\node[scale=.9] (right) at ($(root.south) + (3,-2)$) {\scriptsize $#4$};
+\node[scale=.9] (root) { $\overline{#2}$ };
+\node[scale=.9] (left) at ($(root.south) + (-3,-2)$) {$#3$};
+\node[scale=.9] (right) at ($(root.south) + (3,-2)$) {$#4$};
 \draw[->] (root) edge node[above, pos=0.9]{(#5)} (left.north) ;
 \draw[->] (root) edge node[above, pos=0.9]{(#6)}  (right.north) ;
 \end{tikzpicture}

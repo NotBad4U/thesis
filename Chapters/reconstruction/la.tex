@@ -66,7 +66,7 @@ We start by presenting the first strategy based on a reflection with inner norma
 \subsection{Representation of integers}
 \label{ssec:representation}
 
-\begin{definition}[Type $\bb{G}$]
+\begin{definition}[Type $\bb{G}$]\label{def:G-inner}
 The procedure is based on an algebraic group structure, denoted as  $\bb{G}$, which represents linear polynomials.
 The base type for its elements is $\bb{G}: \type$. The unary operator $\tt{cst}$ injects constants from $\Z$ into $\bb{G}$.
 \begin{align*}
@@ -341,11 +341,11 @@ To validate this procedure, it is necessary to establish the correctness of the 
 For all $\bb{G}$-terms $t$, we have $(\den{[t]}) = (\den{t})$ where $[t]$ is the AC-canonical form of $t$ with respect to $\longrightarrow^{AC}_\Sigma$.
 \end{theorem}
 \begin{proof}
-  The proof proceeds by induction on $t$, and the key case is the one where $t = t_1 \oplus t_2$.
-% This is a meta-level proof, proceeding by structural induction on $t$.
-% Assume that the normalization function $[\_]$ is implemented using a merge sort algorithm over the multiset of subterms $\bb{G}$, with respect to the associative-commutative operator $\oplus$.
-% We focus on the inductive case where $t = t_1 \oplus t_2$.
-We have to show that $\mathop{\den{[t_1 \oplus t_2]}} = \mathop{(\den{t_1}) + (\den{t_2})}$.
+This is a \emph{meta-level} proof, proceeding by structural induction on $t$, and the key case is the one where $t = t_1 \oplus t_2$.
+We have to show that
+\[
+  \mathop{\den{[t_1 \oplus t_2]}} = \mathop{(\den{t_1}) + (\den{t_2})}.
+\]
 By the induction hypothesis, we have
 $\mathop{\den{[t_1]}} = \mathop{\den{t_1}}$ and $\mathop{\den{[t_2]}} = \mathop{\den{t_2}}$.
 Hence,
@@ -356,12 +356,8 @@ Hence,
 \]
 It remains to show that
 $\mathop{\den{([t_1] \oplus [t_2])}} = \mathop{\den{[t_1 \oplus t_2]}}$.
-Now, $[t_1]$, $[t_2]$, and $[t_1 \oplus t_2]$ are terms built solely from \tt{cst}, \tt{var}, and $\oplus$ since the remaining operators have been eliminated by applying the rules in \cref{fig:grp-rw}, and the terms on both sides of the equation contain the same multisets of subterms. The two terms are therefore identified by AC-canonicalization.
-%
-% $[t_1 \oplus t_2]$ is the canonical (i.e., sorted) form of the multiset of subterms in $t_1$ and $t_2$,
-% and that merge-sorting two normalized (i.e., already sorted) linear polynomials yields the same result as normalizing (i.e sorting) their merge.
-% Therefore, since the normalization preserves denotation, we conclude that $\den{[t]} = \mathop{\den{t}}$ for all $\bb{G}$-terms $t$.
-\qed
+Now, $[t_1]$, $[t_2]$, and $[t_1 \oplus t_2]$ are terms built solely from \tt{cst}, \tt{var}, and $\oplus$ since the remaining operators have been eliminated by applying the rules in \cref{def:grp-arith-ops}, and the terms on both sides of the equation contain the same multisets of subterms.
+The two terms are therefore identified by AC-canonicalization.
 \end{proof}
 
 We make use of \cref{lem:conv} to embed $\Z$-terms into $\bb{G}$ to normalize and subsequent comparison.
@@ -387,7 +383,7 @@ To express all inequalities uniformly, remaining equalities are rewritten as $\g
 Finally, Step 6 derives the contradiction by summing inequalities from lines 13 to 17.
 
 \section{Reflection with outer normalization}
-\info{ac}{this work is still in development compared to inner.}
+\label{sec:outer-normalization}
 
 We now describe the second strategy, which implements the normalization function entirely within Lambdapi.
 This approach benefits from an entirely internal correctness proof, but it typically results in slower performance compared to the first strategy.
@@ -396,289 +392,303 @@ As in the first approach, an inductive type $\bb{G}$ reflects the syntactic repr
 \subsection{Reflecting integers}
 
 \renewcommand\reify[2]{ (\Uparrow #1~#2)  }
-\newcommand\Cst[1]{\kw{cst} #1}
+\newcommand\Cst[1]{\kw{cst}~#1}
 \newcommand\Add[2]{\kw{add}~#1~#2}
+
+\begin{notation}
+We write $a[i]$ for $(\kw{nth}~0~i~a)$, i.e., the $i$-th element of the list $a$, with $0$ as default value to make the function total.
+\end{notation}
 
 % \begin{figure}[h]
 \begin{definition}\label{outer-g-def}
-The algebraic group $\bb{G}$ reflecting $\bb{Z}$:
+The algebraic group $\bb{G}$ reflecting $\bb{Z}$ atoms:
 \begin{align*}
-& \bb{G}: \type & \kw{mul}(k, \cst{l}) \re \cst{(k \cdot l)} \\
-&|~\kw{add}: \bb{G} \ra \bb{G} \ra \bb{G} & \kw{mul}(k, \var{i}{l}) \re \var{i}{(k \cdot l)} \\
-&|~\tt{var}: \N \ra \Z \ra \bb{G} & \kw{mul}(k, \add{x}{y}) \re \add{\kw{mul}(k, x)}{\kw{mul}(k, y)} \\
-&|~\tt{cst}: \Z \ra \bb{G} & \\
-&|~\tt{mul}: \Z \ra \bb{G} \ra \bb{G} & \\[1em]
-&\tt{grp}: \set & \\
-&\el~\tt{grp} \re \bb{G}
+& \bb{G}: \type \\
+&|~\kw{var}: \N \ra \Z \ra \bb{G} \\
+&|~\kw{cst}: \Z \ra \bb{G} \\
+&\kw{grp}: \set \\
+&\el~\kw{grp} \re \bb{G}
 \end{align*}
 \end{definition}
-\info{ac}{Here add is use instead $\oplus$}
 
-\begin{remark}
-The resulting normal forms do not contain the constructor $\tt{mul}$ as the associated rewrite rules eliminate them in favor of $\tt{var}, \tt{add}$ and $\tt{cst}$.
-\end{remark}
+The main differences with \cref{def:G-inner} are as follows. 
+First, the constructor $\kw{var}$ indexes uninterpreted terms by $\N$ rather than encapsulating them directly. 
+Second, the operator $\add{}{}$ is omitted, since finite sums are represented by lists ($\List{grp}$) in order to obtain a flattened structure. 
+Third, the operator $\kw{mul}$ is defined externally, so as to simplify subsequent definitions and proofs.
+
+\begin{definition}[multiplication of coefficient]\label{outer-mul-def}
+\begin{align*}
+&\kw{mul} : \Z \ra \List{grp} \ra \List{grp} \\
+&\kw{mul}~k~(\Cst{c} \cons tl) \re \kw{mul}~(k * c)~tl \\
+&\kw{mul}~k~(\var{i}{c} \cons tl) \re \var{i}{(k*c)} \cons \kw{mul}~k~tl \\
+&\kw{mul}~\_~\Box \re \Box
+\end{align*}
+\end{definition}
 
 \begin{definition}[Reification function]
-The \tt{reify} function $\Uparrow : \bb{L}~\kw{int} \ra \Z \ra (\bb{G} \times \bb{L}~\kw{int})$ performs reification of arithmetic expressions from $\bb{Z}$ into the abstract type $\bb{G}$,
-producing a pair consisting of a reified term of type $\bb{G}$, and a list of variable values $\bb{L}~\kw{int}$ called the \emph{context map} that represents uninterpreted terms in domain of $\bb{G}$ such as variable.
+The \tt{reify} function:
+\[
+  \Uparrow : \List{int} \ra \Z \ra \el (\tlist{grp} \times \tlist{int})
+\]
+performs reification of arithmetic expressions from $\bb{Z}$ into the abstract type $\bb{G}$,
+producing a pair consisting of a reified term of type $\bb{G}$, and a list of variable values $\tlist{int}$ called the \emph{context map} that represents uninterpreted terms in domain of $\bb{G}$ such as variable.
 It is defined recursively over the structure of $\bb{Z}$ expressions:
 %
 \begin{align*}
-&\Uparrow: \bb{L}~\kw{int} \ra \Z \ra (\bb{G} \times \bb{L}~\kw{int}) \\
 &\reify{\ell}{(x + y)} \re \mathrel{let} (g_1, \ell_1) = \reify{\ell}{x}, (g_2, \ell_2) = \reify{\ell_1}{y} \\
-& \qquad \mathrel{in} (\Add(g_1, g_2), \ell_2) \\
+& \qquad \mathrel{in} (g_1 \concat g_2, \ell_2) \\
 &\reify{\ell}{(-x)} \re \mathrel{let} (g, \ell') = \reify{\ell}{x} \mathrel{in} (\opp(g), \ell') \\
-&\reify{\ell}{(x - y)} \re \reify{\ell}{x + (-y)} \\
-&\reify{\ell}{0} \re (\Cst(0), l) \\
-&\reify{\ell}{\ZPos(c)} \re (\Cst(\ZPos(c)), l) \\
-&\reify{\ell}{\ZNeg(c)} \re (\Cst(\ZNeg(c)), l) \\
-&\reify{\ell}{(0 * x)} \re (\Cst(0), l) \\
-&\reify{\ell}{(\ZPos(c) * x)} \re \mathrel{let} (g, \ell') = \reify{\ell}{x} \mathrel{in} \\
-& \qquad (\mul(\ZPos(c), g), \ell') \\
-&\reify{\ell}{(\ZNeg(c) * x)} \re \mathrel{let} (g, \ell') = \reify{\ell}{x} \mathrel{in} \\
-& \qquad (\mul(\ZNeg(c), g), \ell') \\
-&\reify{\ell}{(x * \ZPos(c))} \re \mathrel{let} (g, \ell') = \reify{\ell}{x} \mathrel{in} \\
-& \qquad (\mul(\ZPos(c), g), \ell') \\
-&\reify{\ell}{(x * \ZNeg(c))} \re \mathrel{let} (g, \ell') = \reify{\ell}{x} \mathrel{in} \\
-& \qquad (\mul(\ZNeg(c), g), \ell') \\
+&\reify{\ell}{(x - y)} \re \reify{\ell}{(x + (-y))} \\
+&\reify{\ell}{0} \re (\Cst~0 \concat \Box, l) \\
+&\reify{\ell}{(\ZPos~c)} \re (\Cst(\ZPos~c) \concat \Box, l) \\
+&\reify{\ell}{(\ZNeg~c)} \re (\Cst(\ZNeg~c) \concat \Box, l) \\
+&\reify{\ell}{(0 * x)} \re (\Cst~0 \concat \Box, l) \\
+&\reify{\ell}{((\ZPos~c) * x)} \re \mathrel{let} (g, \ell') = \reify{\ell}{x} \mathrel{in} \\
+& \qquad (\mul((\ZPos~c), g), \ell') \\
+&\reify{\ell}{((\ZNeg~c) * x)} \re \mathrel{let} (g, \ell') = \reify{\ell}{x} \mathrel{in} \\
+& \qquad (\mul((\ZNeg~c), g), \ell') \\
+&\reify{\ell}{(x * (\ZPos~c))} \re \mathrel{let} (g, \ell') = \reify{\ell}{x} \mathrel{in} \\
+& \qquad (\mul((\ZPos~c), g), \ell') \\
+&\reify{\ell}{(x * (\ZNeg~c))} \re \mathrel{let} (g, \ell') = \reify{\ell}{x} \mathrel{in} \\
+& \qquad (\mul((\ZNeg~c), g), \ell') \\
 &\reify{\ell}{x} \re
   \begin{cases}
-    (\Var{i}{1}, \ell) & \text{if } x \equivL \ell[i] \\
-    (\Var{\kw{size}(\ell)}{1}, \ell \mathrel{++} [x]) & \text{otherwise}
+    (\Var{i}{1} \concat \Box, \ell) & \text{if } x \text{ is } \ell[i] \\
+    (\Var{\kw{size}(\ell)}{1} \concat \Box, \ell \concat [x]) & \text{otherwise}
   \end{cases}
 \end{align*}
 \end{definition}
 
 \begin{definition}[Denotation function]
-The function $\den{}: (\bb{G} \times \bb{L}~\kw{int}) \ra \Z$ defines the semantic interpretation of reified arithmetic expressions of type $\bb{G}$.
-%
+The function: 
+\[
+  \den{}: \el (\tlist{grp} \times \bb{L}~\kw{int}) \ra \Z 
+\]
+defines the semantic interpretation of reified arithmetic expressions of type $\bb{G}$.
 \begin{align*}
-&\den: (\bb{G} \times \bb{L}~\kw{int}) \ra \Z\\
-&\den{(\Cst(k), \ell)} \re k \\
-&\den{(\Var{i}{k}, \ell)} \re \kw{nth}(\ell, i) \cdot k \\
-&\den{(\Add(x, y), \ell)} \re \den{(x, \ell)} + \den{(y, \ell)}
+&\den{\Box} \re 0 \\
+&\den{(h \cons tl, \ell)} \re \den_\bb{G}{(h, \ell)} \,+ \den{(tl, \ell)} \\
+& \text{with} \\
+&\den_\bb{G}: \el (\kw{grp} \times \bb{L}~\kw{int}) \ra \Z\\
+&\den_\bb{G}{(\Cst(k), \ell)} \re k \\
+&\den_\bb{G}{(\Var{i}{k} \concat \Box, \ell)} \re \ell[i] * k \\
 \end{align*}
 %
-Given a pair $(g, \ell)$ consisting of a term $g : \bb{G}$ and a context map $\ell$ of integer values corresponding to uninterpreted terms (e.g., variable), the function computes an interpreted value in $\mathbb{Z}$.
-Variables are interpreted via lookup in the context map $\ell$ with the function \kw{nth}, defaulting to zero if the index is out of bounds.
 \end{definition}
 
 
 \begin{example}
 Consider the arithmetic expression $x + y + x + 1$, where $x$ and $y$ are $\Z$ variables.
 When reifying this expression, we start with an empty context $\Box$ and apply the $\reify{}$ function recursively.
-Let us denote the final context map $\ell = [x, y]$, so that $x$ has index $0$ and $y$ has index $1$. The reification give us:
-%
-\begin{align*}
-&\reify{\Box}{(x + (y + (x + 1)))} \re \\
-&(
-  \mathsf{Add}(
-    \mathsf{Var}~0~1,\
-    \mathsf{Add}(
-      \mathsf{Var}~1~1,\
-      \mathsf{Add}(
-        \mathsf{Var}~0~1~,\
-        \mathsf{cst}~1
-      )
-    )
+\begin{equation*}
+\reify{\Box}{(x + y + x + 1)} \re^*
+(
+  \add{
+    \mathsf{Var}~0~1}
+    {
+      \add{\mathsf{Var}~1~1}
+      \add{\mathsf{Var}~0~1}{\cst{1}}
+    }
   ),\
-  \ell
+  [x, y]
 )
-\end{align*}
+\end{equation*}
+
+The final context map $\ell = [x, y]$, so that $x$ has index $0$ and $y$ has index $1$.
+
 \end{example}
 
 \subsection{Outer normalisation procedure}
 
-Normalization will consist of converting a $\bb{G}$ expression into a canonical form through a composition of functions:
+In this definition of merge sort algorithm, we reuse the split function defined in \cref{ssec:contraction-recon}.
 
-\begin{definition}[normalisation function]\label{def:norm-outer-grp}
-Given $x: \bb{G}$,
-\begin{equation*}
-\mathop{\mathtt{norm}} x \is \mathop{\mathtt{sum}} (\mathop{\mathtt{remove0}} (\mathop{\mathtt{sort}} (\mathop{\mathtt{aliens}} x)))
-\end{equation*}
-Where shortly:
-\begin{itemize}
-  \item $\kw{aliens}: \bb{G} \ra \bb{L}~\kw{grp}$, flattens $x$ into a list of atomic terms.
-  \item $\kw{sort}: \bb{L}~\kw{grp} \ra \bb{L}~\kw{grp}$, sort aliens variables by insertion sort and combines similar terms. For example:\\ $\Add{\Var{0}{1}}{\Var{0}{1}}$.
-  \item $\kw{remove0}: \bb{L}~\kw{grp} \ra \bb{L}~\kw{grp}$, eliminates neutral elements like $\kw{cst}~0$ or $\kw{var}~\_~0$.
-  \item $\kw{sum}: \bb{L}~\kw{grp} \ra \bb{G}$, rebuilds the term as a sum.
-\end{itemize}
-\end{definition}
-
-\begin{definition}[Aliens predicate]
-The function \kw{aliens} extracts the list of atomic (non-\kw{add}) subterms from an expression $x : \bb{G}$.
+\begin{definition}[Merge]
+The function $\kw{merge}$ combines two lists of group elements:
+\[
+\kw{merge} : \tlist{\kw{grp}} \times \tlist{\kw{grp}} \;\ra\; \tlist{\kw{grp}}.
+\]
+It proceeds by structural recursion:
 \begin{align*}
-&\kw{aliens} \cst{k} \re [\cst{k}] \\
-&\kw{aliens} \var{i}{k} \re [\var{i}{k}] \\
-&\kw{aliens}(\Add{x}{y}) \re \kw{aliens}(x) \mathbin{++} \kw{aliens}(y)
-\end{align*}
-It recursively traverses the structure and flattens it into a list of constants and variable terms, discarding the additive structure.
-\end{definition}
-
-\begin{definition}[Remove neutral elements]
-The function \kw{remove0} eliminates neutral elements from a list of atomic expressions in $\bb{G}$, namely constants equal to $0$ and variables with coefficient $0$.
-\begin{align*}
-&\kw{remove0}~\Box \re \Box \\
-&\kw{remove0}~(\cst{0} \colon\colon l) \re \kw{remove0}\,l \\
-&\kw{remove0}~(\cst{(\ZPos{k})} \colon\colon l) \re \cst{(\ZPos{k})} \colon\colon \kw{remove0}\,l \\
-&\kw{remove0}~(\cst{(\ZNeg{k})} \colon\colon l) \re \cst{(\ZNeg{k})} \colon\colon \kw{remove0}\,l \\
-&\kw{remove0}~(\var{i}{0} \colon\colon l) \re \kw{remove0}\,l \\
-&\kw{remove0}~(\var{i}{\ZPos{k}} \colon\colon l) \re \var{i}{\ZPos{k}} \colon\colon \kw{remove0}\,l \\
-&\kw{remove0}~(\var{i}{\ZNeg{k}} \colon\colon l) \re \var{i}{\ZNeg{k}} \colon\colon \kw{remove0}\,l
-\end{align*}
-This cleanup step ensures that the normalized form contains only meaningful terms.
-\end{definition}
-
-The function \kw{sum} reconstructs a syntactic expression of type $\bb{G}$ from a list of atomic terms by folding them with the \kw{add} constructor.
-This operation reassembles a flat list into a right nested addition tree.
-
-\begin{definition}[function sum]
-\begin{align*}
-&\kw{sum}~\Box \re \cst{0} \\
-&\kw{sum}~(x \colon\colon l) \re \Add{x}{\kw{sum}(l)}
-\end{align*}
-\end{definition}
-
-For our \emph{sort} function,  we require the following properties:
-\begin{itemize}
-  \item constants and variable terms are ordered canonically (constants first, then variables in increasing index),
-  \item constants are merged into a single term via addition,
-  \item variable terms with the same index are merged by summing their coefficients.
-\end{itemize}
-
-\begin{definition}[Sort by insertion]
-\begin{align*}
-&\kw{sort}: \bb{L}~\kw{group} \ra \bb{L}~\kw{group} \\
-&\kw{sort}~\Box \re \Box \\
-&\kw{sort}~(x :: xs) \re \kw{insert}~x~(\kw{sort}~xs)\\[1em]
-& \kw{insert}: \bb{G} \ra \bb{L}~\kw{group} \ra \bb{L}~\kw{group} \\
-&\kw{insert}~x~\Box \re [x] \\
-&\kw{insert}~\cst{k}~(\cst{k'} :: l) \re \cst{(k + k')} :: l \\
-&\kw{insert}~\cst{k}~(\var{i}{k'} :: l) \re \cst{k} :: \var{i}{k'} :: l \\
-&\kw{insert}~\var{i}{k}~(\cst{k'} :: l) \re \\
-&  \qquad\cst{k'} :: \kw{insert}~(\var{i}{k})~l \\
-&\kw{insert}~\var{i}{k_i}~(\var{j}{k_j} :: l) \re\\
-&\qquad\begin{cases}
-  \var{i}{(k_i + k_j)} :: l & \text{if } i = j \\
-  \var{i}{k_i} :: \var{j}{k_j} :: l & \text{if } i < j \\
-  \var{j}{k_j} :: \kw{insert}~(\var{i}{k_i})~l & \text{if } i > j
+&\kw{merge}~\Box~\Box \re \Box \\
+&\kw{merge}~\Box~\ell_2 \re \ell_2 \\
+&\kw{merge}~\ell_1~\Box \re \ell_1 \\
+&\kw{merge}~(\Cst(c_1)\cons \ell_1')~(\Cst(c_2)\cons \ell_2') \re\\
+&\qquad \Cst(c_1+c_2) \cons \kw{merge}~(\ell_1', \ell_2') \\
+&\kw{merge}~(\Cst(c)\cons \ell_1')~(\var{i}{k}\cons \ell_2') \re\\
+&\qquad \Cst(c)\cons \kw{merge}~(\ell_1', \var{i}{k}\cons \ell_2') \\
+&\kw{merge}~(\var{i}{k}\cons \ell_1')~(\Cst(c)\cons \ell_2') \re\\
+&\qquad \Cst(c)\cons \kw{merge}~(\var{i}{k}\cons \ell_1', \ell_2') \\
+&\kw{merge}~(\var{i}{k_1}\cons \ell_1', \var{j}{k_2}\cons \ell_2') \re\\
+&\qquad \begin{cases}
+\var{i}{(k_1+k_2)}\cons \kw{merge}~(\ell_1', \ell_2') & \text{if } i=j,\\
+\var{i}{k_1}\cons \kw{merge}~(\ell_1', \var{j}{k_2}\cons \ell_2') & \text{if } i<j,\\
+\var{j}{k_2}\cons \kw{merge}~(\var{i}{k_1}\cons \ell_1', \ell_2') & \text{if } i>j.
 \end{cases}
 \end{align*}
-The auxiliary function \kw{insert} maintains the sorting invariant and merges terms when necessary.
 \end{definition}
 
+
+\begin{definition}[Mergesort]
+The sorting function $\kw{mergesort}$ is defined by recursion:
+\begin{align*}
+&\kw{mergesort}~\Box \re \Box, \\
+&\kw{mergesort}~(x\cons \Box) \re x\cons \Box, \\
+&\kw{mergesort}~(x\cons y \cons \ell) \re \\
+& \kw{let} (l_1, l_2) \coloneq \kw{split}~\ell~\kw{in} \\
+& \qquad  \kw{merge}\big(\kw{mergesort}~l_1, \kw{mergesort}~l_2\big).
+\end{align*}
+\end{definition}
+
+% \begin{definition}[Maximum Variable]
+% The function $\kw{varmax}$ extracts the maximal variable index of a list:
+% \begin{align*}
+% &\kw{varmax}~\Box \re 0, \\
+% &\kw{varmax}~(\Cst{c} \cons \ell) \re \kw{varmax}(\ell), \\
+% &\kw{varmax}~(\Var{i}{k} \cons \ell) \re \max(i,\kw{varmax}(\ell)).
+% \end{align*}
+% \end{definition}
+
+Normalization will consist of converting a $\tlist{grp}$ expression into a canonical form through a composition of functions:
+
+\begin{definition}[normalisation function]\label{def:norm-outer-grp}
+Given $x: \tlist{grp}$,
+\begin{equation*}
+\mathop{\mathtt{norm}} x \is \mathop{\mathtt{remove0}}~(\mathop{\mathtt{mergesort}} x)
+\end{equation*}
+\end{definition}
 
 \subsection{Correctness of Reified Normalization}
 
 Several helper lemmas establish the soundness of the normalization pipeline, by verifying that each transformation step preserves the semantic interpretation of the term.
 In the following, we omit the proof modality symbol $\prf$ to simplify the notation.
 
-\begin{definition}[Invariant]
-\begin{align*}
-&\kw{no\_Add}~\Box \re \top \\
-&\kw{no\_Add}~(g :: l) \re \kw{isNotAdd}(g) \land \kw{no\_Add}(l)
-\end{align*}
-with:
-\begin{align*}
-&\kw{isNotAdd} \cst{k} \re \top \\
-&\kw{isNotAdd} \var{i}{k} \re \top \\
-&\kw{isNotAdd}(\add{x}{y}) \re \bot
-\end{align*}
-\end{definition}
+We first establish the correctness of the auxiliary operations that will be used in the
+normalization procedure. These lemmas ensure that splitting, merging, and removing
+trivial elements preserve the denotational semantics.
 
-% \begin{align*}
-% \texttt{no\_Add\_aliens}~x : \quad &\kw{no\_Add}(\kw{aliens}(x))
-% \end{align*}
-\begin{lemma}[No Add aliens invariant]\label{lem:no-add-inv}
-For any $(x: \bb{G})$
+\begin{lemma}[Concatenation preserves denotation]\label{lem:concat-den}
+For all lists $x,y$ of \kw{grp} and all environments $\ell$, we have
 \[
-    \kw{no\_Add}(\kw{aliens}(x))
+\Downarrow(x \concat y,\; \ell) \;=\; \Downarrow(x,\ell) + \Downarrow(y,\ell).
 \]
-
 \begin{proof}
-The proof proceeds by structural induction on $x$:
+Direct by induction on the structure of $x$.
+\end{proof}
+\end{lemma}
+
+\begin{lemma}[Split correctness]\label{lem:split-correct}
+For all $\ell$ and $gs$, given $\kw{split}~gs = (gs_1, gs_2)$, we have
+\[
+\Downarrow((gs_1 \concat gs_2, \ell) = (\Downarrow~gs~\ell).
+\]
+\emph{Proof.} By two-step induction on the structure of $gs$.  
 \begin{itemize}
-  \item If $x = \cst{k}$ or $x = \var{i}{k}$, then \kw{aliens}$(x) = [x]$ and \kw{isNotAdd}$(x)$ holds.
-  \item If $x = \Add{x_1}{x_2}$, then \kw{aliens}$(x) = \kw{aliens}(x_1) \mathbin{++} \kw{aliens}(x_2)$, and the result follows by applying the inductive hypotheses to $x_1$ and $x_2$ and proving that \kw{no\_Add} is preserved under list concatenation.
+\item (Case $gs = \Box$ or singletons), are immediate by definition of $\kw{split}$.  
+\item (Case $gs = a\cons b \cons tl$), it is immediate by the induction hypothesis and \cref{lem:concat-den}.  
+\end{itemize}
+\end{lemma}
+
+The merge function combines two already-sorted lists of $\bb{G}$ elements. The following
+lemma states that it behaves extensionally like addition of the corresponding denotations.
+
+\begin{lemma}[Merge correctness]\label{lem:merge-correct}
+For all $\ell, g_1, g_2$, we have
+\[
+\Downarrow(\kw{merge}~g_1~g_2, \ell) \;=\; \Downarrow(g_1, \ell) + \Downarrow(g_2,\ell).
+\]
+\begin{proof}
+By induction on $g_1$.  
+\begin{itemize}
+\item If $g_1=\Box$, the result follows trivially.  
+\item If $g_1$ starts with a constant, use the recursive rule and induction hypothesis.  
+\item If $g_1$ begins with a variable of the form $\var{i}{k_i}$, we proceed by case analysis on the structure of $g_2$. 
+In the situation where both $g_1$ and $g_2$ begin with variables, say $\var{i}{k_i}$ and $\var{j}{k_j}$ respectively, 
+we distinguish cases according to the comparison between the indices $i$ and $j$, and establish the desired equality 
+in each branch.
 \end{itemize}
 \end{proof}
 \end{lemma}
 
-The \cref{lem:no-add-inv} asserts that the list of atomic terms produced by the function \kw{aliens} contains no nested additions. This structural invariant is crucial for the correctness of subsequent normalization steps such as sorting and eliminating neutral elements, which assume a flat list of atomic expressions.
-To enforce this invariant, one defines a predicate \kw{isNotAdd} that holds only for atomic terms, namely constants and variables, and a recursive predicate \kw{no\_Add} over lists that ensures all elements satisfy \kw{isNotAdd}.
+To show that mergesort terminates because we defined it as a general recursive function, and is well-behaved, we need to control the size of the sublists obtained by splitting.
+The following lemma provides the necessary bound.
 
-\begin{lemma}[\tt{aliens\_correct}] \label{lem:aliens-correct}
-For any expression $x : \bb{G}$ and any environment $\ell$, summing a list of aliens $x$ yields the same denotation as interpreting $x$ directly:
+\begin{lemma}[Size bound for split]\label{lem:size-split2}
+For all lists $\ell$, with $\kw{split}~\ell = (\ell_1, \ell_2)$, we have:
 \[
-  \den{(\kw{sum}(\kw{aliens}(x)),\, \ell)} =~ \den{(x,\, \ell)})
+  (\kw{size}~\ell_1) \text{ and } (\kw{size}~\ell_2) \leq \kw{size}(\ell)
 \]
-\begin{proof} add it \end{proof}
+\begin{proof}
+By induction on $\ell$, using the definition of $\kw{split}$ and the monotonicity of $\kw{size}$.
+\end{proof}
 \end{lemma}
 
-% The \cref{lem:aliens-correct} establishes that flattening a syntactic expression into its atomic components via \kw{aliens} and then summing them with \kw{sum} yields the same semantic value as interpreting the original expression directly:
+We can now combine the above invariants to show that mergesort preserves
+denotations. The auxiliary version carries an explicit size bound for induction.
 
-\begin{lemma}[\tt{remove0\_correct}] \label{lem:remove0-correct}
-If a list $l: \bb{L}~\kw{grp}$ contains no additions, then removing all neutral elements with \kw{remove0} does not affect its semantic value:
+\begin{lemma}[Correctness of mergesort]\label{lem:mergesort-correct-aux}
+For all $n, \ell, g$, if $\kw{size}(g)\leq n$, then
 \[
-  \kw{no\_Add}(l) \ra (\den{\kw{sum}(\kw{remove0}(l)),\, \ell}) = (\den{\kw{sum}(l),\, \ell})
+\Downarrow(\kw{mergesort}~g, \ell) \;=\; \Downarrow(g,\ell).
 \]
-\begin{proof} add it \end{proof}
+\begin{proof}
+By induction on $n$.  
+\begin{itemize}
+\item[] (Case $n = 0$), we then have $\kw{size}(g)=0$, then $g=\Box$ and thus $\kw{mergesort}~g = \Box$,  so $\Downarrow(\kw{mergesort}~\Box,\ell) = \Downarrow(\Box,\ell)$ holds directly.
+\item[] (Case $n > 0$), with the definition of $\kw{mergesort}$ and $\kw{split}$, apply the induction hypothesis to both sublists with the bounds given by \cref{lem:size-split2}, and combine using \cref{lem:merge-correct} and \cref{lem:split-correct}.  
+\end{itemize}
+\end{proof}
 \end{lemma}
 
-% The \cref{lem:remove0-correct} guarantees that eliminating zero-valued constants and variables with zero coefficients from the list leaves the evaluation unchanged:
+Next, we show that eliminating trivial constants and variables with zero coefficient
+does not change the denotation.
 
-\begin{lemma}[\tt{sort\_correct}] \label{lem:sort-correct}
-If a list $l$ of terms contains no nested additions, then sorting it with \kw{sort} preserves its denotation:
+\begin{lemma}[Removal of zeros]\label{lem:remove0-correct}
+For all context $\ell$ and sum $gs$, we have
 \[
-  \kw{no\_Add}(l) \ra (\den{\kw{sum}(\kw{sort}(l)),\, \ell}) = (\den{\kw{sum}(l),\, \ell})
+\Downarrow(\kw{remove0}~gs, \ell) \;=\; \Downarrow(gs,\ell).
 \]
-\begin{proof} add it \end{proof}
+\begin{proof}
+We proceed by induction on the list $gs$.  
+In the inductive step where $gs = x \cons tl$, we perform a case analysis on the head element of $gs$:  
+\begin{itemize}
+\item[] (Case $x = \Cst{c}$), if $c=0$, the element is removed and the result follows by the induction hypothesis. 
+If $c \neq 0$, the head is preserved and the induction hypothesis applies to the tail.  
+\item[] (Case $x = \Var{i}{k}$), if $k=0$, the element is removed and the result follows by the induction hypothesis.  
+If $k \neq 0$, the head is preserved and the induction hypothesis applies to the tail.  
+\end{itemize}
+In all cases, the denotation is preserved, hence the lemma holds.
+\end{proof}
 \end{lemma}
 
-The lemma \texttt{sort\_correct} establishes that the \kw{sort} function, which globally reorders and merges atomic terms in a list, preserves the overall semantic value of the list when reconstructed with \kw{sum}.
-The key idea is that sorting does not change the meaning of the expression; it merely brings structurally equivalent but syntactically different lists into a canonical form.
-This lemma is crucial for ensuring that two expressions with different syntactic layouts but equal denotations will normalize to the same form.
+Finally, we can combine mergesort and zero-removal into a single normalization
+procedure. The following theorem states that normalization preserves denotation.
 
-\begin{lemma}[\texttt{insert\_correct}] \label{lem:insert-correct}
-Inserting $g$ into $l$ preserves denotation up to addition if the invariant \kw{no\_Add} $(g :: l)$ is preserved:
+\begin{theorem}[Correctness of normalization]\label{thm:norm-correct}
+For all lists $x$ and $\ell$,
 \[
-    \kw{no\_Add} $(g :: l)$ \ra \den{\kw{sum}(\kw{insert}(g, l)),\, \ell}) = ((\den{g,\, \ell}) + \den{\kw{sum}(l),\, \ell}
+  \Downarrow(\kw{norm}~x, \ell) \,=\, \Downarrow(x,\ell),
 \]
-\end{lemma}
-
-% The lemma \cref{lem:insert-correct} ensures that inserting a new atomic term into a sorted list produces a denotation equal to the sum of the inserted term and the evaluation of the original list, again assuming the list contains no additions:
-
-The main correctness theorem must ensure that the normalization procedure preserves the semantic meaning of a syntactic arithmetic expression.
-Specifically, the function \kw{norm}, which transforms an expression into a canonical form by flattening, sorting, and simplifying the expression, does not change its denotation.
-The theorem holds under the assumption that all variables occurring in the expression are bound within the given environment.
-
-\begin{theorem}[norm correct]\label{theorem:norm-correct}
-Let $x : \bb{G}$ be a syntactic arithmetic expression and let $\ell : \bb{L}~\kw{int}$ be a list representing uninterpreted variables.
-If the maximum variable index in $x$ is bounded by the length of $\ell$, then the normalization function \kw{norm} preserves the denotation of $x$. That is, if
-\[
-    \kw{varmax}(x) \leq \mathsf{length}(\ell)
-\]
-then
-\[
-  \den{\kw{norm}(x),\, \ell} = \den{x,\, \ell}
-\]
-\begin{proof}add it\end{proof}
-\end{theorem}
-
-In addition, the correctness of reification is captured by the following \cref{thm:reify-correct}, which states that converting a ground-level integer expression into its syntactic representation and then evaluating it semantically recovers the original value.
-This ensures that \tt{reify} acts as a faithful bridge between the semantic and syntactic domains.
-
-\begin{theorem}[\tt{reify\_correct}]\label{thm:reify-correct}
-Let $x : \Z$ be an arithmetic expression. Then reifying $x$ yields a pair $(t, l)$ such that the denotation of $t$ under the context $l$ is equal to $x$ itself:
-\[
-  \den{\reify{x}} = x.
-\]
-\begin{proof} The proof is direct by structural induction on $x$. \end{proof}
+\begin{proof}
+Combine \cref{lem:remove0-correct} and \cref{lem:mergesort-correct-aux} with a structural induction on $x$.
+\end{proof}
 \end{theorem}
 
 
 \begin{example}[Application of outer normalisation]\label{ex:outer-recon-example}
 The normalisation of inequalities of steps 1-4 from $\kw{la\_generic}$ algorithm is done simmilarly than \cref{lst:inner-recon-example}.
+
+We conclude this section by establishing the correctness of the reification procedure and an example of reconstruction of \kw{lia\_generic}.
+Reification is designed so that evaluating the syntactic representation it produces
+recovers the original integer expression.
+
+\begin{theorem}[Correctness of reification]\label{thm:reify-correct}
+For all integers $x$ and all environments $\ell$, if
+\[
+\reify(x) \;=\; (g, \ell') \text{ then } \Downarrow(g, \ell') \;=\; x.
+\]
+\begin{proof} The proof is direct by induction on $x$ where the cases will be $\ZPos, \ZNeg, \ZO$. \end{proof}
+\end{theorem}
+
 
 \lstinputlisting[language=Lambdapi,mathescape=true,caption={LIA reconstruction example},label={lst:ex-lia-recon}]{Assets/outer_lia.lp}
 
@@ -687,10 +697,59 @@ The correctness of this reification step is ensured by the \cref{thm:reify-corre
 The lemma \texttt{eta\_prod} expresses the $\eta$ equivalence principle for dependent pairs. It states that any pair $x : a \times b$ is equal to the pair formed by projecting its first and second components.
 This principle allows one to destruct a pair syntactically into its components while preserving definitional equality.
 In the context of reification, where a reified expression is represented as a pair $(t, \ell)$ of a $\bb{G}$-term and a context map, \texttt{eta\_prod} is used to explicitly access the components of the result of $\reify{x}$.
-Hence we can apply the \cref{theorem:norm-correct} (\texttt{norm\_correct}) at line 26.
+Hence we can apply the \cref{thm:norm-correct} (\texttt{norm\_correct}) at line 26.
 The final inequality is then reduced to a comparison between the normalized syntactic forms of $l$ and $r$, using the theorem \texttt{norm\_correct}, which guarantees that normalization preserves semantic equivalence.
 This enables the proof to conclude by purely syntactic comparison of the normalized forms, reducing $\den{[\reify{l}]} \geq \den{[\reify{r}]}$ to a contradiction.
 \end{example}
 
 \section{Reconstruction of Linear Real Arithmetic}
 \label{sec:bv-reconstruction}
+
+The reflective reconstruction for Linear Real Arithmetic (\textbf{LRA}) follows \emph{verbatim} the Integer case of \cref{sec:outer-normalization}: we only change the ground domain from $\Z$ to $\Q$ and adapt the typing of lists and constants accordingly.
+All definitions(\emph{reify}, denotation $\Downarrow$, $\kw{merge}$, $\kw{mergesort}$, $\kw{remove0}$, and
+$\kw{norm}$) and all proofs/lemmas carry over \emph{mutatis mutandis}, relying on the same
+algebraic laws (associativity, commutativity, and distributivity) which hold in the field
+$\Q$ just as they do in the ring $\Z$.
+
+\begin{definition}[Real reflection signature]
+We replace the integer reflection carrier by its rational counterpart:
+\begin{align*}
+& \bb{G}_\bb{R}: \type \\
+&|~\kw{var}: \N \ra \Q \ra \bb{G}_\bb{R} \\
+&|~\kw{cst}: \Q \ra \bb{G}_\bb{R} \\
+&\kw{rgrp}: \set\\
+&\el~\kw{rgrp} \re \bb{G}_\bb{R}
+\end{align*}
+We continue to write $a[i]$ for $(\kw{nth}~\frac{0}{1}~i~a)$, now with $a : \bb{L}~\kw{rat}$ and
+default $\frac{0}{1} \in \Q$ to make indexing total.
+\end{definition}
+
+\paragraph{Reification and denotation.}
+The function $\Uparrow : \bb{L}~\kw{rat} \ra \Q \ra \el(\tlist{grp} \times \tlist{rat})$
+is obtained from the integer version by replacing integer constants and coefficients
+with rationals. The denotation $\Downarrow : \el(\tlist{grp} \times \bb{L}~\kw{rat}) \ra \Q$
+is unchanged apart from types: $\Cst(q)$ evaluates to $q \in \Q$ and
+$\Var(i,q)$ evaluates to $a[i]\cdot q$ for $a:\bb{L}~\kw{rat}$.
+
+\paragraph{Normalization pipeline.}
+The operators $\kw{mul} : \Q \ra \List{grp} \ra \List{grp}$,
+$\kw{merge}$, $\kw{mergesort}$, and $\kw{remove0}$ are identical to the integer case,
+with coefficients and constants in $\Q$ and the environment of type $\bb{L}~\kw{rat}$.
+The normalization function remains
+\[
+\kw{norm}~x \;\is\; \kw{remove0}\big(\kw{mergesort}~x\big).
+\]
+
+\paragraph{Correctness results.}
+All statements and proofs from \cref{sec:outer-normalization} transfer directly:
+\begin{itemize}
+\item $\Downarrow(\kw{merge}~g_1~g_2,\ell)=\Downarrow(g_1,\ell)+\Downarrow(g_2,\ell)$,
+\item $\Downarrow(\kw{mergesort}~g,\ell)=\Downarrow(g,\ell)$,
+\item $\Downarrow(\kw{remove0}~g,\ell)=\Downarrow(g,\ell)$,
+\item $\Downarrow(\kw{norm}~x,\ell)=\Downarrow(x,\ell)$,
+\item and \emph{reification correctness}:
+      if $\Uparrow(\ell,x)=(g,\ell')$ then $\Downarrow(g,\ell')=x$.
+\end{itemize}
+No new lemmas are required: each proof is the same by type instantiation
+$\Z \rightsquigarrow \Q$ and $\bb{L}~\kw{int} \rightsquigarrow \bb{L}~\kw{rat}$.
+
