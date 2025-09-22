@@ -441,10 +441,10 @@ since both the size of the collection and the type of its elements influence how
 To implement the behavior specified in \cref{tab:distinct-spec}, we formalize the elimination of distinct through a series of rewriting rules.
 \begin{align*}
 &\mathop{\mathrm{distinct}}~ \mathbin{\_}~\Box_\bb{V} \re \bot \\
-&\mathop{\mathrm{distinct}}~\mathbin{\_}~ (x \mathbin{::}_\bb{V} \Box_\bb{V}) \re \top \\
-&\mathop{\mathrm{distinct}}~\mathbin{\_}~ (x \mathbin{::}_\bb{V} y \mathbin{::}_\bb{V}  \Box_\bb{V}) \re \neg (x = y) \\
-&\mathop{\mathrm{distinct}}~o~(x \mathbin{::}_\bb{V} y \mathbin{::}_\bb{V} z \mathbin{::}_\bb{V} tl)))) \re \bot \\
-&\mathop{\mathrm{distinct}}~\_~(x \mathbin{::}_\bb{V} y \mathbin{::}_\bb{V} tl \mathbin{::}_\bb{V})))) \re \neg (x = y) \land \kw{distinct}~tl
+&\mathop{\mathrm{distinct}}~\mathbin{\_}~ (x \cons_\bb{V} \Box_\bb{V}) \re \top \\
+&\mathop{\mathrm{distinct}}~\mathbin{\_}~ (x \cons_\bb{V} y \cons_\bb{V}  \Box_\bb{V}) \re \neg (x = y) \\
+&\mathop{\mathrm{distinct}}~o~(x \cons_\bb{V} y \cons_\bb{V} z \cons_\bb{V} tl)))) \re \bot \\
+&\mathop{\mathrm{distinct}}~\_~(x \cons_\bb{V} y \cons_\bb{V} tl \cons_\bb{V})))) \re \neg (x = y) \land \kw{distinct}~tl
 \end{align*}
 
 The first two rules capture the base cases: a \(\mathop{\mathrm{distinct}}\) check on an empty vector returns $\bot$, while a vector containing a single element trivially returns $T$.
@@ -456,11 +456,11 @@ while the final rule encodes the recursive elimination for others type than $\pr
 
 \begin{example}
 \(
-    \mathop{\mathrm{distinct}}~(\bot \mathbin{::}_\bb{V} \top \mathbin{::}_\bb{V} \top \mathbin{::}_\bb{V} \Box_\bb{V}) \re \bot
+    \mathop{\mathrm{distinct}}~(\bot \cons_\bb{V} \top \cons_\bb{V} \top \cons_\bb{V} \Box_\bb{V}) \re \bot
 \)
 and
 \(
-    \mathop{\mathrm{distinct}}~(\top \mathbin{::}_\bb{V} \bot \mathbin{::}_\bb{V} \Box_\bb{V}) \re \neg (\top = \bot).
+    \mathop{\mathrm{distinct}}~(\top \cons_\bb{V} \bot \cons_\bb{V} \Box_\bb{V}) \re \neg (\top = \bot).
 \)
 \end{example}
 

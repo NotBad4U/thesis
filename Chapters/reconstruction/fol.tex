@@ -58,7 +58,7 @@ The definitions use the following lemmas proved in our Lambdapi encoding:
         \Pi x\,x',\ \prf (x = x') \ra \prf (f\,x = f\,x'),
     \end{array}$
 \item $\kw{equiv\_pos2} : \Pi (\varphi_1~\varphi_2: \prop),\ \pid (\neg (\varphi_1 = \varphi_2) \veedot \neg \varphi_1 \veedot \varphi_2 \veedot \nil )$,
-% \item $\pid_l : \Pi [a : \set],\ \pid (a \cons \nil) \ra \prf a$.
+% \item $\pid_l : \Pi [a : \set],\ \pid (a \veedot \nil) \ra \prf a$.
 \end{itemize}\todo{cong might move due to nary-function, so no more details here}
 
 
@@ -331,7 +331,7 @@ Each transformation associated with this rule is implemented by a separate lemma
   \hline
   \multicolumn{2}{|l|}{R = \kw{not\_simplify}} \\ \hline
   \\
-  $i. \quad \Gamma~\triangleright \quad \neg \psi \approx \varphi \quad (\kw{not\_simplify})$ & $\C{i} = \pid (\neg \E{\psi} = \E{\varphi} \cons \nil) $ \\
+  $i. \quad \Gamma~\triangleright \quad \neg \psi \approx \varphi \quad (\kw{not\_simplify})$ & $\C{i} = \pid (\neg \E{\psi} = \E{\varphi} \veedot \nil) $ \\
   $(1) \neg \neg \varphi \Rightarrow \varphi$ &  $\is$ \lpinline{eval not_simplify} \\
   $(2) \neg \bot \Rightarrow \top$  &   \\
   $(3) \neg \top \Rightarrow \bot$  &
@@ -445,7 +445,7 @@ ADD PROOF
   R = \kw{pos\_and} \\ \hline
   $i. \triangleright \quad \neg (\varphi_1 \land \dots \land \varphi_n),~ \varphi_k$ \quad (\kw{pos\_and})[k] \\ \hline
   \begin{tabular}[t]{@{}l}
-    $i: \pid (\neg (\E{\varphi_1} \land \dots \land \E{\varphi_n}) \cons \E{\varphi_k} \cons \nil ) $\\
+    $i: \pid (\neg (\E{\varphi_1} \land \dots \land \E{\varphi_n}) \veedot \E{\varphi_k} \veedot \nil ) $\\
     begin
     \ \ \begin{tabular}[t]{@{}l}
           apply $\lor_{i1}$;\\ %
@@ -477,7 +477,7 @@ which should reduce to $\top$.
   \ruleAlethe{i}{(\neg \forall \bar{x},\, \varphi) \lor (\varphi[\bar{t}])}{forall\_inst} \\ \hline
   %
   \begin{tabular}[t]{@{}l}
-    $i: \pid (\forall x_1,\dots~x_n, \E{\varphi} = \E{\psi} \cons \nil) \coloneq$\\
+    $i: \pid (\forall x_1,\dots~x_n, \E{\varphi} = \E{\psi} \veedot \nil) \coloneq$\\
     begin
     \ \ \begin{tabular}[t]{@{}l}
           apply $\lor_{i1}$;\\ %
@@ -534,8 +534,8 @@ This allows us to reconstruct the rule \tt{forall\_inst} directly, as shown in \
   \end{tabular} \\ \hline
   %
   \begin{tabular}[t]{@{}l}
-    $i: \pid (\E{\varphi} = \E{\psi} \cons \nil ) \dots $\\
-    $k: \pid (\forall x_1,\dots~x_n, \E{\varphi} = \E{\psi} \cons \nil) \coloneq$\\
+    $i: \pid (\E{\varphi} = \E{\psi} \veedot \nil ) \dots $\\
+    $k: \pid (\forall x_1,\dots~x_n, \E{\varphi} = \E{\psi} \veedot \nil) \coloneq$\\
     begin
     \ \ \begin{tabular}[t]{@{}l}
           apply $\lor_{i1}$;\\ %
@@ -625,7 +625,7 @@ $i_j.\ \Gamma \triangleright \psi$ \quad $(\dots)$ \quad with $u \in 1 \dots n$ 
 
 \hline
 
-$\C{k} = \pid (( \neg \E{\varphi_1} \cons \dots \cons \neg \E{\varphi_n} \cons \E{\psi} ) \cons \nil)$ \\
+$\C{k} = \pid (( \neg \E{\varphi_1} \veedot \dots \veedot \neg \E{\varphi_n} \veedot \E{\psi} ) \veedot \nil)$ \\
 $\quad \is \kw{apply}~\kw{subproof}_n$ \\
 \hline
 \textbf{R = \kw{bind}} \\
@@ -636,7 +636,7 @@ $k.\ \Gamma \triangleright (Q~\overline{x}, \varphi) \approx (Q~\overline{y}, \p
 
 \hline
 
-$\C{k} = \pid (\E{Q~\overline{x}, \varphi \approx Q~\overline{y}, \psi} \cons \nil) \is$ \\
+$\C{k} = \pid (\E{Q~\overline{x}, \varphi \approx Q~\overline{y}, \psi} \veedot \nil) \is$ \\
  begin
     \ \ \begin{tabular}[t]{@{}l}
           $\kw{apply}~\lor_{i1}; \kw{apply~bindQ};$ \\
@@ -654,7 +654,7 @@ We define in \cref{table:subproof-c} the definitions of the function $\mathcal{C
 
 
 \begin{lemma}[$\kw{subproof}_1$]\label{lem:subproof}
-For $\varphi, \psi : \prop{}$, if $\prf{} \varphi$ implies $\prf{} \psi$ then $\pid (\neg \varphi \cons \psi)$.
+For $\varphi, \psi : \prop{}$, if $\prf{} \varphi$ implies $\prf{} \psi$ then $\pid (\neg \varphi \veedot \psi)$.
 \end{lemma}
 
 
@@ -721,7 +721,7 @@ Although the automation does not inspect the contents of $\sigma$, it can determ
 Note that during reification, repeated expressions are assigned the same index in $\sigma$ whenever possible.
 However, we do not attempt to prove that different indices refer to distinct expressions.
 
-\begin{definition}[Reification $\cal{P} \rightleftarrows \prop$]
+\begin{definition}[Reification and denotation $\cal{P} \rightleftarrows \prop$]
 We define a reification function $\reify{\_} : \mathbb{L}~o \rightarrow \prop \rightarrow \mathcal{P}$ written $\reify{\_}\, x \, \sigma$,
 and an interpretation function $\deno{\_} : \mathbb{L}~o \rightarrow \mathcal{P} \rightarrow \prop$ written $\deno{\_} \, x \, \sigma$,
 which convert between the source logic $\prop$ and the target theory $\mathcal{P}$ using the context map $\sigma$.
@@ -897,32 +897,101 @@ As shown in \cref{lst:tauto-ex}, we define a new tactic \kw{tauto} using a tacti
 \label{ssec:contraction-recon}
 
 The Alethe rule \kw{contraction} removes duplicate literals from a clause without changing its truth.
+Because of the challenges posed by associativity and commutativity (AC), reconstructing this rule requires using the second kind of proof-by-reflection method.
 
-\begin{tabular}{l c r}
-$i.~\triangleright$  & $l_1,\, \dots,\, l_{n}$ & (\dots)  \\
-$j.~\triangleright$  & $l_{k_1},\, \dots,\, l_{k_m}$ & (\kw{contraction}~i) 
-\end{tabular}
+\begin{align*}
+&i.~\triangleright &  &l_1,\, \dots,\, l_{n}       & & (\dots)  \\
+&j.~\triangleright &  &l_{k_1},\, \dots,\, l_{k_m} & & (\kw{contraction}~i) 
+\end{align*}
 
 where $m \leq n$ and $k_1 \dots k_m$ is a monotonic map to $1 \dots n$ such that: $l_{k_1},\, \dots,\, l_{k_m}$ are pairwise distinct, and Hence, this rule removes duplicated literals.
 
-In our reconstruction we assume an assignment $\sigma$ computed automatically from the literals of the clause $l_{k_1},\, \dots,\, l_{k_m}$.
-This assignment not only interprets propositional variables as truth values but also  induces an order on terms through their identifiers.  
-We exploit this order to define a canonical representation of clauses: we turn a clause into a list of literal identifiers, stably sort this list using mergesort,  and then delete adjacent duplicates.  
+In our reconstruction, we use an assignment $\sigma: \bb{L}~o$ computed automatically from the literals of the clause $l_{k_1},\, \dots,\, l_{k_m}$.
+Each literal is associated with its position index in $\sigma$, which induces a total order on terms. 
+This order allows us to define a canonical representation of clauses: we turn a clause into a list of literal identifiers, stably sort this list using mergesort, and then remove adjacent duplicates.  
 Correctness follows from three ingredients: a denotational interpreter $\Downarrow$ parameterized by $\sigma$, a mergesort whose denotation is extensionally equal to its input, and a duplicate-removal pass whose denotation is idempotent with respect to disjunction.
 
-We first encode a canonical algebra of literals:
+We first encode a simple canonical algebra of literals:
 
 \begin{align*}
 &\cal{C} : \type & \kw{cl}: \set  \\
-&| p: \N \ra \cal{C} & \el~\kw{cl} \re \cal{C}
+&\pipe p : \N \ra \cal{C} &\el~\kw{cl} \re \cal{C}
 \end{align*}
 
 A clause is then represented as a list of elements of $\cal{C}$.
+In this construction, contraction is performed solely on the left-hand side term $t_1$ representing the unreduce clause $l_1,\, \dots,\, l_{n}$ of step $i$.
+
+\begin{center}
+\(\begin{tikzcd}[ampersand replacement=\&,column sep=small]
+	{\Uparrow\,t_1 \,=\, \Uparrow\,t_2} \& \bb{L}~\kw{cl} \&\& \bb{L}~\kw{cl} \& {[\Uparrow t_1] \,=\, \Uparrow t_2} \\
+	\\
+	{t_1 = t_2} \& \kw{Clause} \&\& \kw{Clause} \& {(\den{[\Uparrow g_1]}) = (\den{\Uparrow g_2})}
+	\arrow["({[\_], id)}", dashed, from=1-2, to=1-4]
+	\arrow["\lrcorner"{anchor=center, pos=0.125}, draw=none, from=1-2, to=3-4]
+	\arrow["{\Downarrow(\_)}", from=1-4, to=3-4]
+	\arrow["{\Uparrow(\_)}", from=3-2, to=1-2]
+	\arrow["\iff"{description}, dotted, no head, from=3-2, to=3-4]
+\end{tikzcd}\)
+\[
+  \text{with } [\_] = \kw{remove} \circ \kw{sort}
+\]
+\end{center}
+
+
+\begin{definition}[Denotation]\label{def:denotation}
+Given an assignment $\sigma : \bb{L}~o$, the denotation function
+\[
+  \Downarrow : \bb{L}~o \to \bb{L}\,\kw{cl} \to \prop
+\]
+maps a list of identifiers to the big disjunction of the corresponding literals:
+\begin{align*}
+&\Downarrow\,\sigma\,\Box \re \bot \\
+&\Downarrow\,\sigma\,(p\,i :: \ell) \re \sigma[i] \mathbin{\veedot} \Downarrow\,\sigma\,\ell.
+\end{align*}
+\end{definition}
+
+\begin{definition}[Reification into $\bb{L}~\kw{cl}$]\label{def:reify}
+Reification translates a clause into its canonical list of identifiers together with 
+the remaining syntactic literals. It proceeds by traversing the clause, 
+looking up each literal in the current environment, and assigning it a fresh identifier if none is found.
+\[
+  \Uparrow  : \bb{L}~o \to \kw{Clause} \to \el (\kw{list}~\kw{cl} \times \kw{list}~o)
+\]
+\begin{align*}
+&\Uparrow (l,\;\Box) \re (\Box,\,l) \\
+&\Uparrow (l,\; x \veedot xs) \re \\
+&\begin{cases}
+  (p\,i :: l,\; l) & \text{if }  i \text{ index already exists} \\
+  (p\,i :: (l \concat (x::\Box)),\; l) & \text{if } i \text{ new index},
+\end{cases} \\
+&\qquad \text{then recursively reify the tail: } (xs',\,l') \coloneq \Uparrow~l~xs, \\
+&\qquad \text{and return } (p\,i :: xs',\, l').
+\end{align*}
+
+\noindent
+We then define the top-level reification function
+\[
+  \Uparrow \;c \;\coloneqq\; \Uparrow \,\Box\,c.
+\]
+\end{definition}
+
+\begin{example}[Reification]
+Given $\sigma \eqcolon x \cons y \cons \Box$, the clause:
+\[
+    x \veedot y \veedot x \veedot y \veedot \nil 
+\]
+is then reified into:
+\[
+    p\,0 \cons p\,1 \cons p\,0 \cons p\,1 \cons \nil
+\]
+\end{example}
+
+We now can start to define the necessary functions and lemmas for the mergesort.
 
 \begin{definition}[split]
-The function \kw{split} divides a list into two sublists by alternating elements:
+The function \kw{split} divides a generic list into two sublists by alternating elements:
 \begin{align*}
-&\kw{split}: \bb{L}~\kw{cl} \ra \el (\kw{list}~\kw{cl} \times \kw{list}~\kw{cl})\\
+&\kw{split}: \Pi\,a:\set, \bb{L}~a \ra \el (\kw{list}~a \times \kw{list}~a)\\
 &\kw{split}\,\Box \re (\Box , \Box) \\
 &\kw{split}\,(x::\Box) \re (\,x::\Box , \Box\,) \\
 &\kw{split}\,(x::y::\ell) \re \bigl(x::(\kw{split}\,\ell)_1, y::(\kw{split}\,\ell)_2 \bigr)
@@ -936,14 +1005,14 @@ The following two lemmas show that $\Downarrow$ interacts well with list concate
 \begin{lemma}[Concatenation distributes over \(\Downarrow\)]\label{lem:den-cat}
 For all lists \(x,y\) of identifiers and any assignment \(\sigma\),
 \[
-\prf\bigl(\Downarrow\,\sigma\,(x \concat y) = \Downarrow\,\sigma\,x \ \vee\ \Downarrow\,\sigma\,y\bigr).
+\prf\bigl(\Downarrow\,\sigma\,(x \concat y) \;=\; \Downarrow\,\sigma\,x \ \vee\ \Downarrow\,\sigma\,y\bigr).
 \]
 \end{lemma}
 
 \begin{lemma}[Split preserves denotation]\label{lem:split-correct}
 For all identifier lists \(g\) and assignments \(\sigma\),
 \[
-  \prf\bigl(\Downarrow\,\sigma\,((\kw{split} g)_1 \concat (\kw{split} g)_2) = \Downarrow\,\sigma\,g\bigr).
+  \prf\bigl(\Downarrow\,\sigma\,((\kw{split} g)_1 \concat (\kw{split} g)_2) \;=\; \Downarrow\,\sigma\,g\bigr).
 \]
 \end{lemma}
 
@@ -989,16 +1058,16 @@ After sorting, duplicate literals appear as adjacent elements. We now define a f
 \begin{align*}
 &\kw{remove}~\Box \re \Box \\
 &\kw{remove}~(p\,i :: \Box) \re p\,i :: \Box \\
-&\kw{remove}~(p\,i :: p\,j :: tl) \re
+&\kw{remove}~(p\,i :: p\,j :: \ell) \re
 \begin{cases}
-  \kw{remove}~(p\,j :: tl) & \text{if } i = j, \\
-  p\,i :: \kw{remove}(p\,j :: tl) & \text{if } i \neq j
+  \kw{remove}~(p\,j :: \ell) & \text{if } i = j, \\
+  p\,i :: \kw{remove}(p\,j :: \ell) & \text{if } i \neq j
 \end{cases}
 \end{align*}
 \end{definition}
 
 \begin{theorem}[Mergesort correctness]\label{thm:mergesort-correct}
-For all \(g\) and context \(\sigma\),
+For all \(g: \bb{L}~\kw{cl}\) and context \(\sigma\),
 \[
   \prf\bigl(\Downarrow\,\sigma\,(\kw{mergesort}\,g) \;=\; \Downarrow\,\sigma\,g\bigr).
 \]
@@ -1017,3 +1086,32 @@ Then, for all \(g\) and \(\sigma\),
 By size-bounded induction on \(g\), using \cref{lem:split-correct,lem:merge-correct} and the distributivity \cref{lem:den-cat} in the combine step.
 \end{proof}
 \end{theorem}
+
+\begin{example}[Contraction]
+To illustrate the use of contraction in practice, consider the clause with a duplicated literal $: \prfcl (a \veedot b \veedot b \veedot \nil)$.
+We show how to reconstruct the proof for the contracted clause $\prfcl (a \veedot b \veedot \nil)$ by appealing to the correctness of contraction.
+
+\begin{lstlisting}[language=Lambdapi,mathescape=true,]
+opaque symbol ti: $\prfcl$ (a ⟇ b ⟇ b ⟇ ▩) ≔ begin ... end;
+
+opaque symbol tj:  $\prfcl$ (a ⟇ b ⟇ ▩) ≔
+begin
+  have eqh : $\prf$ ($\cal{F}$ (a ⟇ b ⟇ b ⟇ ▩) = $\cal{F}$ (a ⟇ b ⟇ ▩)) {
+    set r ≔ $\Uparrow$ X;
+    change $\prf$ ($\Downarrow$ (r ₂) (r ₁) = $\cal{F}$ (a ⟇ b ⟇ ▩));
+    rewrite left contraction_correct;
+    reflexivity
+  };
+  refine subst_eq_clause eqh ti
+end;
+\end{lstlisting}
+Here, the intermediate proof \kw{eqh} establishes that the denotations of the original clause
+$(a \veedot b \veedot b)$ and the contracted clause $(a \veedot b)$ are equal by \cref{thm:contraction-correct}.
+The lemma
+\[
+  \kw{subst\_eq\_clause}~x~y: 
+    \prf(\cal{F}\,x = \cal{F}\,y)
+    \;\ra\; \prfcl(x) \;\ra\; \prfcl(y)
+\]
+is then applied to transfer the proof of the original clause $t_i$ to the contracted clause $t_j$.
+\end{example}

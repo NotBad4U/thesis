@@ -600,7 +600,7 @@ We define the constant \( \mathop{\mathrm{Vec}}\,a\,n \) inductively for \( n : 
 \begin{align*}
 &(a: \set) \mathop{\mathrm{Vec}}: \N \ra \type \\
 &|~\Box_\bb{V} : \mathop{\mathrm{Vec}} a \, 0 \\
-&|~\mathbin{::}_\bb{V}\,[n:\N]: \el\,a \ra \mathop{\mathrm{Vec}}\,a\,n \ra  \mathop{\mathrm{Vec}}\,a\,(n +1) \quad (\text{infix})\\
+&|~\cons_\bb{V}\,[n:\N]: \el\,a \ra \mathop{\mathrm{Vec}}\,a\,n \ra  \mathop{\mathrm{Vec}}\,a\,(n +1) \quad (\text{infix})\\
 &\mathop{\mathrm{vector}}: \set \ra \N \ra \set \\
 &\el~(\mathop{\mathrm{vector}}\,a\,n) \re \mathop{\mathrm{Vec}}\,a\,n
 \end{align*}
