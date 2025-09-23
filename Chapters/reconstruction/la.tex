@@ -705,11 +705,12 @@ This enables the proof to conclude by purely syntactic comparison of the normali
 \section{Reconstruction of Linear Real Arithmetic}
 \label{sec:bv-reconstruction}
 
-The reflective reconstruction for Linear Real Arithmetic (\textbf{LRA}) follows \emph{verbatim} the Integer case of \cref{sec:outer-normalization}: we only change the ground domain from $\Z$ to $\Q$ and adapt the typing of lists and constants accordingly.
+The reflective reconstruction for Linear Real Arithmetic (\textbf{LRA}) follows verbatim the integer case of the previous section (\cref{sec:outer-normalization}).
+We only change the ground domain from $\Z$ to $\Q$ defined at (\cref{ssec:encoding-la}), and adapt the typing of lists and constants accordingly.
 All definitions(\emph{reify}, denotation $\Downarrow$, $\kw{merge}$, $\kw{mergesort}$, $\kw{remove0}$, and
 $\kw{norm}$) and all proofs/lemmas carry over \emph{mutatis mutandis}, relying on the same
-algebraic laws (associativity, commutativity, and distributivity) which hold in the field
-$\Q$ just as they do in the ring $\Z$.
+algebraic laws (associativity, commutativity, and distributivity) which hold in the group
+$\Q$ just as they do in the group $\Z$.
 
 \begin{definition}[Real reflection signature]
 We replace the integer reflection carrier by its rational counterpart:
@@ -720,16 +721,16 @@ We replace the integer reflection carrier by its rational counterpart:
 &\kw{rgrp}: \set\\
 &\el~\kw{rgrp} \re \bb{G}_\bb{R}
 \end{align*}
-We continue to write $a[i]$ for $(\kw{nth}~\frac{0}{1}~i~a)$, now with $a : \bb{L}~\kw{rat}$ and
+We continue to write $\ell[i]$ for $(\kw{nth}~\frac{0}{1}~i~\ell)$, now with $\ell : \bb{L}~\kw{rat}$ and
 default $\frac{0}{1} \in \Q$ to make indexing total.
 \end{definition}
 
 \paragraph{Reification and denotation.}
-The function $\Uparrow : \bb{L}~\kw{rat} \ra \Q \ra \el(\tlist{grp} \times \tlist{rat})$
+The function $\Uparrow_\Q : \bb{L}~\kw{rat} \ra \Q \ra \el(\tlist{grp} \times \tlist{rat})$
 is obtained from the integer version by replacing integer constants and coefficients
-with rationals. The denotation $\Downarrow : \el(\tlist{grp} \times \bb{L}~\kw{rat}) \ra \Q$
+with rationals $0 \rightsquigarrow \frac{0}{1}$. The denotation $\Downarrow_\Q : \el(\tlist{grp} \times \bb{L}~\kw{rat}) \ra \Q$
 is unchanged apart from types: $\Cst(q)$ evaluates to $q \in \Q$ and
-$\Var(i,q)$ evaluates to $a[i]\cdot q$ for $a:\bb{L}~\kw{rat}$.
+$\Var{i}{q}$ evaluates to $\ell[i] *_\Q q$ for $\ell :\bb{L}~\kw{rat}$.
 
 \paragraph{Normalization pipeline.}
 The operators $\kw{mul} : \Q \ra \List{grp} \ra \List{grp}$,
@@ -741,14 +742,14 @@ The normalization function remains
 \]
 
 \paragraph{Correctness results.}
-All statements and proofs from \cref{sec:outer-normalization} transfer directly:
+All statements and proofs from \cref{sec:outer-normalization} transfer:
 \begin{itemize}
-\item $\Downarrow(\kw{merge}~g_1~g_2,\ell)=\Downarrow(g_1,\ell)+\Downarrow(g_2,\ell)$,
-\item $\Downarrow(\kw{mergesort}~g,\ell)=\Downarrow(g,\ell)$,
-\item $\Downarrow(\kw{remove0}~g,\ell)=\Downarrow(g,\ell)$,
-\item $\Downarrow(\kw{norm}~x,\ell)=\Downarrow(x,\ell)$,
+\item $\Downarrow_\Q(\kw{merge}~g_1~g_2,\ell)=\Downarrow_\Q(g_1,\ell) \;+_\Q \Downarrow_\Q(g_2,\ell)$,
+\item $\Downarrow_\Q(\kw{mergesort}~g,\ell)=\Downarrow_\Q(g,\ell)$,
+\item $\Downarrow_\Q(\kw{remove0}~g,\ell)=\Downarrow_\Q(g,\ell)$,
+\item $\Downarrow_\Q(\kw{norm}~x,\ell)=\Downarrow_\Q(x,\ell)$,
 \item and \emph{reification correctness}:
-      if $\Uparrow(\ell,x)=(g,\ell')$ then $\Downarrow(g,\ell')=x$.
+      if $\Uparrow(\ell,x)=(g,\ell')$ then $\Downarrow_\Q(g,\ell')=x$.
 \end{itemize}
 No new lemmas are required: each proof is the same by type instantiation
 $\Z \rightsquigarrow \Q$ and $\bb{L}~\kw{int} \rightsquigarrow \bb{L}~\kw{rat}$.
