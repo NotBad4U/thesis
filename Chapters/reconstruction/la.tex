@@ -405,7 +405,7 @@ The algebraic group $\bb{G}$ reflecting $\bb{Z}$ atoms:
 \begin{align*}
 & \bb{G}: \type \\
 &|~\kw{var}: \N \ra \Z \ra \bb{G} \\
-&|~\kw{cst}: \Z \ra \bb{G} \\
+&|~\kw{cst}: \Z \ra \bb{G} \\[1em]
 &\kw{grp}: \set \\
 &\el~\kw{grp} \re \bb{G}
 \end{align*}
@@ -419,9 +419,9 @@ Third, the operator $\kw{mul}$ is defined externally, so as to simplify subseque
 \begin{definition}[multiplication of coefficient]\label{outer-mul-def}
 \begin{align*}
 &\kw{mul} : \Z \ra \List{grp} \ra \List{grp} \\
+&\kw{mul}~\_~\Box \re \Box \\
 &\kw{mul}~k~(\Cst{c} \cons tl) \re \kw{mul}~(k * c)~tl \\
-&\kw{mul}~k~(\var{i}{c} \cons tl) \re \var{i}{(k*c)} \cons \kw{mul}~k~tl \\
-&\kw{mul}~\_~\Box \re \Box
+&\kw{mul}~k~(\var{i}{c} \cons tl) \re \var{i}{(k*c)} \cons \kw{mul}~k~tl
 \end{align*}
 \end{definition}
 

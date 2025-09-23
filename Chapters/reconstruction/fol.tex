@@ -343,8 +343,8 @@ Each transformation associated with this rule is implemented by a separate lemma
 To apply these tactics sequentially, we define a meta-tactic $\mathop{\mathtt{applyAny}}$ that attempts each tactic in the list until one succeeds:
 
 \begin{align*}
-&\mathop{\mathtt{all\_not\_simplify}} \is (\rewrite \kw{not\_simplify1}) \colon\colon  \\
-&\quad (\rewrite \kw{not\_simplify2}) \colon\colon (\rewrite \kw{not\_simplify3})
+&\mathop{\mathtt{all\_not\_simplify}} \is (\rewrite \kw{not\_simplify1}) \cons  \\
+&\quad (\rewrite \kw{not\_simplify2}) \cons (\rewrite \kw{not\_simplify3})
 \end{align*}
 
 The combinator $t_1 \orelse t_2$ tries $t_1$ on the current goal; if it fails to make progress, $t_2$ is applied instead. We then define the tactic for reconstructing the simplification step as follows:
@@ -352,119 +352,14 @@ The combinator $t_1 \orelse t_2$ tries $t_1$ on the current goal; if it fails to
 \begin{align*}
 &\mathop{\mathtt{applyAny}} : \bb{L} \, \kw{tactic} \ra \kw{Tactic} \\
 &\mathop{\mathtt{applyAny}} \Box \re \fail \\
-&\mathop{\mathtt{applyAny}} (\kw{t} \colon\colon \kw{ts}) \re t \orelse (\mathop{\mathtt{applyAny}} \kw{ts}) \\[1em]
-&\mathop{\mathtt{not\_simplify}} \is \repeatT (\mathop{\mathtt{applyAny}} \mathop{\mathtt{all\_not\_simplify}}) \\
+&\mathop{\mathtt{applyAny}} (\kw{t} \cons \kw{ts}) \re t \orelse (\mathop{\mathtt{applyAny}} \kw{ts}) \\[1em]
+&\mathop{\mathtt{not\_simplify}} \is \repeatT (\mathop{\mathtt{applyAny}}~\mathop{\mathtt{all\_not\_simplify}}) \\
 &\quad \andT \reflexivity
 \end{align*}
 
 Here, $\repeatT$ repeatedly applies the simplification tactics until none can be applied further.
 Finally, a step using the \kw{not\_simplify} rule can be reconstructed as shown in \cref{fig:not-simplify}, by simply running the tactic script using the meta-tactic $\eval$.
 
-\section{N-ary rules}
-
-\begin{table}
-\centering
-\caption{N-ary operators rules}
-\begin{tabular}{ll}
-Rule & Description \\ \hline
-and (i)[k] & $i. \triangleright \quad (\varphi_1 \land \dots \land \varphi_n)$ \\
-    & $j. \triangleright \quad \varphi_k $ with $1 \leq k \leq n$\\
-not\_and (i) & $i. \triangleright \quad \neg (\varphi_1 \land \dots \land \varphi_n)$ \\
-    & $j. \triangleright \quad \neg \varphi_1, \dots, \neg \varphi_n $\\
-not\_or (i)[k] & $i. \triangleright \quad \neg (\varphi_1 \lor \dots \lor \varphi_n)$\\
-    & $j. \triangleright \quad \neg \varphi_k$ with $1 \leq k \leq n$\\
-and\_pos [k] & $\triangleright \quad \neg (\varphi_1 \land \dots \land \varphi_n), \varphi_k$ with $1 \leq k \leq n$ \\
-and\_neg & $\triangleright \quad (\varphi_1 \land \dots \land \varphi_n), \neg \varphi_1, \dots, \neg \varphi_n$ \\
-or\_pos & $\triangleright \quad \neg (\varphi_1 \lor \dots \lor \varphi_n), \varphi_1, \dots, \varphi_n$ \\
-or\_neg [k] & $\triangleright \quad \neg (\varphi_1 \lor \dots \lor \varphi_n), \neg \varphi_k$ with $1 \leq k \leq n$ \\
-\end{tabular}
-\label{table:nary-rules}
-\end{table}
-
-The Alethe format includes n-ary tautological rules—relying on arbitrary n-ary conjunctions and disjunctions as outlined in \cref{table:nary-rules}.
-A direct approach to reconstruct these rules would involve generating tactic scripts during the translation in Carcara.
-However, this could lead to proofs requiring hundreds of tactic applications.
-To address this, we adopt an alternative strategy: reconstructing these rules via a \emph{proof by reflection} of the first kind.
-We illustrate our approach by detailing the reconstruction of \tt{and\_pos}.
-In our encoding, n-ary conjunctions and disjunctions are interpreted as values of the abstract type $\bb{L}\,o$.
-We begin by introducing the following configuration:
-
-\begin{itemize}
-  \item The function $\kw{indexes}: \Pi [a: \set],\, \bb{L}~a \ra \bb{L}~\kw{nat}$  takes a list of propositions and returns a list where each proposition is replaced by its position in the list.
-  \begin{example}[indexes]
-  \(
-    \mathop{\mathtt{indexes}} (x \mathbin{\colon\colon} y \mathbin{\colon\colon} x  \mathbin{\colon\colon} z \mathbin{\colon\colon} \Box) \equivL 0 \mathbin{\colon\colon} 1 \mathbin{\colon\colon} 2 \mathbin{\colon\colon} 3 \mathbin{\colon\colon} \Box
-  \)
-  \end{example}
-  \item The function $\in_k : \N \rightarrow \bb{L}~\kw{nat} \rightarrow \bb{B}$  determines whether a given index is present in a list.
-  \item The denotation function $\kw{conj}: \bb{L}~o \ra \prop$ decodes a list of propositions into an n-ary conjunction.
-  \item The total function $\kw{literal}: \Pi (k: \N),\, \bb{L}~o \ra \prop$ returns the $k$-th element of the list, or $\bot$ otherwise.
-\end{itemize}
-
-% ∈ₙ : τ nat → 𝕃 nat → 𝔹
-
-% select (id : τ nat) (cnf: 𝕃 o) : π (id ∈ₙ (indexes cnf)) → π (conj cnf) → π (literal cnf id) ≔
-% \begin{lemma}[select]
-% Let $k : \N$ be an index and $c : \bb{L}~o$ a reified conjunction, represented as a list of literals. If
-% \[
-%   \prf (\kw{istrue}~(k \in_k (\kw{indexes}~c))) \text{ and } \prf (\kw{conj}~c)
-% \]
-% then
-% \[
-%   \prf (\neg (\kw{conj}~c) \lor (\kw{literal}~k~c))
-% \]
-% That is, if a literal indexed by $k$ appears in the reified conjunction $c$ and the conjunction as a whole holds, then the corresponding literal must also hold.
-% \label{lemma:select}
-% \begin{proof}
-% \question{ac}{Do I need to provide the proof}
-% \end{proof}
-% \end{lemma}
-
-% and_pos2 (id : τ nat) (cnf: 𝕃 o) : π (id ∈ₙ (indexes cnf)) → π (¬ (conj cnf) ∨ (literal cnf id)) ≔
-\begin{lemma}[and\_pos]
-Given an index $k: \N$ and a list $c: \bb{L}~o$, If
-\[
-  \prf (\kw{istrue} (k \in_k (\kw{indexes}~c)))
-\]
-then
-\[
-  \prf (\neg (\kw{conj}~c) \lor (\kw{literal}~k~c))
-\]
-\begin{proof}
-ADD PROOF
-\end{proof}
-\label{lem:and-pos}
-\end{lemma}
-
-
-
-\begin{figure}
-\centering
-\begin{tabular}{|l|}
-\hline
-  R = \kw{pos\_and} \\ \hline
-  $i. \triangleright \quad \neg (\varphi_1 \land \dots \land \varphi_n),~ \varphi_k$ \quad (\kw{pos\_and})[k] \\ \hline
-  \begin{tabular}[t]{@{}l}
-    $i: \pid (\neg (\E{\varphi_1} \land \dots \land \E{\varphi_n}) \veedot \E{\varphi_k} \veedot \nil ) $\\
-    begin
-    \ \ \begin{tabular}[t]{@{}l}
-          apply $\lor_{i1}$;\\ %
-          apply $\kw{and\_pos}~\E{k}$ $(\E{\varphi_1} \colon\colon \dots \colon\colon \E{\varphi_n} \colon\colon \Box)~ \top_i$
-        \end{tabular}\\
-    end
-  \end{tabular}
-  \\\hline
-\end{tabular}
-\caption{Translating the \kw{pos\_and} command.}
-\label{fig:pos-and-recon}
-\end{figure}
-
-We can reconstruct the proof such as described in \cref{fig:pos-and-recon}.
-We first need to retrieve a disjunctions from a clause by applying the disjunction introduction rule $\lor_{i1}$,
-and then we apply \cref{lem:and-pos} with the index $k$ given by Alethe, the conjunction reified $(\E{\varphi_1} \colon\colon \dots \colon\colon \E{\varphi_n} \colon\colon \Box)$ and a proof that $\prf (k \in_k (\kw{indexes}~c))$
-which should reduce to $\top$.
-
-% Proof by reflection
 
 \section{Quantifiers}
 
@@ -608,7 +503,7 @@ The subproof starts at the \smtinline{anchor} command at line 1 and ends at line
 (step t9.t2 (cl (= (p z2) (p vr4))) :rule cong :premises (t9.t1))
 (step t9 (cl (= (forall ((z2 U)) (p z2))
                 (forall ((vr4 U)) (p vr4)))) :rule bind)
-\end{lstlisting}\change{ac}{Find better example}
+\end{lstlisting}
 
 \begin{figure}
 \centering
@@ -667,10 +562,138 @@ Given an arbitrary $a : \kw{Clause}$ and predicates $p, q : \el{}\,a \ra \prop$,
   Given an arbitrary $a : \kw{Clause}$ and predicates $p, q : \el{}\,a \ra \prop$, if $\Pi x : \el{}\,a,~ \prf (p~x = q~x)$ then $\prf ((\exists x, p~x) = (\exists y, q~y))$.
 \end{lemma}
 
+
+%================= reflection introduction ====================
+
+Since proof by reflection is a key methodological ingredient of our reconstruction framework, 
+we dedicate the next section to introduce this concept in detail before applying it to specific rules.
+
 \input{Chapters/reconstruction/reflection}
 
+%=============================================================
+
+\section{N-ary rules}
+\label{sec:nary-rule-recon}
+
+\begin{table}
+\centering
+\caption{N-ary operators rules}
+\begin{tabular}{ll}
+Rule & Description \\ \hline
+and (i)[k] & $i. \triangleright \quad (\varphi_1 \land \dots \land \varphi_n)$ \\
+    & $j. \triangleright \quad \varphi_k $ with $1 \leq k \leq n$\\[1em]
+not\_and (i) & $i. \triangleright \quad \neg (\varphi_1 \land \dots \land \varphi_n)$ \\
+    & $j. \triangleright \quad \neg \varphi_1, \dots, \neg \varphi_n $\\[1em]
+not\_or (i)[k] & $i. \triangleright \quad \neg (\varphi_1 \lor \dots \lor \varphi_n)$\\
+    & $j. \triangleright \quad \neg \varphi_k$ with $1 \leq k \leq n$\\[1em]
+and\_pos [k] & $\triangleright \quad \neg (\varphi_1 \land \dots \land \varphi_n), \varphi_k$ with $1 \leq k \leq n$ \\[1em]
+and\_neg & $\triangleright \quad (\varphi_1 \land \dots \land \varphi_n), \neg \varphi_1, \dots, \neg \varphi_n$ \\[1em]
+or\_pos & $\triangleright \quad \neg (\varphi_1 \lor \dots \lor \varphi_n), \varphi_1, \dots, \varphi_n$ \\[1em]
+or\_neg [k] & $\triangleright \quad \neg (\varphi_1 \lor \dots \lor \varphi_n), \neg \varphi_k$ with $1 \leq k \leq n$ \\
+\end{tabular}
+\label{table:nary-rules}
+\end{table}
+
+The Alethe format includes n-ary tautological rules—relying on arbitrary n-ary conjunctions and disjunctions as outlined in \cref{table:nary-rules}.
+A direct approach to reconstruct these rules would involve generating tactic scripts during the translation in Carcara.
+However, this could lead to proofs requiring hundreds of tactic applications.
+To address this, we adopt an alternative strategy: reconstructing these rules via a \emph{proof by reflection} of the first kind.
+We illustrate our approach by detailing the reconstruction of \tt{and\_pos}.
+In our encoding, n-ary conjunctions and disjunctions are interpreted as values of the abstract type list of proposition: $\bb{L}\,o$.
+We begin by introducing the following configuration:
+
+\begin{itemize}
+  \item The function $\kw{indexes}: \Pi [a: \set],\, \bb{L}~a \ra \bb{L}~\kw{nat}$  takes a list of propositions and returns a list where each proposition is replaced by its position in the list.
+  \begin{example}[indexes]
+  \(
+    \mathop{\mathtt{indexes}} (x \mathbin{\cons} y \mathbin{\cons} x  \mathbin{\cons} z \mathbin{\cons} \Box) \equivL 0 \mathbin{\cons} 1 \mathbin{\cons} 2 \mathbin{\cons} 3 \mathbin{\cons} \Box
+  \)
+  \end{example}
+  \item The function $\in_k : \N \rightarrow \bb{L}~\kw{nat} \rightarrow \bb{B}$  determines whether a given index is present in a list of indexes ($\bb{L}~\kw{nat}$).
+  \item The denotation function $\kw{conj}: \bb{L}~o \ra \prop$ decodes a list of propositions into an n-ary conjunction:
+  \[
+    \begin{aligned}
+    & \kw{conj}~(x \cons b \cons \ell) \re (x \land \kw{conj}~(b \cons \ell))\\
+    & \kw{conj}~(x \cons \Box) \re x\\
+    & \kw{conj}~\Box \re \top
+    \end{aligned}
+    \]
+  \item The total function $\kw{literal}: \Pi (k: \N),\, \bb{L}~o \ra \prop$ returns the $k$-th element of the list, or $\bot$ otherwise.
+\end{itemize}
+
+The rule \kw{and\_pos} is an instance of the classical reasoning \(\prfcl (\neg A \veedot B) \equiv \prf A \ra \prfcl B\),
+with $A$ is $\varphi_1 \land \dots \land \varphi_n$, and $B$ is the singleton clause $\varphi_k$.
+Hence, after reification, it suffices to prove $\kw{conj}~\mathit{cnf}$ implies $\kw{literal}~\mathit{cnf}~k$.
+Given the hypothesis that \(\prf\,(k \in_k \kw{indexes}~\mathit{cnf})\), the $k$-th member is indeed one literal in the conjunction, so from \(\prf\,(\kw{conj}~\mathit{cnf})\) we may project \(\prf\,(\kw{literal}~\mathit{cnf}~k)\).
+In other words, if all formulas in \(\kw{conj}~\mathit{cnf}\) hold, then the $k$-th one holds.
+
+\begin{lemma}[and\_pos]
+Given an index $k: \N$ and a list $\mathit{cnf}: \List{o}$ representing a reified $n$-ary conjunction, if
+\[
+  \prf (k \in_k (\kw{indexes}~\mathit{cnf}))
+\]
+i.e. the literal at index $k$ is in the conjunction then
+\[
+  \prfcl (\neg (\kw{conj}~\mathit{cnf}) \veedot (\kw{literal}~k~\mathit{cnf}) \veedot \nil)
+\]
+\begin{proof}
+By interpreting clause as disjunction it suffices to prove:
+\[
+    \neg (\kw{conj}~\mathit{cnf}) \lor (\kw{literal}~\mathit{cnf}~k).
+\]
+We proceed by outer induction on $k$, and inner induction on the list $\mathit{cnf}$.
+\begin{itemize}
+  \item (Case $k = 0$),
+    \begin{itemize}
+      \item (Case $\mathit{cnf} = \Box$), so the hypothesis $0 \in_k (\kw{indexes}~\Box)$ leads to a contradiction since the reified conjunction is empty.
+      \item (Case $\mathit{cnf} = a \cons \ell$),  then the element $k$ is the head literal $a$ so we can immediately conclude.
+    \end{itemize}
+  \item (Case $k > 0$),
+      \begin{itemize}
+      \item (Case $\mathit{cnf} = \Box$), so the hypothesis $k + 1 \in_k (\kw{indexes}~\Box)$ leads to a contradiction since the reified conjunction is empty.
+      \item (Case $\mathit{cnf} = a \cons \ell$), we have to show that:
+        \[
+            \kw{literal}~(a \cons \ell)~(k+1)
+        \]
+        It is suffisant to prove that \( \kw{literal}~\ell~k \) since validity of the index $k+1$ in the whole list implies validity of $k$ in $\ell$.
+        By the induction reasoning, using that $k+1 \in_k \kw{indexes}\,(a \cons \ell)$ implies $k \in_k \kw{indexes}\,\ell$, we obtain a proof of the literal at position $k$ in $\ell$.
+        Thus, the conclusion follows directly from this argument.
+    \end{itemize}
+\end{itemize}
+\end{proof}
+\label{lem:and-pos}
+\end{lemma}
+
+\begin{figure}
+\centering
+\begin{tabular}{|l|}
+\hline
+  R = \kw{pos\_and} \\ \hline
+  $i. \triangleright \quad \neg (\varphi_1 \land \dots \land \varphi_n),~ \varphi_k$ \quad (\kw{pos\_and})[k] \\ \hline
+  \begin{tabular}[t]{@{}l}
+    $i: \pid (\neg (\E{\varphi_1} \land \dots \land \E{\varphi_n}) \veedot \E{\varphi_k} \veedot \nil ) $\\
+    begin
+    \ \ \begin{tabular}[t]{@{}l}
+          apply $\lor_{i1}$;\\ %
+          apply $\kw{and\_pos}~\E{k}$ $(\E{\varphi_1} \cons \dots \cons \E{\varphi_n} \cons \Box)~ \top_i$
+        \end{tabular}\\
+    end
+  \end{tabular}
+  \\\hline
+\end{tabular}
+\caption{Translating the \kw{pos\_and} command.}
+\label{fig:pos-and-recon}
+\end{figure}
+
+We can reconstruct the proof such as described in \cref{fig:pos-and-recon}.
+We first need to retrieve a disjunctions from a clause by applying the disjunction introduction rule $\lor_{i1}$,
+and then we apply \cref{lem:and-pos} with the index $k$ given by Alethe, the conjunction reified $(\E{\varphi_1} \cons \dots \cons \E{\varphi_n} \cons \Box)$ and a proof that $\prf (k \in_k (\kw{indexes}~c))$
+which should reduce to $\top$.
+
+
+
 \section{The \texttt{\upshape{evaluate}} cvc5 rule}
-\label{ssec:eval-recon}
+\label{sec:evaluation-recon}
 
 The SMT solver cvc5 can produce proof traces with steps generated by internal theories: \kw{evaluate}, \kw{TRUST\_THEORY\_REWRITE} (TTR).
 The clauses derived using \kw{evaluate} are propositional and numerical constant equalities proved internally by cvc5, using constant propagation.
@@ -753,7 +776,7 @@ which convert between the source logic $\prop$ and the target theory $\mathcal{P
 \end{definition}
 
 \begin{example}[Reification]
-Let $\sigma \is a \colon\colon b \colon\colon \Box$, the reification of $a \land b$ is:
+Let $\sigma \is a \cons b \cons \Box$, the reification of $a \land b$ is:
 \[
   \reify{(a \land b)}_\sigma \equivL \mathop{\mathtt{pAnd}} (\mathop{\mathtt{pOther}} 0) (\mathop{\mathtt{pOther}} 1)
 \]
@@ -783,7 +806,7 @@ We define what it means for all members of a context $\hyps$ to represent true p
 and we prove some lemmas about this notion.
 
 The predicate \kw{all} (\cref{eq:all-func}) transform a list of $\cal{P}$ into conjunctions to represent a context.
-It used a fold right function from the Lambdapi standard library \info{ac}{present it in \cref{ch:intro-lambdapi}}.
+It used a fold right function from the Lambdapi standard library.
 \begin{equation}
 \kw{all}: \kw{list}~\cal{P} \ra \cal{P} \coloneqq \kw{foldr}~(\kw{pAnd})~\kw{pTrue}
 \label{eq:all-func}
@@ -890,11 +913,10 @@ begin eval tauto; end;
 \end{lstlisting}
 
 As shown in \cref{lst:tauto-ex}, we define a new tactic \kw{tauto} using a tactic script at line 5, and demonstrate its usage at lines 8-9.
-\todo{ac: improve presentation of tauto tactic, but it is not a priority for now}
 
 
 \section{The \texttt{\upshape{contraction}} rule}
-\label{ssec:contraction-recon}
+\label{sec:contraction-recon}
 
 The Alethe rule \kw{contraction} removes duplicate literals from a clause without changing its truth.
 Because of the challenges posed by associativity and commutativity (AC), reconstructing this rule requires using the second kind of proof-by-reflection method.
@@ -1096,21 +1118,21 @@ opaque symbol ti: $\prfcl$ (a ⟇ b ⟇ b ⟇ ▩) ≔ begin ... end;
 
 opaque symbol tj:  $\prfcl$ (a ⟇ b ⟇ ▩) ≔
 begin
-  have eqh : $\prf$ ($\cal{F}$ (a ⟇ b ⟇ b ⟇ ▩) = $\cal{F}$ (a ⟇ b ⟇ ▩)) {
+  have eqh : $\prf$ ($\cltodisj$ (a ⟇ b ⟇ b ⟇ ▩) = $\cltodisj$ (a ⟇ b ⟇ ▩)) {
     set r ≔ $\Uparrow$ X;
-    change $\prf$ ($\Downarrow$ (r ₂) (r ₁) = $\cal{F}$ (a ⟇ b ⟇ ▩));
+    change $\prf$ ($\Downarrow$ (r ₂) (r ₁) = $\cltodisj$ (a ⟇ b ⟇ ▩));
     rewrite left contraction_correct;
     reflexivity
   };
-  refine subst_eq_clause eqh ti
+  refine subst_cl eqh ti
 end;
 \end{lstlisting}
 Here, the intermediate proof \kw{eqh} establishes that the denotations of the original clause
 $(a \veedot b \veedot b)$ and the contracted clause $(a \veedot b)$ are equal by \cref{thm:contraction-correct}.
 The lemma
 \[
-  \kw{subst\_eq\_clause}~x~y: 
-    \prf(\cal{F}\,x = \cal{F}\,y)
+  \kw{subst\_cl}~x~y: 
+    \prf(\cltodisj\,x = \cltodisj\,y)
     \;\ra\; \prfcl(x) \;\ra\; \prfcl(y)
 \]
 is then applied to transfer the proof of the original clause $t_i$ to the contracted clause $t_j$.

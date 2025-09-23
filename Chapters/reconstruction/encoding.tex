@@ -536,12 +536,12 @@ The operator $\pp$ is used to concatenate lists.
 \end{definition}
 
 \begin{definition}[Proof on \kw{Clause}]
-Clauses are logically interpreted as disjunctions via the function $\cal{F}$, defined through rewriting rules. For convenience, we also introduce the predicate $\pid$, which asserts the provability of a clause.
+Clauses are logically interpreted as disjunctions via the function $\cltodisj$, defined through rewriting rules. For convenience, we also introduce the predicate $\pid$, which asserts the provability of a clause.
 \begin{align*}
-& \cal{F}: \texttt{Clause} \ra \prop \\
-& \cal{F}~\nil \re \bot\\
-& \cal{F}~(x \veedot y) \re x \lor (\cal{F}~y) \\
-& \pid (c : \texttt{Clause}) \coloneqq \prf\,(\cal{F}~c)
+& \kw{cl2disj}: \texttt{Clause} \ra \prop \\
+& \cltodisj~\nil \re \bot\\
+& \cltodisj~(x \veedot y) \re x \lor (\cltodisj~y) \\
+& \pid (c : \texttt{Clause}) \coloneqq \prf\,(\cltodisj~c)
 \end{align*}
 \end{definition}
 
@@ -551,23 +551,23 @@ We can now prove the equivalence between clause and disjunction.
 For any $p \colon \prop$ and $q,r \colon \texttt{Clause}$, If $\pid (p \veedot q)$ and $(\pid (p \veedot \nil) \ra  \pid r)$ and $(\pid q \ra  \pid r)$ then $\pid r$.
 \end{lemma}
 \begin{proof}
-Since the hypothesis $\pid (p \veedot q)$ is equivalent to $\prf\,(p \lor \cal{F}\,q)$, we apply the classic disjunction elimination rule.
-Then we can conclude $\prf\,p \ra \prf\,(\cal{F}\,r)$ wih the hypothesis $\pid (p \veedot \nil) \ra  \pid r$, and we can conclude $\prf\,(\cal{F}\,q) \ra \prf\,(\cal{F}\,r)$
+Since the hypothesis $\pid (p \veedot q)$ is equivalent to $\prf\,(p \lor \cltodisj\,q)$, we apply the classic disjunction elimination rule.
+Then we can conclude $\prf\,p \ra \prf\,(\cltodisj\,r)$ wih the hypothesis $\pid (p \veedot \nil) \ra  \pid r$, and we can conclude $\prf\,(\cltodisj\,q) \ra \prf\,(\cltodisj\,r)$
 with the hypothesis $\pid q \ra  \pid r$.
 \end{proof}
 
 \smallskip
 
 \begin{lemma}[Concatenation is disjunction]\label{lemma:clause-equiv-disj}
-For any two clauses $a\,b$, the equivalence $\prf\,(\cal{F}(a~\pp~b)) \Leftrightarrow \prf\,(\cal{F}\,a \lor \cal{F}\,b)$ holds.
+For any two clauses $a\,b$, the equivalence $\prf\,(\cltodisj(a~\pp~b)) \Leftrightarrow \prf\,(\cltodisj\,a \lor \cltodisj\,b)$ holds.
 \end{lemma}
 \begin{proof} By induction on $a$.
   \begin{itemize}
     \item For the base case $a = \nil$ we must show that
     \[
-        \prf\, (\cal{F} (\nil\, \pp \, b)) \Leftrightarrow \prf\, (\cal{F}\,\nil \lor \cal{F}\,b)
+        \prf\, (\cltodisj (\nil\, \pp \, b)) \Leftrightarrow \prf\, (\cltodisj\,\nil \lor \cltodisj\,b)
     \]
-    The implication ``$\Rightarrow$'' is trivial because $\nil\,\pp\,b$ rewrites to $b$. The implication ``$\Leftarrow$'' is proved using the standard elimination rule $\lor_e$ for disjunction, which requires proving $\prf\,(\cal{F}\,\nil) \ra \prf\,(\cal{F}\,(\nil\,\pp\,b))$ as well as $\prf\,(\cal{F}\,b) \ra \prf\,(\cal{F}\,(\nil\,\pp\,b))$. Both proofs are immediate since $\cal{F}\,\nil$ rewrites to $\bot$ and $\nil\,\pp\,b$ rewrites to $b$.
-    \item For the case $a = h \veedot tl$ we may use the induction hypothesis $\prf\,(\cal{F}\, (tl\, \pp\, b)) \Leftrightarrow \prf\,(\cal{F}\,tl \lor \cal{F}\, b)$. The conclusion is then easy to prove based on the rewriting rules for the operators $\cal{F}$ and $\pp$, together with associativity of $\lor$.
+    The implication ``$\Rightarrow$'' is trivial because $\nil\,\pp\,b$ rewrites to $b$. The implication ``$\Leftarrow$'' is proved using the standard elimination rule $\lor_e$ for disjunction, which requires proving $\prf\,(\cltodisj\,\nil) \ra \prf\,(\cltodisj\,(\nil\,\pp\,b))$ as well as $\prf\,(\cltodisj\,b) \ra \prf\,(\cltodisj\,(\nil\,\pp\,b))$. Both proofs are immediate since $\cltodisj\,\nil$ rewrites to $\bot$ and $\nil\,\pp\,b$ rewrites to $b$.
+    \item For the case $a = h \veedot tl$ we may use the induction hypothesis $\prf\,(\cltodisj\, (tl\, \pp\, b)) \Leftrightarrow \prf\,(\cltodisj\,tl \lor \cltodisj\, b)$. The conclusion is then easy to prove based on the rewriting rules for the operators $\cltodisj$ and $\pp$, together with associativity of $\lor$.
     \end{itemize}
 \end{proof}

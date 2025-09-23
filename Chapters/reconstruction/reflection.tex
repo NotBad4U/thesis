@@ -62,5 +62,8 @@ The key theorem states that this normalization preserves meaning:
 \]
 Hence to prove that $P \lor Q$ and $Q \lor P$, are logically equivalent, it suffices to represent them as abstract expressions $m_1$ and $m_2$ of type $\mathsf{Monoid}$, apply the function $\mathop{norm}$ with the lemma $\mathsf{norm\_mono}$ to normalize both, and check that $\mathop{norm}(m_1) = \mathop{norm}(m_2)$.
 
-In this thesis, we make use of both classes of reflection to encode certain \texttt{Alethe} rules. For example, the reconstruction of arithmetic steps (\textbf{LIA} and \textbf{LRA}) and bitvector (\textbf{BV}) Alethe rules primarily relies on the first class,
+In this thesis, we make use of both classes of reflection to encode certain \texttt{Alethe} rules. For example, the reconstruction of arithmetic steps (\textbf{LIA} and \textbf{LRA}) Alethe rules primarily relies on the first class,
 while the permutation of clauses for the \texttt{resolution} rule relies on the second class.
+
+We will make concrete use of both classes of proof by reflection in the subsequent sections. 
+In particular, \cref{sec:nary-rule-recon, sec:evaluation-recon} (N-ary rules and \kw{evaluate} cvc5 rule) employs proof by reflection of the first class,  while \cref{sec:contraction-recon} (\kw{contraction} rule) illustrates the use of the second class.

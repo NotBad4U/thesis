@@ -3,7 +3,7 @@
 %*****************************************
 
 We now describe how we encode input problems expressed in a given
-SMT-LIB signature \cite[\S 5.2.1]{smtlib}. In order to avoid a notational clash with the Lambdapi signature $\Sigma$, we denote the set of SMT-LIB sorts as $\Theta^\mathcal{S}$, the set of function symbols $\Theta^\cal{F}$, the set of natural numbers $\Theta^\cal{N}$, and the set of variables $\Theta^\cal{X}$.
+SMT-LIB signature \cite[\S 5.2.1]{smtlib}. In order to avoid a notational clash with the Lambdapi signature $\Sigma$, we denote the set of SMT-LIB sorts as $\Theta^\mathcal{S}$, the set of function symbols $\Theta^\cltodisj$, the set of natural numbers $\Theta^\cal{N}$, and the set of variables $\Theta^\cal{X}$.
 Alethe does not support the sorts \texttt{Array} and \texttt{String}. Our translation is based on the following functions:
 \begin{itemize}
 \item $\cal{D}$ translates declarations of SMT sorts and functions in $\Theta^\cal{S}$ and $\Theta^\mathcal{F}$ into declarations of constants,
@@ -17,7 +17,7 @@ Alethe does not support the sorts \texttt{Array} and \texttt{String}. Our transl
 
 \begin{definition}[Function $\mathcal{D}$ translating SMT sort and function symbol declarations]
 For each sort symbol $s$ with arity $n$ in $\Theta^\cal{S}$ we create a constant $\cal{D}(s) : \set \ra \dots \ra \set$.
-For each function symbol $f~\sigma^+$ in $\Theta^\cal{F}$ we create a constant $\cal{D}(f) : \cal{S}(\sigma^+)$.
+For each function symbol $f~\sigma^+$ in $\Theta^\cltodisj$ we create a constant $\cal{D}(f) : \cal{S}(\sigma^+)$.
 \label{def:function-d}
 \end{definition}
 
@@ -64,7 +64,7 @@ The definition of $\E{e}$ is as follows.
 \item Case $e =$ \smtinline{true}, then $\E{e} = \top$
 \item Case $e =$ \smtinline{false}, then $\E{e} = \bot$
 \item Case $e = (p~t_1~t_2\dots~t_n)$ and $p$ a logic operator, then $\E{e} = \E{t_1}~p~\dots~p~\E{t_n}$.
-\item Case $e = (f~t_1\dots~t_n)$ with $f \in \Theta^\cal{F}$,\\
+\item Case $e = (f~t_1\dots~t_n)$ with $f \in \Theta^\cltodisj$,\\
   then $\E{e} = (\mathcal{D}(f)~\E{t_1}~\dots~\E{t_n})$.
 \item Case $e = (\approx~t_1~t_2)$ then $\E{e} = (\E{t_1} = \E{t_2})$.
 \item Case $e = (Q~x_1  \dots x_n ~t)$ and $Q\in \{\kw{forall}, \kw{exists}\}$\\
@@ -74,7 +74,7 @@ The definition of $\E{e}$ is as follows.
 \item Case $e = (\kw{ite}~c~t~e)$, then $\E{e} = \kw{ite}~\E{c}~\E{t}~\E{e}$.
 \item Case $e = (\kw{xor}~a~b)$, then $\E{e} = \kw{xor}~\E{a}~\E{b}$.
 \item Case $e = (\kw{distinct}~t_1 \dots t_n)$,\\
-  then $\E{e} = \kw{distinct}~(\E{t_1} \mathbin{\colon\colon_\bb{V}} \dots\, \mathbin{\colon\colon_\bb{V}} ~\E{b} \mathbin{\colon\colon_\bb{V}} \Box_\bb{V})$.
+  then $\E{e} = \kw{distinct}~(\E{t_1} \mathbin{\cons_\bb{V}} \dots\, \mathbin{\cons_\bb{V}} ~\E{b} \mathbin{\cons_\bb{V}} \Box_\bb{V})$.
 \item Case $e = (\kw{bbt}~x_1 \dots x_n)$, \todo{WIP}
 \end{itemize}
 \label{def:function-e}

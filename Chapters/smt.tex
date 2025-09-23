@@ -29,7 +29,7 @@ The SMT-LIB logic is a many-sorted first-order logic with equality.
 \begin{itemize}
     \item The set $\cal{S}$ contains the sort symbols denoted by $\sigma$. The set contains the symbol \smtinline{Bool} for Booleans.
     \item The countably infinite set $\cal{X}$ contains the variables denoted by $x$ and $y$.
-    \item The set $\cal{F}$ contains the function symbols. This set contains the symbols $\approx, \lor, \land,$ and $\neg$.
+    \item The set $\cltodisj$ contains the function symbols. This set contains the symbols $\approx, \lor, \land,$ and $\neg$.
     \item The two-element set $\cal{B}$ contains the symbols for the \smtinline{Bool}.
 \end{itemize}
 
@@ -64,15 +64,15 @@ Since the symbol $\Sigma$ is already used for Lambdapi signatures, and SMT-LIB a
 \begin{definition}[Signature]\label{def:smt-signature}
 A signature is a tuple:
 \[
-    \Theta = (\Theta^\cal{S}, \Theta^\cal{F}, \Theta^\cal{X}, V, R)
+    \Theta = (\Theta^\cal{S}, \Theta^\cltodisj, \Theta^\cal{X}, V, R)
 \]
 \begin{itemize}
     \item  a finite set $\Theta^\cal{S}$  of sort symbols that contains the symbol \smtinline{Bool};
     \item The countably infinite set $\Theta^\cal{X}$ contains the variables;
-    \item a set $\Theta^\cal{F}$ of function symbols;
+    \item a set $\Theta^\cltodisj$ of function symbols;
     \item a partial mapping $V$ from $\Theta^\cal{X}$ to $\Theta^\cal{S}$ that assigns sorts to some variables,
-    \item and a ranking relation $R \subseteq \Theta^\cal{F} \times (\Theta^\cal{S})^+$. The relation must be left-total: for
-    all $f \in \Theta^\cal{F}$ there is a $\eta \in (\Theta^\cal{S})^+$ such that $f \mathrel{R} \eta$. The set $(\Theta^\cal{S})^+$ 
+    \item and a ranking relation $R \subseteq \Theta^\cltodisj \times (\Theta^\cal{S})^+$. The relation must be left-total: for
+    all $f \in \Theta^\cltodisj$ there is a $\eta \in (\Theta^\cal{S})^+$ such that $f \mathrel{R} \eta$. The set $(\Theta^\cal{S})^+$ 
     is the set of non-empty finite lists over the sort symbols in $\Theta^\cal{S}$.
 \end{itemize}
 \end{definition}
@@ -81,7 +81,7 @@ A rank denotes the expected sort of the symbol's arguments and the return sort. 
 From left to right, a rank denotes the expected sort of the symbol's arguments and of the result.
 Since the SMT-LIB logic allows ad-hoc polymorphism (overloading), $R$ is not left-unique.
 A function symbol together with a sort is called a ranked function symbol.
-A ranked function is written as $f: \sigma_1\dots\sigma_n\sigma \in \Theta^{\cal{F}} \times (\Theta^{\cal{S}})^+$.
+A ranked function is written as $f: \sigma_1\dots\sigma_n\sigma \in \Theta^{\cltodisj} \times (\Theta^{\cal{S}})^+$.
 
 \begin{notation}
 We write $f: \sigma_1\dots\sigma_n\sigma \in \Theta$ if $f~R~\sigma_1 \dots \sigma_n \sigma_1$ and $x \in \Theta$ if $V(x) = \sigma$.
