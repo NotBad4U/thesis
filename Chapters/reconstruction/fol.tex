@@ -214,7 +214,7 @@ In all cases we obtain the desired equality
 
 With these lemmas in hand, we are ready to state and prove the main resolution rule.
 
-\begin{theorem}[Resolution]
+\begin{theorem}[Resolution]\label{th:resolution}
 Let $ps$ and $qs$ be two clauses such that $\prfcl(ps)$ and $\prfcl(qs)$ hold.
 Suppose $i < (\mathrm{size} ps)$ and $j < (\mathrm{size} qs)$, and assume that the $i$-th literal of $ps$ is the negation of the $j$-th literal of $qs$.
 Then the clause obtained by removing these two complementary literals and  concatenating the remaining parts of $ps$ and $qs$ is also provable, that is:
