@@ -200,74 +200,81 @@ These rules can be used to rerun the tool in order to verify the confluence prop
 \end{align*}
 \end{definition}
 
-\section{Fin and List}
-\label{app:fin-and-list}
+\section{Supported Alethe rules}
+\label{app:alethe-rules-supported}
 
-\section{bitvectors definitions}\label{app:bf-defs}
+% \begin{figure}[H]
+% \centering
+% \begin{tabular}{|cccc|}
+% \hline
+% \kw{assume} & \kw{subproof} & \kw{resolution} & \kw{th\_resolution}  \\
+% \kw{true} & \kw{false} & \kw{not\_not} & \kw{forall\_inst}   \\
+% \kw{refl} & \kw{eq\_reflexive} & \kw{eq\_transitive} & \kw{eq\_congruent} \\
+% \kw{eq\_congruent\_pred} & \kw{and\_pos} & \kw{and\_neg} & \kw{or\_pos} \\
+% \kw{or\_neg} & \kw{xor\_pos1} & \kw{xor\_pos2} & \kw{xor\_neg1} \\
+% \kw{xor\_neg2}  & \kw{xor\_pos1} & \kw{contraction} & \kw{bind} \\
+% \kw{implies\_pos} & \kw{implies\_neg1}  & \kw{implies\_neg2} & \kw{equiv\_pos1} \\
+% \kw{equiv\_pos2} & \kw{equiv\_neg1}  & \kw{equiv\_neg2} & \kw{ite\_pos1} \\
+% \kw{ite\_pos1} & \kw{ite\_pos2} & \kw{ite\_neg1} & \kw{ite\_neg2}  \\
+% \kw{distinct\_elim} & \kw{eq\_symmetric} & \kw{sko\_exist} & \kw{sko\_forall} \\
+% \kw{and} & \kw{not\_or} & \kw{not\_and} & \kw{reordering} \\
+% \kw{symm} & \kw{not\_symm} & \kw{eq\_symmetric} & \kw{equiv\_simplify} \\
+% \kw{not\_simplify} & \kw{ite\_simplify} & \kw{implies\_simplify} & \kw{ac\_simp} \\
+% \hline
+% \end{tabular}
+% \caption{List of Alethe rules supported in our reconstruction.}
+% \end{figure}
 
-To illustrate the approach on bitwise operators, we focus on the $\mathop{bvand}$ operator.
-We begin by defining its natural number analogue, $\mathop{land}$ with its correctness \cref{lem:correct-land}.
+\begin{figure}[H]
+\centering
+\begin{tabular}{|ccc|}
+\hline
+\kw{ac\_simp} & \kw{and} & \kw{and\_neg} \\
+\kw{and\_pos} & \kw{assume} & \kw{bind} \\
+\kw{contraction} & \kw{distinct\_elim} & \kw{eq\_congruent} \\
+\kw{eq\_congruent\_pred} & \kw{eq\_reflexive} & \kw{eq\_symmetric} \\
+\kw{eq\_transitive} & \kw{equiv\_neg1} & \kw{equiv\_neg2} \\
+\kw{equiv\_pos1} & \kw{equiv\_pos2} & \kw{equiv\_simplify} \\
+\kw{false} & \kw{forall\_inst} & \kw{implies\_neg1} \\
+\kw{implies\_neg2} & \kw{implies\_pos} & \kw{implies\_simplify} \\
+\kw{ite\_neg1} & \kw{ite\_neg2} & \kw{ite\_pos1} \\
+\kw{ite\_pos2} & \kw{ite\_simplify} & \kw{la\_generic} \\
+\kw{lia\_generic} & \kw{not\_and} & \kw{not\_not} \\
+\kw{not\_or} & \kw{not\_simplify} & \kw{not\_symm} \\
+\kw{or} & \kw{or\_neg} & \kw{or\_pos} \\
+\kw{refl} & \kw{reordering} & \kw{resolution} \\
+\kw{sko\_exist} & \kw{sko\_forall} & \kw{subproof} \\
+\kw{symm} & \kw{th\_resolution} & \kw{true} \\
+\kw{xor\_neg1} & \kw{xor\_neg2} & \kw{xor\_pos1} \\
+\kw{xor\_pos2} & & \\
+\hline
+\end{tabular}
+\caption{List of Alethe rules supported in our reconstruction (alphabetical order, 3 columns).}
+\end{figure}
 
-\begin{definition}[and operator for Nat]
-We define a higher-order function \( \mathop{\mathrm{bitwise}} : (\mathbb{B} \ra \mathbb{B} \ra \mathbb{B}) \ra \mathbb{N} \ra \mathbb{N} \ra \mathbb{N} \ra \mathbb{N} \) by the following rewrite rules:
-\begin{align*}
-&\mathop{\mathrm{bitwise}}\,op\, 0\, a\, b \re 0 \\
-&\mathop{\mathrm{bitwise}}\,op\, n{+}1\, a\, b \re \\
-&\quad\left( \text{if } (\mathop{op}\,(\mathop{\mathrm{odd}}a)\, (\mathop{\mathrm{odd}}\,b)) 1\,0 \right) \\
-&\quad+ 2 * \mathop{\mathrm{bitwise}}\,op\, n\, (\mathop{\mathrm{div2}}\,a)\,(\mathop{\mathrm{div2}}\,b)
-\end{align*}
-The auxiliaries functions \( \mathop{\mathrm{div2}} : \mathbb{N} \ra \mathbb{N} \) and the boolean \( \mathop{\mathrm{and}_\B} : \B \ra \B \ra \B \) are defined recursively as:
-\begin{align*}
-&\mathop{\mathrm{div2}}\,0 \re 0 \\
-&\mathop{\mathrm{div2}}\,1 \re 0 \\
-&\mathop{\mathrm{div2}}\,x{+}2 \re \mathop{\mathrm{div2}}\,x + 1 \\
-&\\
-&\mathop{\mathrm{and}_\B}(\mathrm{true},\, b) \re b \\
-&\mathop{\mathrm{and}_\B}(b,\, \mathrm{true}) \re b \\
-&\mathop{\mathrm{and}_\B}(\mathrm{false},\, \_) \re \mathrm{false} \\
-&\mathop{\mathrm{and}_\B}(\_,\, \mathrm{false}) \re \mathrm{false}
-\end{align*}
-Then, we can define the natural number bolean and i.e. (\&\&) as:
-\begin{equation*}
-\&\&~(a\,b: \N): \N \is \mathop{bitwise}\,(and_\B)\,a\,a\,b \quad \text{(written infix)}
-\end{equation*}
-\end{definition}
 
+The $\kw{th\_resolution}$ and $\kw{resolution}$ denote the same rule.
+The difference only distinguishes if the rule was introduced by the SAT solver or a theory solver.
+The Alethe formats include 102 rules (excluding the rule \kw{hole}), and we currently support 52 of them. However, some rules in the format
+are used exclusively by veriT, and neither appears in cvc5 proof trace. Among the unsupported rules, 14 are for the linear arithmetic and 3 for Bitvector.
 
-\begin{lemma}[Correctness of Bitwise \&\&]
-Let $n, m, i \in \N$. Then the $i$-th bit of the bitwise $\mathbin{\&\&}$ of $n$ and $m$ equals the conjunction of the $i$-th bits of $n$ and $m$, that is:
-\[
-\mathop{testbit} (n \mathbin{\&\&} m)~i = \mathop{andb}~(\mathop{testbit} n~i) (\mathop{testbit} m~i).
-\]
-with:
-\begin{align*}
-&\mathop{\mathrm{testbit}} : \N \ra \N \ra \B \\
-&\mathop{\mathrm{testbit}}\,a,\,0 \re \mathop{\mathrm{odd}}\,a \\
-&\mathop{\mathrm{testbit}}\,a,\,n{+}1 \re \mathop{\mathrm{testbit}}\,\mathop{\mathrm{div2}}(a),\, n
-\end{align*}
-\begin{proof}TODO\end{proof}
-\label{lem:correct-land}
-\end{lemma}
-
-\begin{lemma}[Bitwise $\mathbin{\&\&}$ upper bound]
-Let \( x, y, n : \N \), and suppose \( y < 2 \,\hat{}\, n \). Then:
-\[
-x \mathbin{\&\&} y < 2^n.
-\]
-\label{and_lt_two_pow}
-\begin{proof} TODO \end{proof}
-\end{lemma}
-
-Representing Linear ArithmeticFinally, we can define the $\mathop{bvand}$ function.
-
-\begin{definition}[Bitwise \emph{and} for bitvectors]
-\begin{align*}
-&\mathop{\mathrm{Fin.and}}~[n: \N]: \mathop{Fin} n \ra \mathop{Fin} n \ra \mathop{Fin} n\\
-&\quad\is \lambda f1,\, \lambda f2,\, \mathop{\mathrm{FinMk}}~n~((\mathop{val} f1) \mathbin{\&\&} (\mathop{val} f2)) \\
-&\quad (\mathop{and\_lt\_two\_pow}~(\mathop{val} f1)~(\mathop{val} f2)~n~(\mathop{isLt} f2)) \\
-&\\
-&\mathop{\mathrm{bvand}}~[n: \N]: \mathop{BitVec} n \ra \mathop{BitVec} n \ra \mathop{BitVec} n\\
-&\quad\is \lambda x, \lambda y, \mathop{Fin.and}~(2~\hat{}~n)~x~y
-\end{align*}
-with $\mathop{and\_lt\_two\_pow}$ the constant for \cref{and_lt_two_pow}.
-\end{definition}
+\begin{figure}[H]
+\centering
+\begin{tabular}{|cc|}
+\hline
+\kw{arith-elim-lt} & \kw{arith-geq-norm} \\
+\kw{arith-geq-norm1} & \kw{arith-geq-norm2} \\
+\kw{arith-geq-tighten} & \kw{arith-leq-norm} \\
+\kw{bool-and-de-morgan} & \kw{bool-and-false} \\
+\kw{bool-and-flatten} & \kw{bool-and-true} \\
+\kw{bool-double-not-elim} & \kw{bool-eq-false} \\
+\kw{bool-eq-true} & \kw{bool-impl-elim} \\
+\kw{bool-impl-false1} & \kw{bool-impl-false2} \\
+\kw{bool-impl-true2} & \kw{bool-impl-true2} \\
+\kw{bool-or-de-morgan} & \kw{bool-or-false} \\
+\kw{bool-or-flatten} & \kw{distinct-binary-elim} \\
+\kw{eq-refl} & \kw{eq-symm} \\
+\hline
+\end{tabular}
+\caption{List of RARE rules supported in our reconstruction (alphabetical order, 2 columns).}
+\end{figure}
