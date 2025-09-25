@@ -221,48 +221,8 @@ Table~\ref{table:benchmarks-list} reports the Lambdapi proof-checking times in m
 In most cases, the checking time remains below one second.
 % , with the exception of a few outliers particularly in the \emph{sledgehammer} and \emph{rings} benchmarks that exhibit higher upper tails.
 
-
-\section{Validating \texorpdfstring{\tlaplus} SMT proof}\label{sec:tla-eval}
-
-\begin{figure}[tb]
-    \centering
-    \begin{tikzpicture}
-      \path (0,0) node (lp) {\begin{tabular}{c}
-        \textcolor{red}{Lambdapi} \\
-        \hline
-        \textcolor{red}{Dedukti}
-      \end{tabular}}
-            (-4,1) node (coq) {Coq}
-            (-3,2) node (lean) {Lean}
-            (0,2.5) node [draw, dashed, purple] (smt) {\color{purple}\textbf{SMT}}
-            (0,4) node [draw, dashed, purple] (tla) {\color{purple}\tlaplus}
-            (3,2.5) node (isa) {Isabelle}
-            (4,1) node (agda) {Agda}
-            (-3,-2) node (k) {$\mathbb{K}$-framework}
-            (0,-3) node (mat) {Matita}
-            (2,-2) node (hol) {HOL}
-            (-4,-1) node (pvs) {PVS}
-            (4,0) node (eventb) {\textcolor{blue}{EventB}}
-            (4,-1) node (ze) {Zenon and ArchSAT}
-            ;
-      \draw[->,red, thick] (smt) -- (lp) node[midway,sloped,above]
-      {\scriptsize{Carcara}};
-      \draw[->,red, thick] (tla) -- (smt) node[midway,sloped,above] {};
-      \draw[->,blue, thick] (eventb) -- (lp) node[midway,sloped,above] {};
-      \draw[->] (lean) -- (lp) node[midway,sloped,above] {\footnotesize{lean2dk}};
-      \draw[->] (isa) -- (lp) node[midway,sloped,above] {\footnotesize{isabelle\_dk}};
-      \draw[->] (agda) -- (lp) node[midway,sloped,above] {\footnotesize{agda2dk}};
-      \draw[<->] (ze) -- (lp) node[midway,sloped,above] {};
-      \draw[<->] (hol) -- (lp) node[midway,sloped,above] {\footnotesize{hol2dk}};
-      \draw[<->] (mat) -- (lp) node[midway,sloped,above] {\footnotesize{Krajono}};
-      \draw[->] (pvs) -- (lp);
-      \draw[->] (k) -- (lp) node[midway,sloped,above] {\footnotesize{KaMeLo}};
-      \draw[<->] (coq) -- (lp)  node[midway,sloped,above] {\footnotesize{vodk}};
-    \end{tikzpicture}
-    \caption{Verifying TLAPS proof with Lambdapi.}
-    \label{fig:interop-tla}
-\end{figure}
-
+\section{Validating \tlaplus SMT proof}
+\label{sec:tla-eval}
 
 Following our approach, we collect the Alethe proof produced by the SMT solver and reconstruct it in Lambdapi.
 However, we do not currently re-integrate the reconstructed proof back into \tlaplus.
