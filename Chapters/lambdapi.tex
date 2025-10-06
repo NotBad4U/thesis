@@ -21,7 +21,7 @@ and verify Event-B proofs \cite{eventb2lp}.
         \hline
         \textcolor{red}{Dedukti}
       \end{tabular}}
-            (-4,1) node (coq) {Coq}
+            (-4,1) node (coq) {Rocq}
             (-3,2) node (lean) {Lean}
             % (0,2) node [draw, dashed, purple] (smt) {\color{purple}\textbf{SMT}}
             (4,2) node (isa) {Isabelle}
@@ -37,7 +37,7 @@ and verify Event-B proofs \cite{eventb2lp}.
       \draw[->] (lean) -- (lp) node[midway,sloped,above] {\footnotesize{lean2dk}};
       \draw[->] (isa) -- (lp) node[midway,sloped,above] {\footnotesize{isabelle\_dk}};
       \draw[->] (agda) -- (lp) node[midway,sloped,above] {\footnotesize{agda2dk}};
-      \draw[<->] (ze) -- (lp) node[midway,sloped,above] {};
+      \draw[->] (ze) -- (lp) node[midway,sloped,above] {};
       \draw[<->] (hol) -- (lp) node[midway,sloped,above] {\footnotesize{hol2dk}};
       \draw[<->] (mat) -- (lp) node[midway,sloped,above] {\footnotesize{Krajono}};
       \draw[->] (pvs) -- (lp);

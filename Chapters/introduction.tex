@@ -60,8 +60,8 @@ $\lightning$
 \begin{figure}[b]
     \centering
     \begin{tikzpicture}
-      \path (0,0) node (lp) {\textcolor{red}{Lambdapi}}
-            (-4,1) node (coq) {Coq}
+      \path (0,0) node (lp) {\textcolor{RedOrange}{Lambdapi}}
+            (-4,1) node (coq) {Rocq}
             (-3,2) node (lean) {Lean}
             (0,2) node [draw, dashed, purple] (smt) {\color{purple}\textbf{Alethe}}
             (4,2) node (isa) {Isabelle}
@@ -72,11 +72,11 @@ $\lightning$
             (-4,-1) node (pvs) {PVS}
             (4,-1) node (ze) {Zenon \& ArchSAT}
             ;
-      \draw[->,red, thick] (smt) -- (lp) node[midway,sloped,above] {};
+      \draw[->,RedOrange, thick] (smt) -- (lp) node[midway,sloped,above] {};
       \draw[->] (lean) -- (lp) node[midway,sloped,above] {\footnotesize{lean2dk}};
       \draw[->] (isa) -- (lp) node[midway,sloped,above] {\footnotesize{isabelle\_dk}};
       \draw[->] (agda) -- (lp) node[midway,sloped,above] {\footnotesize{agda2dk}};
-      \draw[<->] (ze) -- (lp) node[midway,sloped,above] {};
+      \draw[->] (ze) -- (lp) node[midway,sloped,above] {};
       \draw[<->] (hol) -- (lp) node[midway,sloped,above] {\footnotesize{hol2dk}};
       \draw[<->] (mat) -- (lp) node[midway,sloped,above] {\footnotesize{Krajono}};
       \draw[->] (pvs) -- (lp);
@@ -128,7 +128,7 @@ This chapter also highlights the challenges posed by coarse-grained proof steps 
     This chapter bridges the gap between SMT's many-sorted first-order logic and Lambdapi's dependent types.
 
 \item In \Cref{ch:reconstruction}, \ref{ch:reconstruction-ul} and \ref{ch:reconstruction-la}, we present the core of our reconstruction methodology.
-    The \cref{ch:reconstruction-ul} focuses on reconstructing first-order proofs, including tautologies, resolution, and quantifier handling, while \cref{ch:reconstruction-la} extends this to linear arithmetic proofs.
+    \cref{ch:reconstruction-ul} focuses on reconstructing first-order proofs, including tautologies, resolution, and quantifier handling, while \cref{ch:reconstruction-la} extends this to linear arithmetic proofs.
     We introduce reflective techniques for normalising arithmetic expressions and prove the correctness of our translations, ensuring that reconstructed proofs faithfully represent the original SMT reasoning.
 
 \item In \cref{ch:soundness}, we formalise the correctness of our translation, proving that the encoding preserves semantic entailment.
@@ -137,6 +137,6 @@ This chapter also highlights the challenges posed by coarse-grained proof steps 
 \item In \cref{ch:evaluation}, we shift to practical evaluation, presenting benchmarks and case studies that demonstrate the efficiency and scalability of our method.
     We show how our toolchain can validate proofs from real-world applications, including TLAPS proofs \cite{tla-proofs}, and discuss optimisations for parallel checking.
 
-\item Finally, in Chapter~\cref{ch:conclusion}, we conclude by summarising our contributions and discussing limitations and future directions.
+\item Finally, in \cref{ch:conclusion}, we conclude by summarising our contributions and discussing limitations and future directions.
     We highlight the potential for extending our work to additional theories (e.g., bit-vectors) and integrating with more proof assistants, ultimately aiming to establish Alethe as a standard for proof exchange in formal methods.
 \end{itemize}
