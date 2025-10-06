@@ -2,7 +2,11 @@
 \chapter{Introduction}\label{ch:introduction}
 %************************************************
 
-Satisfiability Modulo Theories (SMT) solvers \cite{cvc5,verit} are automated reasoning (AR) tools that have become essential in a wide range of formal reasoning tasks, including program verification and interactive theorem proving.
+Powerful modern automated theorem provers are widely used now to prove security and safety properties of computer systems.
+These tools are capable of handling complex logical reasoning tasks with a degree of automation and efficiency that complements or extends manual mathematical proof development.
+Their ability to automatically generate and check formal proofs has made them indispensable for ensuring the reliability and safety of both hardware and software systems, where correctness is paramount.
+
+Satisfiability Modulo Theories (SMT) solvers \cite{cvc5,verit} are automated reasoning (AR) tools that have become especially essential in a wide range of formal reasoning tasks, including program verification and interactive theorem proving.
 Their efficiency and expressive power enable them to handle complex logical proofs and verifications with speed.
 At the same time, the growing reliance on SMT solvers raises a fundamental question of trust: \textit{can we be confident that the results produced by these highly complex SMT solvers are correct?}
 
@@ -21,28 +25,28 @@ Consequently, directly certifying solvers in a late lifecycle of development mig
 A first alternative is to develop a certified solver in a proof assistant environment such as the IsaSAT solver \cite{fleury:tel-02963301,fleury:hal-01904647} that is a fully verified SAT solver developed in Isabelle/HOL \cite{isabelle-hol-ref}.
 This alternative offers strong guarantees about the correctness of the implementation itself, since the solver is extracted from a machine-checked formalization.
 Moreover, it has been demonstrated to achieve competitive performance in SAT solving \cite{EDA-challenge}.
-While IsaSAT has been extended to output DRAT proofs, these proofs are not yet checked within the verified framework, and therefore do not provide the same level of end-to-end certification as approaches that combine solver output with independently verified proof checking.
 In this respect, IsaSAT advances the state of the art by providing a verified implementation of SAT solving.
-However, it does not yet close the gap toward fully certifying solver results.
-Moreover, the restriction to SAT limits its applicability in domains where SMT theories reasoning is required.
+However, the restriction to SAT limits its applicability in domains where SMT theories reasoning is required.
 
 
-A second alternative line of research is the \emph{proof logging} \cite{proof-logging}, where the approach is to certify the \emph{results} rather than the solver implementation.
-The proof logging is a technique for automatically reviewing the reasoning steps of a proof engine by a separate tool.
+A second alternative line of research is \emph{proof logging} \cite{proof-logging}, where the approach is to certify the \emph{results} rather than the solver implementation.
+Proof logging is a technique for automatically reviewing the reasoning steps of a proof engine by a separate tool.
 This is achieved by requiring the solver to produce a proof, or certificate, of its output.
-An SMT proof formally records the logical reasoning that leads to a solution, enabling independent verification by a separate proof checker.
+A proof trace or, more generally, certificate formally records the logical reasoning that leads to a solution, enabling independent verification by a separate proof checker.
 Essentially, the task of proof checking is conceptually simpler and typically much faster than solving itself.
 Moreover, a well designed trace format allows traces to be generated and checked with low performance overhead.
 This decouples the trust in solver results from the correctness of the solver’s implementation, thereby providing a more practical path toward trustworthy automated reasoning.
 It is then the checker of the proof trace that becomes the critical link for establishing confidence in the correctness of a verdict, and establishing soundness of a proof checker is much easier than verifying an SMT solver.
+DRAT proofs \cite{drat} is a standard for verifying unsatisfiability proofs emitted by modern SAT solvers.
+The independent checker rupee \cite{drat-checking} verify DRAT proofs produced by modern SAT solvers.
 An attractive way of building and verifying a trace checker is to have a proof assistant interpret a trace and produce a proof that is accepted by the kernel of the proof assistant.
 This method is known as \emph{proof reconstruction} \cite{z3recon}.
 For example, this approach has been adopted in several proof assistants that employ \emph{hammers} for discharging goals to automatic theorem provers (ATPs), including SMT solvers.
 Examples include Sledgehammer \cite{Sledgehammer} for Isabelle/HOL and CoqHammer \cite{coqhammer1,coqhammer2} for Coq.
 The hammer translates the conjecture and facts supplied by the user or harvested from the context to the input language of the back-end, invokes it, and, in the case of success, attempts to reconstruct the proof in the logic of the proof assistant, based on a trace of the proof found by the back-end.
 
-Alethe is an established SMT proof format generated by the solvers veriT \cite{verit} and cvc5 \cite{cvc5}.
-As the example \cref{lst:alethe-ex-intro} shows the format is close to SMT-LIB and allows both coarse and fine-grained steps, facilitating proof production.
+Alethe \cite{alethe,alethe2} is an established SMT proof format generated by the solvers veriT \cite{verit} and cvc5 \cite{cvc5}.
+As the example \cref{lst:alethe-ex-intro} shows, the format is close to SMT-LIB and facilitating proof production.
 However, it lacks a stand-alone checker, which harms its usability and hinders its adoption. 
 Moreover, the coarse-grained steps can be too expensive to check and lead to verification failures.
 
@@ -83,13 +87,13 @@ $\lightning$
     \label{fig:interop-intro}
 \end{figure}
 
-This thesis addresses these challenges by introducing a translation framework from Alethe proofs to Lambdapi, a proof assistant for the $\lp$-calculus modulo rewriting ($\lpm$).
-The $\lpm$-calculus combines dependent types, which enable precise encodings of object logics, with modulo theory which extends reasoning by allowing rewrite rules for defining theories and deductions.
-In this way, the $\lpm$-calculus provides a meta-logic capable of expressing object logics, axioms, inference rules, and proofs of various theorem provers.
+This thesis addresses these challenges by introducing a translation framework from Alethe proofs to Lambdapi \cite{lambdapi}, a proof assistant for the $\lp$-calculus modulo rewriting ($\lpm$).
+The $\lpm$-calculus combines dependent types, which enable precise encodings of object logic, with modulo theory which extends reasoning by allowing rewrite rules for defining theories and deductions.
+In this way, the $\lpm$-calculus provides a meta-logic capable of expressing object logic, axioms, inference rules, and proofs of various theorem provers.
 Lambdapi also supports exporting proofs to other systems (\cref{fig:interop-intro}), providing a bidirectional connection between different proof environments.
-This has been one of the principal reasons for selecting Lambdapi, since it enables the conversion and sharing of Alethe proofs with other logical systems such as Rocq and Isabelle/HOL.
+This has been one of our principal reasons for selecting Lambdapi, since it enables the conversion and sharing of Alethe proofs with other logical systems such as Rocq and Isabelle/HOL.
 
-In this work, we identified common challenges and developed general encoding strategies.
+In this work, we identify common challenges and develop general encoding strategies.
 Based on these strategies, we present a modular encoding in Lambdapi of selected Alethe inference rules.
 We then empirically evaluate the effectiveness of this approach through the automated generation of proof certificates verifiable within the Lambdapi proof assistant.
 
@@ -97,7 +101,7 @@ We then empirically evaluate the effectiveness of this approach through the auto
 \label{sec:thesis-outline}
 
 This chapter has introduced the challenges of ensuring trustworthiness in SMT solvers, highlighting the need for verifiable proofs to address the complexity and potential incorrectness of SMT solvers.
-While SMT solvers are widely used in formal methods, their outputs are often taken for granted, despite the risks of errors in large, optimized codebases.
+While SMT solvers are widely used in formal methods, their outputs are often taken for granted, despite the risks of errors in large, optimised codebases.
 The goal of this thesis is to provide a robust framework for certifying SMT proofs by translating them into a dependently typed setting, making them both trustworthy and portable across different proof assistants.
 The thesis is structured as follows:
 
@@ -108,7 +112,7 @@ The thesis is structured as follows:
     It demonstrates why Lambdapi is uniquely suited for this task due to its interoperability with other proof assistants and its support for user-defined rewriting.
 
 \item In \cref{ch:smt}, we provide background on Satisfiability Modulo Theories (SMT), covering the SMT-LIB standard, the semantics of first-order logic with theories, and the architecture of modern SMT solvers.
-We discuss the role of proof production in ensuring solver correctness and motivate the need for a standardized, verifiable proof format like Alethe.
+We discuss the role of proof production in ensuring solver correctness and motivate the need for a standardised, verifiable proof format like Alethe.
 
 \item In \cref{ch:alethe}, we dive into the Alethe proof format, detailing its design, syntax, and logical rule system including resolution, quantifier instantiation, and theory specific rules (e.g., for linear arithmetic).
 We explain how Alethe represents proofs as sequences of steps.
@@ -117,7 +121,7 @@ This chapter also highlights the challenges posed by coarse-grained proof steps 
 \item In \cref{ch:elab}, we describe how preprocessing tools, such as Carcara \cite{carcara} and RARE \cite{rare}, refine and elaborate proofs before translation, eliminating redundant steps and preparing them for reconstruction in Lambdapi.
 
 \item In \cref{ch:relatedworks}, we survey related work, comparing Alethe with other proof formats (e.g., Eunoia) and discussing existing approaches to integrating SMT solvers with proof assistants.
-    We position our work within the broader landscape of proof certification for smt solver.
+    We position our work within the broader landscape of proof certification for smt solvers.
 
 \item In \cref{ch:encoding}, we lay the groundwork for our encoding by defining how SMT logic can be represented in Lambdapi.
     We develop a prelude that captures SMT-LIB's sorts, terms, and formulas, and show how to encode theories like Linear Integer Arithmetic (LIA) and Linear Arithmetic (LA).
@@ -125,14 +129,14 @@ This chapter also highlights the challenges posed by coarse-grained proof steps 
 
 \item In \Cref{ch:reconstruction}, \ref{ch:reconstruction-ul} and \ref{ch:reconstruction-la}, we present the core of our reconstruction methodology.
     The \cref{ch:reconstruction-ul} focuses on reconstructing first-order proofs, including tautologies, resolution, and quantifier handling, while \cref{ch:reconstruction-la} extends this to linear arithmetic proofs.
-    We introduce reflective techniques for normalizing arithmetic expressions and prove the correctness of our translations, ensuring that reconstructed proofs faithfully represent the original SMT reasoning.
+    We introduce reflective techniques for normalising arithmetic expressions and prove the correctness of our translations, ensuring that reconstructed proofs faithfully represent the original SMT reasoning.
 
-\item In \cref{ch:soundness}, we formalize the correctness of our translation, proving that the encoding preserves semantic entailment.
+\item In \cref{ch:soundness}, we formalise the correctness of our translation, proving that the encoding preserves semantic entailment.
     This chapter provides the theoretical guarantees that underpin our approach.
 
 \item In \cref{ch:evaluation}, we shift to practical evaluation, presenting benchmarks and case studies that demonstrate the efficiency and scalability of our method.
-    We show how our toolchain can validate proofs from real-world applications, including TLAPS proofs \cite{tla-proofs}, and discuss optimizations for parallel checking.
+    We show how our toolchain can validate proofs from real-world applications, including TLAPS proofs \cite{tla-proofs}, and discuss optimisations for parallel checking.
 
-\item Finally, in Chapter~\cref{ch:conclusion}, we conclude by summarizing our contributions and discussing limitations and future directions.
+\item Finally, in Chapter~\cref{ch:conclusion}, we conclude by summarising our contributions and discussing limitations and future directions.
     We highlight the potential for extending our work to additional theories (e.g., bit-vectors) and integrating with more proof assistants, ultimately aiming to establish Alethe as a standard for proof exchange in formal methods.
 \end{itemize}
