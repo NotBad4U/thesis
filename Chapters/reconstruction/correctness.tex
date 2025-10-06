@@ -47,7 +47,7 @@ In this way, a valid proof ensures that every clause in the trace is correctly d
   \end{itemize}
   The rest of the supported tautologous and simple deductions can be found in \cref{app:alethe-rules-supported}.
   \item Case $R = \kw{resolution}$. The assertion follows from \cref{th:resolution} since the resolution rule is a chain of resolutions of clauses.
-  \item Case $R = \kw{subproof}$. The assertion follows from \cref{lem:subproof}, cf.\ \cref{app:subproof}, and the assumption that $P$ is a valid Alethe trace prefix.
+  \item Case $R = \kw{subproof}$. The assertion follows from \cref{lem:subproof}, cf.\ \cref{sec:subproof}, and the assumption that $P$ is a valid Alethe trace prefix.
   \item Case $R = \kw{contraction}$.
     The assertion follows from \cref{thm:contraction-correct}, since the rule contracts a clause already established in a previous step. 
     By the induction hypothesis, that earlier step is valid, and therefore the contracted clause is also valid under the assumption that $P$ is a valid Alethe trace prefix.
@@ -57,8 +57,8 @@ In this way, a valid proof ensures that every clause in the trace is correctly d
     \[
         \prfcl (\neg(\E{\varphi^1_1} \bowtie \E{\varphi^1_2}) \veedot \dots \veedot  \neg(\E{\varphi^k_1} \bowtie \E{\varphi^k_2}) \veedot \nil)
     \]
-    with $\bowtie = \{ \geq, \leq, <, >, = \}$ leads to a contradiction follows from the normalisation \cref{thm:norm-correct} and reification \cref{thm:reify-correct}, which ensures the correctness of the reification of arithmetic expressions in order to prove a contradiction,
-    together with the lemmas (\cref{app:alethe-rules-supported}) establishing the normalisation of disjunctions of inequalities and the coefficients $[\E{a_1} ,\dots, \E{a_n}]$. 
+    with $\bowtie = \{ \geq, \leq, <, >, = \}$ leads to a contradiction follows from the normalisation \cref{thm:norm-correct} and reification \cref{thm:reify-correct}, which ensures the correctness of the reification of arithmetic expressions in order to prove a contradiction;
+    establishing the normalisation of disjunctions of inequalities and the coefficients $[\E{a_1} ,\dots, \E{a_n}]$. 
   \end{itemize}
     The case of \kw{lia\_generic} is handled by relying on the Carcara elaboration of linear arithmetic reasoning (see \cref{ssec:elaboration-lia}). 
 
