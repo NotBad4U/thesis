@@ -3,7 +3,7 @@
 %*****************************************
 
 \section{The Eunoia proof format}
-Eunoia is a ongoing development logical framework that provides a formally defined language for representing proof systems and serves as the specification basis for the recently introduced Cooperating Proof Calculus (CPC) employed by the SMT solver cvc5.
+Eunoia is a ongoing development of a logical framework that provides a formally defined language for representing proof systems and serves as the specification basis for the recently introduced Cooperating Proof Calculus (CPC) employed by the SMT solver cvc5.
 %
 \footnote{See \url{https://cvc5.github.io/docs/cvc5-1.2.1/proofs/output_cpc.html}. A complete
 list of the proof rules in CPC can be found at \url{https://cvc5.github.io/docs/cvc5-1.
@@ -23,23 +23,11 @@ However, while Alethe primarily aims to provide a standardized exchange format f
 Unlike Alethe, which relies on a predefined set of proof rules, Eunoia allows users to define their own custom rules using the \smtinline{declare-rule} command, offering greater flexibility and extensibility in proof construction.
 For example:
 
-\begin{lstlisting}[language=Eunoia, numbers=none]
+\begin{lstlisting}[label={lst:eunoia},caption={An Eunoia proof example},language=Eunoia]
 (declare-parameterized-const = ((T Type :implicit)) (→ T T Bool))
 (declare-rule symm ((T Type) (t T) (s T))
     :premises ((= t s))
     :conclusion (= s t))
-\end{lstlisting}
-
-This rule specifies symmetry of equality. This rule takes as premise an equality \smtinline{(= t s)} and no arguments.
-In detail, an application of this proof rule for premise proof \smtinline{(= a b)} for concrete terms $a,b$ will compute the substitution $[t \mapsto a, s \mapsto b]$ and apply it to the conclusion term to obtain \smtinline{(= b a)}.
-The Eunoia proof format follows a structure that is almost identical to that of Alethe (\smtinline{assume}, \smtinline{step}).
-
-\begin{lstlisting}[language=Eunoia, caption={Eunoia proof example}, label={lst:eunoia}]
-(declare-parameterized-const = ((T Type :implicit)) (-> T T Bool))
-(declare-rule symm ((T Type) (t T) (s T))
-    :premises ((= t s))
-    :conclusion (= s t)
-)
 (declare-type Int ())
 (declare-const a Int)
 (declare-const b Int)
@@ -47,16 +35,20 @@ The Eunoia proof format follows a structure that is almost identical to that of 
 (step @p1 (= b a) :rule symm :premises (@p0))
 \end{lstlisting}
 
-The \cref{lst:eunoia} shows an example of an Eunoia proof script. Line 1, a polymorphic equality predicate $=$ is declared, allowing equality comparisons over any type \tt{T}.
+The rule \smtinline{symm} (at line 2) specifies symmetry of equality. This rule takes as premise an equality \smtinline{(= t s)} and no arguments.
+In detail, an application of this proof rule for premise proof \smtinline{(= a b)} for concrete terms $a,b$ will compute the substitution $[t \mapsto a, s \mapsto b]$ and apply it to the conclusion term to obtain \smtinline{(= b a)}.
+The Eunoia proof format follows a structure that is almost identical to that of Alethe (\smtinline{assume}, \smtinline{step}) as we can observe lines 8 and 9.
+
+The \cref{lst:eunoia} shows an example of an Eunoia proof script. Line 1, a polymorphic binary predicate $=$ is declared.
 The proof rule \tt{symm} (lines 2 to 5) is then defined to capture the symmetry property of equality: if \smtinline{t = s}, then \smtinline{s = t}.
 Following this, an integer type \smtinline{Int} (line 6) and two integer constants, \tt{a} and \tt{b}, are declared (lines 7,8).
-The proof begins line 9 by assuming the equality of \tt{a} and \tt{b}, labeled as \smtinline{@p0}.
-Finally, at line 10, the symmetry rule \tt{symm} is applied to derive the equality of \tt{b} and \tt{a}, labeled as \smtinline{@p1}, using the assumption \smtinline{@p0} as the premise.
+The proof begins line 8 by assuming the equality of \tt{a} and \tt{b}, labelled as \smtinline{@p0}.
+Finally, at line 9, the symmetry rule \tt{symm} is applied to derive the equality of \tt{b} and \tt{a}, labelled as \smtinline{@p1}, using the assumption \smtinline{@p0} as the premise.
 This concise proof demonstrates Eunoia's capability to formally represent and verify basic properties of equality, highlighting its support for polymorphic types and structured proof rules.
 
 Recent work\footnote{https://github.com/cvc5/AletheInEunoia} has focused on embedding the Alethe proof format within Eunoia, ensuring backward compatibility and enabling users to leverage existing Alethe proofs in the more general Eunoia framework.
 
-\section{Proof search with hammers}
+\section{Proof reconstruction for hammers}
 
 Several proof assistants employ \emph{hammers} for discharging goals to automatic theorem provers (ATPs), including SMT solvers. Examples include Sledgehammer \cite{Sledgehammer} for Isabelle/HOL and CoqHammer \cite{coqhammer1,coqhammer2} for Coq.
 The hammer translates the conjecture and facts supplied by the user or harvested
@@ -67,7 +59,6 @@ assistant, based on a trace of the proof found by the back-end.
 This process can benefit significantly from detailed proofs by the back-ends.
 For example, adoption by Sledgehammer of the Alethe format generated by the SMT solver veriT \cite{isabelle1,isabelle2} cut the failure rate of reconstruction by 50\%.
 According to Sledgehammer benchmarks, proof reconstruction now succeeds in over 90\% of cases \cite{verit-recon, SledgehammerReconImprove}, a substantial improvement over previous formats.
-In benchmarks such as the HOL-Library, the failure rate of proof reconstruction was reduced by approximately 50\%.
 Across other formalizations, including the Prime Number Theorem and Simplex algorithm, the failure rate was reduced by 56\% to 63\%, consistently enhancing the reliability of the proof reconstruction pipeline.
 The introduction of fine-grained proof formats and optimized solver strategies not only increased the number of automatically reconstructed proofs but also reduced the total reconstruction time by up to 15\%.
 These results encouraged us to base our approach on the Alethe trace format.
@@ -116,11 +107,23 @@ This capability is particularly valuable for our work, as it compensates for the
 Analogously, Ethos plays a role similar to that of Carcara, which provides an independent proof checker for SMT proofs.
 
 
-\paragraph{TLA+ and TLAPS: handling unverified SMT backend}
+\section{The Unverified Backend Problem in Formal Verification Tools}
 
-Beyond the hammer and direct SMT integration approaches discussed above, TLAPS (TLA+ Proof System) exemplifies another proof assistant that relies on SMT solvers for automation but lacks proof verification capabilities, presenting an opportunity to apply the reconstruction methods developed in this thesis.
+Beyond the hammer and SMT integration approaches discussed,
+we highlight formal verification tools that rely on SMT solvers for automation but lacks proof verification capabilities,
+thereby presenting an opportunity to apply the reconstruction methods developed in this thesis.
 
-\subsection{The language}
+\paragraph{The B method}
+
+The B method \cite{Bmethod} has been increasingly adopted in the development of high-assurance software systems, particularly in safety-critical domains such as railways.
+The verification of B models is facilitated by integrated development environments such as Atelier B \cite{AtelierB} and Rodin \cite{AbrialRodin}, which provide a unified framework for both system development and formal verification.
+Proof obligations are systematically generated from B components and translated into machine-verifiable formats to be fed into automated solvers. 
+In these environments, proof obligations are automatically generated from the B components and translated into machine-verifiable formulas for processing by automated solvers.
+One class of such solvers is SMT solver, a dedicated backend \cite{DeharbeBSMT}, and its modern successor BEer \cite{Beer}, can encode B proof obligations into SMT.
+However, while SMT solvers are effective at finding proofs, the correctness of the proofs they produce still requires independent verification to ensure complete trustworthiness.
+In this context, we can see a direct application of the work presented in this thesis, as our reconstruction framework can serve as a foundation for certifying SMT proofs generated during the verification of B models.
+
+\paragraph{\tlaplus and TLAPS}
 
 \tlaplus is a specification language based on the Temporal Logic of Actions and Zermelo–Fraenkel set theory with the Axiom of Choice (ZFC) \cite{tlabook,tla-ref}.
 It is particularly used for specifying concurrent and distributed systems.
@@ -183,11 +186,11 @@ The proposed approach involves extracting the output generated by the SMT backen
 The assertion that the Cantor theorem stating that no function ($f$) from a set ($S$) to its power set (\SUBSET\ $S$) can be surjective is formalized in \tlaplus as the theorem in \cref{fig:cantor-tlaps}.
 Each proof in the hierarchy ends with a \QED\ step that asserts the proof's goal.
 However, in \cref{fig:cantor-tlaps}, the proof is flat and concludes with a unique \QED\ step that asserts the proof's goal.
-Proofs are incrementally decomposed into simpler subproofs across multiple levels. Each proof consists of labeled steps $\ps{i}{k.}$, that reflect their depth in the proof tree, where level $i$ indicates the nesting depth.
-Steps may introduce assumptions, intermediate claims, or invoke previously proven results, using TLAPS tactics such as \ASSUME/\PROVE\, \TAKE\ or \WITNESS.
+Proofs are incrementally decomposed into simpler subproofs across multiple levels. Each proof consists of labelled steps $\ps{i}{k.}$, that reflect their depth in the proof tree, where level $i$ indicates the nesting depth.
+Steps may introduce assumptions, intermediate claims, or invoke previously proven results (with \BY), using TLAPS tactics such as \ASSUME/\PROVE\, \TAKE\ or \WITNESS.
 The proof is completed when the root goal is reduced to a collection of leaf obligations marked as \QED\ and discharged by backend provers.
 
-For each step $\ps{i}{k.}$ in \tlaplus proof, there is a proof obligation that is to be proved.
+For each step $\ps{i}{k.}$ in \tlaplus proof, there is a set of proof obligations that has to be proved.
 The obligation contains a context of known facts, definitions, declarations, and a goal.
 Obligations are dispatched by the proof manager (PM) to the available backends (SMT solvers, Zenon, Isabelle/TLA) in a default order (SMT, Zenon, Isabelle) until one of them successfully proves the obligation.
 In the case of \cref{fig:cantor-tlaps}, we will have 5 proof obligations ($\ps{1}{1} - \ps{1}{6}$ except $\ps{1}{3}$) that will be discharged to the backend.
@@ -236,8 +239,8 @@ The assumption $X \in T \lor X \notin T$ provides a complete case split, and in 
 
 \smallskip
 
-There would be 4 proof obligations that will be covered by the SMT solvers, and 2 by Zenon for the most simplest one. 
-The SMT backend of \tlaplus generated the corresponding SMT input problem presented in \cref{lst:cantor-smt}.
+There would be 4 proof obligations that will be covered by the SMT solvers, and 2 by Zenon. 
+The SMT backend of \tlaplus generates the corresponding SMT input problem presented in \cref{lst:cantor-smt}.
 Since \tlaplus is based on ZFC which is untyped, the backend introduces a universal uninterpreted sort \tt{Idv} (line 2) to represent the domain of all values.
 Within this setting,  the function symbol \tt{Mem} (line 3) denotes set membership ($\in$)  ,  while \tt{FunApp} (line 4) encodes function application (i.e. $f[x]$) .
 The declared constant symbols \tt{S} and \tt{f} correspond to the set $S$ and function $f$ in the original proof.
