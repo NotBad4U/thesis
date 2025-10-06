@@ -45,7 +45,7 @@ This bridges the gap between high-level system proofs in \tlaplus and low-level 
 
 Our empirical evaluation demonstrates that our framework is capable of validating non-trivial SMT traces efficiently, including proofs produced by cvc5 from \tlaps and SMT-LIB benchmarks.
 
-\section{Future Perspective}
+\section{Future Perspectives}
 
 These findings lay the groundwork for future investigations into:
 
@@ -56,40 +56,41 @@ Although the Alethe format already mentions bitvectors, only three rules are cur
 We are considering to encode bitvectors of width $w$ as elements of the finite type $\kw{Fin}(2^w)$ (\cref{def:fin-def}), i.e.\ natural numbers bounded by $2^w$.
 This representation captures the intended semantics of unsigned machine integers and enforces range-safety through dependent typing. 
 Arithmetic operators can be defined by lifting operations on $\N$ modulo $2^w$, while bit-level operators such as conjunction, disjunction, or shifts can be defined either via Boolean decomposition of the underlying representation or through modular arithmetic formulations.  
-An initial work has been started in this direction for extending the Lambdapi standard library with bitvector.
-We chose the $\mathop{Fin}$ representation over other possible encodings due to its relative efficiency.
+An initial work has been started in this direction for extending the Lambdapi standard library with bitvectors.
+We chose the $\kw{Fin}$ representation over other possible encodings due to its relative efficiency.
 If, in the future, Lambdapi's kernel adds support for efficient representations of natural numbers e.g.,
-via overriding them with arbitrary-precision arithmetic libraries like GMP\footnote{\url{https://gmplib.org/}} bitvectors encoded with $\mathop{Fin}$ would likewise benefit from such optimizations.
-We therefore chose to implement $\mathop{Fin}\,n$, as we believe it provides the most suitable and future-proof foundation for representing the $\mathop{BitVec}$ type,
+via overriding them with arbitrary-precision arithmetic libraries like GMP\footnote{\url{https://gmplib.org/}} bitvectors encoded with $\kw{Fin}$ would likewise benefit from such optimizations.
+We therefore chose to implement $\kw{Fin}\,n$, as we believe it provides the most suitable and future-proof foundation for representing the $\kw{BitVec}$ type,
 particularly in light of potential enhancements to the kernel.
 
 \begin{definition}[Fin]\label{def:fin-def}
-The type $\mathop{Fin} n$ is the type of natural numbers $i$ with the constraint that $i < n$.
+The type $\kw{Fin}\,n$ is the type of natural numbers $i$ with the constraint that $i < n$.
 It is the canonical type with $n$ elements.
 \begin{align*}
-& Fin~(n: \N) \coloneq \Sigma~(\lambda\,x, istrue(x < n)) \\
-& FinMk~(n: \N) (m: \N) (islt: \prf (m < n)) : Fin~n \\
-&\quad\is exist~(\lambda\,x, istrue(x <n))~m~islt\\
-&\mathop{val}~[n]: \mathop{Fin} n \ra \N \is \lambda e, e~s\_1 \\
-&\mathop{isLt}~[n] (f: \mathop{Fin} n): \prf (f~s_1 < n) \is f~s_2\\
+& \kw{Fin}~(n: \N) \coloneq \int~(\lambda\,x, \kw{istrue}(x < n)) \\
+& \kw{FinMk}~(n~m: \N) (islt: \prf (m < n)) : \kw{Fin}~n \\
+&\quad\is \kw{exist}~(\lambda\,x, \kw{istrue}(x <n))~m~islt\\
+&\kw{val}~[n]: \kw{Fin}~n \ra \N \is \lambda e, (e~s_1) \\
+&\kw{isLt}~[n] (f: \kw{Fin}~n): \prf ((f~s_1) < n) \is (f~s_2)\\
 \end{align*}
+with $s_1$ and $s_2$ the first and second projection for dependent pair defined in \cref{dep-pair-def}.
 \end{definition}
 
 \begin{definition}[Bitvector]\label{def:bv-def}
 We can define bitvectors as natural numbers bounded by powers of two and modular arithmetic representation.
 We first introduce an infix exponentiation function $\_\,\hat{}\,\_$ on $\N$.
-Using this, we define the type $BitVec~n$ as the finite type $Fin~(2~\hat~n)$ (written $Fin~2^n$), representing the set of natural numbers strictly less than $2^n$.
+Using this, we define the type $\kw{BitVec}~n$ as the finite type $\kw{Fin}~(2~\hat~n)$ (written $\kw{Fin}~2^n$), representing the set of natural numbers strictly less than $2^n$.
 \begin{align*}
 & \hat{}: \N \ra \N \ra \N \qquad \text{(written inﬁx)}\\
-& 0 ~\hat{}~ 1 \re 1 \N\\
+& 0 ~\hat{}~ 1 \re 1\\
 & n ~\hat{}~ (m + 1) \re n * (n ~\hat{}~ m)\\[1em]
-&BitVec~n \is Fin~(2^n) \\
-& mkBv: \Pi(n~m: \N)(p: \prf~(istrue(n < 2^n))): BitVec~n\\
-&\quad\is FinMk~(2^n)~m~p
+&\kw{BitVec}~n \is \kw{Fin}~(2^n) \\
+& \kw{mkBv}: \Pi(n~m: \N)(p: \prf~(\kw{istrue}(m < 2^n))): \kw{BitVec}~n\\
+&\quad\is \kw{FinMk}~(2^n)~m~p
 \end{align*}
 Each bitvector of size $n$ is thus a natural number modulo $2^n$, capturing the behaviour of (unsigned) integers with $n$ bits.
-The function $mkBv$ then takes a size $n: \N$, an element $m$, and a proof $p$ that $m < 2^n$, and returns a bitvector of type $BitVec~n$.
-Internally, this is constructed using $FinMk$, the constructor for the finite type $Fin~(2^n)$, ensuring that only values within the correct range can inhabit the bitvector type.
+The function $\kw{mkBv}$ then takes a size $n: \N$, an element $m$, and a proof $p$ that $m < 2^n$, and returns a bitvector of type $\kw{BitVec}~n$.
+Internally, this is constructed using $\kw{FinMk}$, the constructor for the finite type $\kw{Fin}~(2^n)$, ensuring that only values within the correct range can inhabit the bitvector type.
 \end{definition}
 
 

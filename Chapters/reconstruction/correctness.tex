@@ -1,5 +1,5 @@
 %*****************************************
-\chapter{Correctness of the translation}\label{ch:soundness}
+\chapter{Translation Correctness}\label{ch:soundness}
 %*****************************************
 
 An Alethe proof trace is a non-empty list $[c_1, \dots, c_n]$ of steps such that $c_n$ derives the empty clause: \smtinline{(cl)}.
@@ -16,11 +16,7 @@ Validity requires that the trace is well-formed (\cref{def:well-formed-alethe}),
 In this way, a valid proof ensures that every clause in the trace is correctly derived from earlier clauses or assumptions, so that the final clause faithfully represents the logical consequence of the whole derivation.
 
 \begin{theorem}[Correctness of reconstruction]\label{theorem:soundness}
-  For any valid Alethe proof trace prefix:
-  \[
-    P = [c_1, \dots, c_i]
-  \]
-  , and $\mathcal{C}(c_i)$ is \emph{well-formed}. Furthermore, if
+  For any valid Alethe proof trace prefix $P = [c_1, \dots, c_i]$, if
   \[
     c_i.\,\Gamma\, \triangleright \varphi_1 \dots \varphi_m \, (\mathcal{R}\,P)[A]
   \]
@@ -30,7 +26,7 @@ In this way, a valid proof ensures that every clause in the trace is correctly d
   \] If $M_i$ is provided it is a proof term inhabiting the type of the translated clause.
 \end{theorem}
 \begin{proof}
-  Inductively, assume that the theorem holds for the shorter trace prefix $P = [c_1, \dots, c_{n-1}]$, which is also a valid proof trace prefix, and consider the rule $R$ that is applied for establishing $c_n$.
+  Inductively, assume that the theorem holds for the shorter trace prefix $P = [c_1, \dots, c_{i-1}]$, which is also a valid proof trace prefix, and consider the rule $R$ that is applied for establishing $c_n$.
   \begin{itemize}
   \item Case $R = \kw{assume}$. Then the assertion obviously holds, and no proof term is provided.
   \item For tautologous and simple deduction rules, the proofs follow a similar approach. We illustrate them with two cases:
@@ -61,7 +57,7 @@ In this way, a valid proof ensures that every clause in the trace is correctly d
     \[
         \prfcl (\neg(\E{\varphi^1_1} \bowtie \E{\varphi^1_2}) \veedot \dots \veedot  \neg(\E{\varphi^k_1} \bowtie \E{\varphi^k_2}) \veedot \nil)
     \]
-    with $\bowtie = \{ \geq, \leq, <, >, = \}$ leads to a contraction follows from the normalisation \cref{thm:norm-correct} and reification \cref{thm:reify-correct}, which ensures the correctness of the reification of arithmetic expressions in order to prove a contraction,
+    with $\bowtie = \{ \geq, \leq, <, >, = \}$ leads to a contradiction follows from the normalisation \cref{thm:norm-correct} and reification \cref{thm:reify-correct}, which ensures the correctness of the reification of arithmetic expressions in order to prove a contradiction,
     together with the lemmas (\cref{app:alethe-rules-supported}) establishing the normalisation of disjunctions of inequalities and the coefficients $[\E{a_1} ,\dots, \E{a_n}]$. 
   \end{itemize}
     The case of \kw{lia\_generic} is handled by relying on the Carcara elaboration of linear arithmetic reasoning (see \cref{ssec:elaboration-lia}). 

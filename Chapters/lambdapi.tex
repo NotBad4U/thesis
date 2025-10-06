@@ -580,15 +580,15 @@ The type $\int$ parameterized by a predicate $p$ on a type $\el\,a$, represents 
 
 \begin{align*}
 &\int : \forall a : \set{}, (\el{}~a \ra \prop): \type \\
-&|~exist : \Pi (x :\el{}\,a), \prf (p~x) \ra \int~p \\
+&|~\kw{exist} : \Pi (x :\el{}\,a), \prf (p~x) \ra \int~p \\
 &\\
 & int~[a: \set{}]: (\el{}~a \ra \prop) \ra \set{} \\
 & \el{}~int~p \re \int~p \\
 &\\
 & \textcolor{red}{s_1}~[a: \set{}] [p:(\el{}~a \ra \prop)] (e: \int~a~p): \el{}~a \\
-& (exist~x~\_)~\textcolor{red}{s_1} \re x\\
+& (\kw{exist}~x~\_)~\textcolor{red}{s_1} \re x\\
 & s_2~[a: \set{}] [p:(\el{}~a \ra \prop)] (e: \int~a~p): \prf{}(p~(e~\textcolor{red}{s_1})) \\
-& (exist~\_~p)~s_2 \re p\\
+& (\kw{exist}~\_~p)~s_2 \re p\\
 \end{align*}
 The projections from this dependent pair are defined through the symbols $s_1$ and $s_2$, corresponding respectively to the first and second components of the pair.
 The rewrite rule for $s_1$ extracts the value $x$ from a term of the form $\kw{exist}~x~\_$, while the rule for $s_2$ retrieves the proof that $(p~x)$ holds.
