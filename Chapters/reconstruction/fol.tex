@@ -57,7 +57,7 @@ The definitions use the following lemmas proved in our Lambdapi encoding:
         \Pi (a\,b \colon \set),\ \Pi f \colon \el\,a \ra \el\,b, \\
         \Pi x\,x',\ \prf (x = x') \ra \prf (f\,x = f\,x'),
     \end{array}$
-\item $\kw{equiv\_pos2} : \Pi (\varphi_1~\varphi_2: \prop),\ \pid (\neg (\varphi_1 = \varphi_2) \veedot \neg \varphi_1 \veedot \varphi_2 \veedot \nil )$,
+\item $\kw{equiv\_pos2} : \Pi (\varphi_1~\varphi_2: \prop),\ \pid (\neg (\varphi_1 = \varphi_2) \veedot \neg \varphi_1 \veedot \varphi_2 \veedot \nil )$
 % \item $\pid_l : \Pi [a : \set],\ \pid (a \veedot \nil) \ra \prf a$.
 \end{itemize}\todo{cong might move due to nary-function, so no more details here}
 
@@ -86,7 +86,7 @@ In addition, pivots may appear anywhere in a clause rather than just as the head
 To prove our resolution rule, we first establish a sequence of auxiliary lemmas.
 Each lemma captures a structural property of disjunctions at the clause level,
 and together they provide the tools needed for the final resolution argument.
-We recall that clause of literals can be rewrite into disjunctions.
+We recall that clauses of literals can be rewritten into disjunctions.
 
 \begin{lemma}[Sublist disjunction]\label{lem:orN_subList}
 Let $ps$ and $qs$ be two Clause and two index $i,j \in \mathbb{N}$. If
@@ -110,7 +110,7 @@ The proof proceeds by structural induction on $qs$.
     \[
         \prfcl (t \veedot \ell).
     \]
-    We reasons by cases on the index $j$ and then $i$.
+    We reason by cases on the index $j$ and then $i$.
     \begin{itemize}
       \item For $j=0$ we have $\mathrm{take}\,0\,(t \veedot \ell)=\nil$, hence the subclause $ps$ of $qs$ is empty i.e. $ps = \nil$.
       Similar to the previous case, the hypothesis $\prfcl(ps)$ is $\prf(\bot)$, thus the goal follows immediately by \emph{ex falso quodlibet}.
@@ -123,7 +123,7 @@ The proof proceeds by structural induction on $qs$.
             \]
             and the equality hypothesis yields
             \[
-              \prfcl\bigl(p = t \veedot \mathrm{take}\,j\,\ell\bigr).
+              \prfcl\bigl(ps = t \veedot \mathrm{take}\,j\,\ell\bigr).
             \]
             Thus, there are two subcases to consider.
             When $\prf(t)$ holds, we immediately obtain $\prfcl(t \veedot \ell)$ by left introduction.
@@ -192,14 +192,18 @@ We proceed by induction on the structure of $qs$.
     \item If $j=0$, then $\kw{remove}(qs,0)=\ell$ and $qs[0]=t$.
     Removing the head element $t$ and then reintroducing it yields the same clause.
     Hence the equality holds immediately.
-    \item If $j>0$, then we have the identities
+    \item If $j = j' +1$, we need to show that
       \[
-        \kw{remove}(t \veedot \ell,j) = t \veedot \kw{remove}(\ell,j-1)\\
-        (t \veedot \ell)[j] = \ell[j-1].
+          (t \veedot \ell)[j'+1] \veedot (\kw{remove}~(t \veedot \ell)~(j'+1)) = t \veedot \ell
       \]
-      By the induction hypothesis applied to $\ell$ at index $j-1$, we know that
+      First, we have the identities
+      \begin{itemize}
+        \item[] $\kw{remove}(t \veedot \ell,j) \equivL t \veedot \kw{remove}(\ell,j-1)$
+        \item[] and $(t \veedot \ell)[j'+1] \equivL \ell[j']$
+      \end{itemize}
+      So by the induction hypothesis applied to $\ell$ at index $j'+1$, we know that
       \[
-        \prf\bigl(\,\ell[j-1] \veedot \kw{remove}(\ell,j-1) = \ell\,\bigr).
+        \prf\bigl(\,\ell[j'+1] \veedot \kw{remove}(\ell,j'+1) = \ell\,\bigr).
       \]
       Combining this with the identities above, we obtain
       \[
@@ -216,15 +220,15 @@ With these lemmas in hand, we are ready to state and prove the main resolution r
 
 \begin{theorem}[Resolution]\label{th:resolution}
 Let $ps$ and $qs$ be two clauses such that $\prfcl(ps)$ and $\prfcl(qs)$ hold.
-Suppose $i < (\mathrm{size} ps)$ and $j < (\mathrm{size} qs)$, and assume that the $i$-th literal of $ps$ is the negation of the $j$-th literal of $qs$.
+Suppose $i < (\mathrm{size}~ps)$ and $j < (\mathrm{size}~qs)$, and assume that the $i$-th literal of $ps$ is the negation of the $j$-th literal of $qs$.
 Then the clause obtained by removing these two complementary literals and  concatenating the remaining parts of $ps$ and $qs$ is also provable, that is:
 \[
 \begin{array}{l}
-  \tt{resolution}~(ps, qs : \tt{Clause})\; (i, j : \mathbb{N}) \\
+  \tt{resolution}~[ps, qs : \tt{Clause}]\; (i, j : \mathbb{N}) \\
   (hps : \prfcl(ps)) \\
   (hqs : \prfcl(qs)) \\
-  (hi  : \prf(i < \tt{size} ps) \\
-  (hj  : \prf(j < \tt{size} qs) \\
+  (hi  : \prf(i < \tt{size}~ps) \\
+  (hj  : \prf(j < \tt{size}~qs) \\
   (hij : \prf(ps[i] = \lnot(qs[j]))) \\
   : \prfcl((\tt{remove}~ps~i) \pp (\tt{remove}~qs~j))
 \end{array}
@@ -262,12 +266,11 @@ We reason by case analysis on the pivot literal truth.
 
 
 \begin{example}
-  \cref{lst:smtexamplelambdapi} illustrates the result of our main function $\mathcal{C}$ applied to the first steps in the running example of \cref{lst:smtexampleinput-fol}.
-  In the code below, all the \texttt{assume} commands (corresponding to the \texttt{assert}s of the input problem) are transformed into constants by~$\mathcal{C}$. A symbol without a definition is considered as an axiom.
-  Each step is encoded as an \lpinline{opaque symbol} that represents a lemma. Splitting the proof into multiple lemmas is beneficial for larger proofs because it reduces Lambdapi's checking time for the proof.
-\end{example}
+\cref{lst:smtexamplelambdapi} illustrates the result of our main function $\mathcal{C}$ applied to the first steps in the running example of \cref{lst:smtexampleinput-fol}.
+In the code below, all the \texttt{assume} commands (corresponding to the \texttt{assert}s of the input problem) are transformed into constants by~$\mathcal{C}$. A symbol without a definition is considered as an axiom.
+Each step is encoded as an \lpinline{opaque symbol} that represents a lemma. Splitting the proof into multiple lemmas is beneficial for larger proofs because it reduces Lambdapi's checking time for the proof.
 
-\begin{lstlisting}[mathescape=true, caption={Trace from \cref{lst:smtexampleinput} encoded in Lambdapi.}, label={lst:smtexamplelambdapi}, language=Lambdapi]
+\begin{lstlisting}[mathescape=true, caption={Trace from  encoded in Lambdapi.}, label={lst:smtexamplelambdapi}, language=Lambdapi]
 symbol p2 ≔ p b;
 symbol p4 ≔ p a = p b;
 symbol p5 ≔ p a;
@@ -278,27 +281,29 @@ opaque symbol t1 : Prf$\textcolor{purple}{\smash{^\bullet}}$ ((¬ ((p_5 = p_2)))
 begin apply equiv_pos2; end;
 
 opaque symbol t2 : Prf$\textcolor{purple}{\smash{^\bullet}}$ (p_4 ⟇ ▩) ≔
-begin apply ∨ᵢ₁; apply feq (p) (Prf$\textcolor{purple}{\smash{^\bullet}}$ₗ a1) end;
+begin apply ∨ᵢ₁; apply cong (p) (headcl a1) end;
 
 opaque symbol t3 : Prf$\textcolor{purple}{\smash{^\bullet}}$ (p_2 ⟇ ▩) ≔
 begin
 have t0_t1 : Prf$\textcolor{purple}{\smash{^\bullet}}$ ((¬ (p_5))  ⟇ p_2 ⟇ ▩) {
-  apply resolution 0 0 t1 t2 ⊤ᵢ ⊤ᵢ (eq_refl _)
+  apply resolution 0 0 t1 t2 $\top_i$ $\top_i$ (eq_refl _)
 };
 have t0_t1_a0 : Prf$\textcolor{purple}{\smash{^\bullet}}$ (p_2 ⟇ ▩) {
-    apply resolution 0 0 t0_t1 a0 ⊤ᵢ ⊤ᵢ (eq_refl _)
+    apply resolution 0 0 t0_t1 a0 $\top_i$ $\top_i$ (eq_refl _)
 }; refine t0_t1_a0;
 end;
 
 opaque symbol t4 : Prf$\textcolor{purple}{\smash{^\bullet}}$ ▩ ≔
 begin
-  apply resolution 0 0 a2 t3 ⊤ᵢ ⊤ᵢ (eq_refl _);
+  apply resolution 0 0 a2 t3 $\top_i$ $\top_i$ (eq_refl _);
 end;
 \end{lstlisting}
+The function $\kw{headcl}$ at line 11 has type $\prfcl (a \veedot \nil) \ra \prf\,a$, and $\top_i: \prf (\top)$ denote the introduction for $\top$.
+\end{example}
 
 \section{Simplification rules}
 
-The Alethe format includes rules that encode operator-level simplifications typically performed by SMT solvers. \info{ac}{The introduction of Alethe will contain the description of RARE, so we do not need to introduce it here anymore}
+The Alethe format includes rules that encode operator-level simplifications typically performed by SMT solvers.
 A key challenge arises from the fact that the solver does not explicitly specify which transformations are applied, nor the order in which they are performed. This makes certain rules, such as \tt{or\_simplify}, difficult to certify.
 For instance, the rule \texttt{or\_simplify}, presented in \cref{eqn:or-simp}, simplifies disjunctions by applying equivalence-preserving transformations repeatedly until a fixpoint is reached. Its general form is:
 
@@ -313,16 +318,15 @@ where $\psi$ is the transformed term. The possible transformations are:
 \item[(4)] $l_1 \lor \dots \lor \top \lor \dots \lor l_n \Rightarrow \top$
 \item[(5)] $l_1 \lor \dots \lor l_i \lor \dots \lor l_j \lor \dots \lor  l_n \Rightarrow \top$ where $l_i = \neg^{2p} x$, $l_j = \neg^{2q+1} x$.
 \end{enumerate}
-\info{ac}{reconstruction of or\_simplify need to be improve so I still prove not\_simplify only has example}
 
 To manage these transformations, we leverage the RARE language provided by cvc5 \cite{rare}, which supports elaborated rewrite proofs.
-As detailed in \cref{sec:rare-intro}, RARE generates explicit proof terms on demand, using built-in rewrite rules.
+As detailed in \cref{ssec:rare-intro}, RARE generates explicit proof terms on demand, using built-in rewrite rules.
 The RARE rule used and its arguments are made explicit in the \smtinline{:args} parameter of the rule $\kw{rare\_rewrite}$ in the proof trace.
 
 However, in some cases, cvc5 may emit proof traces using the legacy simplification rules instead of RARE. In such situations, we reconstruct the simplification steps using tactic scripts, as detailed in \cref{ch:intro-lambdapi}.
-These scripts enable us to approach a fixpoint-style interpretation.\question{ac}{is it enough to say "approach" the Fix?}
+These scripts enable us to approach a fixpoint-style interpretation.
 
-To illustrate this process, we describe how we reconstruct a step involving the \kw{not\_simplify} rule, summarized in \cref{fig:not-simplify} since it is simple than \kw{or\_simplify} rule.
+To illustrate this process, we describe how we reconstruct a step involving the \kw{not\_simplify} rule, summarized in \cref{fig:not-simplify} since it is simpler than \kw{or\_simplify} rule.
 Each transformation associated with this rule is implemented by a separate lemma e.g., \kw{not\_simplify1}, \kw{not\_simplify2}, etc. which are then tried sequentially on the current goal.
 
 \begin{figure}
@@ -363,7 +367,7 @@ Finally, a step using the \kw{not\_simplify} rule can be reconstructed as shown 
 
 \section{Quantifiers}
 
-\begin{figure}
+\begin{figure}[t]
 \centering
 \begin{tabular}{|l|}
 \hline
@@ -395,8 +399,7 @@ where $\varphi$ is a term containing the free variables $\bar{x}$, and each term
 \begin{example}[Quantifier instantiation]
 The following example shows a simple Alethe proof expressed in the abstract
 notation used in this document. It uses quantifier instantiation and resolution to show a
-contradiction. The paragraphs below describe the concepts necessary to understand the
-proof step by step.
+contradiction.
 \begin{center}
 \begin{tabular}{ l l r}
 a0.& $\triangleright \quad \forall x, (P~x)$  & \kw{(assume)}[\,] \\
@@ -467,7 +470,7 @@ For every $a : \set$ and predicate $p: \el~a \ra \prop$, $(\forall x, p~x) \Left
 \end{itemize}
 \end{proof}
 
-We now prove the Skolemization lemma for the universal quantifier that used to reconstruct steps using the rule \kw{sko\_forall}.
+We now prove the Skolemization lemma for the universal quantifier that is used to reconstruct steps using the rule \kw{sko\_forall}.
 
 \smallskip
 
@@ -655,7 +658,7 @@ We proceed by outer induction on $k$, and inner induction on the list $\mathit{c
         \[
             \kw{literal}~(a \cons \ell)~(k+1)
         \]
-        It is suffisant to prove that \( \kw{literal}~\ell~k \) since validity of the index $k+1$ in the whole list implies validity of $k$ in $\ell$.
+        which is equivalent to prove $\kw{literal}~\ell~k$.
         By the induction reasoning, using that $k+1 \in_k \kw{indexes}\,(a \cons \ell)$ implies $k \in_k \kw{indexes}\,\ell$, we obtain a proof of the literal at position $k$ in $\ell$.
         Thus, the conclusion follows directly from this argument.
     \end{itemize}
@@ -686,14 +689,13 @@ We proceed by outer induction on $k$, and inner induction on the list $\mathit{c
 \end{figure}
 
 We can reconstruct the proof such as described in \cref{fig:pos-and-recon}.
-We first need to retrieve a disjunctions from a clause by applying the disjunction introduction rule $\lor_{i1}$,
+We first need to retrieve a disjunction from a clause by applying the disjunction introduction rule $\lor_{i1}$,
 and then we apply \cref{lem:and-pos} with the index $k$ given by Alethe, the conjunction reified $(\E{\varphi_1} \cons \dots \cons \E{\varphi_n} \cons \Box)$ and a proof that $\prf (k \in_k (\kw{indexes}~c))$
 which should reduce to $\top$.
 
 
 
-\section{The \texttt{\upshape{evaluate}} cvc5 rule}
-\label{sec:evaluation-recon}
+\section{The \texttt{\upshape{evaluate}} cvc5 rule}\label{evaluation-recon}
 
 The SMT solver cvc5 can produce proof traces with steps generated by internal theories: \kw{evaluate}, \kw{TRUST\_THEORY\_REWRITE} (TTR).
 The clauses derived using \kw{evaluate} are propositional and numerical constant equalities proved internally by cvc5, using constant propagation.
@@ -711,7 +713,7 @@ In contrast, we attempt to reconstruct them using a combination of simple intern
 \smallskip
 
 For propositional formulas such as line 1 in \cref{lst:eval-step}, we reconstruct the proof using an embedded proof procedure based on proof by reflection of the first kind.
-For equalities over numerical constants, such as line 2, we simplify the expressions using the rewriting rules defined in $\mathcal{R}{\mathbb{Z}}$ and $\mathcal{R}{\mathbb{P}}$, and aim to conclude by \lpinline{reflexivity}.
+For equalities over numerical constants, such as line 2, we simplify the expressions using the rewriting rules defined in $\mathcal{R}_{\mathbb{Z}}$ and $\mathcal{R}_{\mathbb{P}}$, and aim to conclude by \lpinline{reflexivity}.
 The rule \kw{TTR} (TRUST\_THEORY\_REWRITE) describes steps performed by cvc5’s internal theory rewriter.
 These steps may involve rewriting quantified propositions or other expressions too complex for the tautology solver.
 Instead, we attempt reconstruct them by invoking the first-order automated theorem prover Zenon Modulo \cite{zenonmodulo} with the tactic \lpinline{why3} of Lambdapi, configured to call Zenon Modulo.
@@ -745,44 +747,61 @@ Note that during reification, repeated expressions are assigned the same index i
 However, we do not attempt to prove that different indices refer to distinct expressions.
 
 \begin{definition}[Reification and denotation $\cal{P} \rightleftarrows \prop$]
-We define a reification function $\reify{\_} : \mathbb{L}~o \rightarrow \prop \rightarrow \mathcal{P}$ written $\reify{\_}\, x \, \sigma$,
-and an interpretation function $\deno{\_} : \mathbb{L}~o \rightarrow \mathcal{P} \rightarrow \prop$ written $\deno{\_} \, x \, \sigma$,
-which convert between the source logic $\prop$ and the target theory $\mathcal{P}$ using the context map $\sigma$.
+We define a reification function $\reify{\_} : \mathbb{L}~o \rightarrow \prop \rightarrow \mathcal{P}$:
 
-\begin{minipage}{0.6\linewidth}
-\small
-\begin{flalign*}
-&\reify{}: \bb{L}~o \ra \prop \ra \cal{P} && \\
-&\reify{\top}_\sigma \re  \kw{pTrue} && \\
-&\reify{\bot}_\sigma \re  \kw{pFalse} && \\
-&\reify{x \lor y}_\sigma \re  \kw{pOr}~(\reify{x}_\sigma) (\reify{y}_\sigma) && \\
-&\reify{x \land y}_\sigma \re \kw{pAnd} ~(\reify{x}_\sigma) (\reify{y}_\sigma) && \\
-&\reify{x \Rightarrow y}_\sigma \re \kw{pImpl}~(\reify{x}_\sigma) (\reify{y}_\sigma) && \\
-&\reify{x}_\sigma \re  \kw{pOther}~(\kw{Index}(\sigma, x)) && \\
-\end{flalign*}
-\end{minipage}%
-\begin{minipage}{0.5\linewidth}
-\small
-\begin{flalign*}
-&\deno{}: \bb{L}~o \ra \cal{P} \ra \prop && \\
-&\deno{\kw{pTrue}} = \top  &&\\
-&\deno{\kw{pFalse}} = \bot  &&\\
-&\deno{\kw{pOr}\,x\,y} = \deno{x} \lor \deno{y}  &&\\
-&\deno{\kw{pAnd}\,x\,y} = \deno{x} \land \deno{y}  &&\\
-&\deno{\kw{pImpl}\,x\,y} = \deno{x} \Rightarrow \deno{y}  &&\\
-&\deno{\kw{pOther}~i} = \sigma[i] &&
-\end{flalign*}
-\end{minipage}
+\begin{align*}
+&\reify{}: \bb{L}~o \ra \prop \ra \el (\kw{propS} \times \kw{list}~o) \\
+&\reify{\sigma~\top} \re  (\kw{pTrue}, \sigma) \\
+&\reify{\sigma~\bot} \re  (\kw{pFalse}, \sigma) \\
+&\reify{\sigma~(x \land y)} \re 
+  \text{let } (p_1,\sigma_1) = \reify{\sigma~x} \text{ in} \\
+&\qquad\text{let } (p_2,\sigma_2) = \reify{\sigma_1~y} \text{ in} \\
+&\qquad(\kw{pAnd}~p_1~p_2,\; \sigma_2) \\
+&\reify{\sigma~(x \lor y)} \re 
+  \text{let } (p_1,\sigma_1) = \reify{\sigma~x} \text{ in} \\
+&\qquad\text{let } (p_2,\sigma_2) = \reify{\sigma_1~y} \text{ in} \\
+&\qquad(\kw{pOr}~p_1~p_2,\; \sigma_2) \\
+&\reify{\sigma~(\neg x)} \re 
+  \text{let } (p,\sigma') = \reify{\sigma~x} \text{ in } (\kw{pNot}~p,\; \sigma') \\
+&\reify{\sigma~(x \Rightarrow y)} \re 
+  \text{let } (p_1,\sigma_1) = \reify{\sigma~x} \text{ in} \\
+&\qquad\text{let } (p_2,\sigma_2) = \reify{\sigma_1~y} \text{ in} \\
+&\qquad(\kw{pImpl}~p_1~p_2,\; \sigma_2) \\
+&\reify{\sigma~(x \Leftrightarrow y)} \re 
+  \text{let } (p_1,\sigma_1) = \reify{\sigma~x} \text{ in} \\
+&\qquad\text{let } (p_2,\sigma_2) = \reify{\sigma_1~y} \text{ in} \\
+&\qquad(\kw{pIff}~p_1~p_2,\; \sigma_2) \\
+&\reify{\sigma~x} \re \\
+&\qquad\begin{cases}
+  (\kw{pOther}\,i, \sigma) & \text{if index }  i \text{ already exists in } \sigma \\
+  (\kw{pOther}\,i, (\sigma \concat (x::\Box))) & \text{otherwise } i = \kw{length}(\sigma) + 1
+\end{cases} \\
+\end{align*}
+
+and an interpretation function $\deno{\_} : \mathbb{L}~o \rightarrow \mathcal{P} \rightarrow \prop$:
+
+
+\begin{align*}
+&\deno{}: \bb{L}~o \ra \cal{P} \ra \prop \\
+&\deno{\sigma~\kw{pTrue}} = \top  \\
+&\deno{\sigma~\kw{pFalse}} = \bot  \\
+&\deno{\sigma~\kw{pOr}\,x\,y} = \deno{\sigma~x} \lor \deno{\sigma~y}  \\
+&\deno{\sigma~\kw{pAnd}\,x\,y} = \deno{\sigma~x} \land \deno{\sigma~y}  \\
+&\deno{\sigma~\kw{pImpl}\,x\,y} = \deno{\sigma~x} \Rightarrow \deno{\sigma~y}  \\
+&\deno{\sigma~\kw{pOther}~i} = \sigma[i]
+\end{align*}
+
+which convert between the source logic $\prop$ and the target theory $\mathcal{P}$ using the context map $\sigma$.
 \end{definition}
 
 \begin{example}[Reification]
 Let $\sigma \is a \cons b \cons \Box$, the reification of $a \land b$ is:
 \[
-  \reify{(a \land b)}_\sigma \equivL \mathop{\mathtt{pAnd}} (\mathop{\mathtt{pOther}} 0) (\mathop{\mathtt{pOther}} 1)
+  \reify{\sigma~(a \land b)} \equivL \mathop{\mathtt{pAnd}} (\mathop{\mathtt{pOther}} 0) (\mathop{\mathtt{pOther}} 1)
 \]
 and its denotation
 \[
-  \deno{(\mathop{\mathtt{pAnd}} (\mathop{\mathtt{pOther}} 0) (\mathop{\mathtt{pOther}} 1))}_\sigma \equivL a \land b.
+  \deno{\sigma~(\mathop{\mathtt{pAnd}} (\mathop{\mathtt{pOther}} 0) (\mathop{\mathtt{pOther}} 1))} \equivL a \land b.
 \]
 \end{example}
 
@@ -800,12 +819,12 @@ Next, we define a decidable equality between terms of type $\cal{P}$.
 with $=_\N: \N \ra \N \ra \B$ a decidable equality between $\N$.
 \end{definition}
 
-We know describes the notion of context $\hyps$ that is encoded as a $\bb{L}~\kw{propS}$.
+We now describe the notion of context $\hyps$ that is encoded as a $\bb{L}~\kw{propS}$.
 The context will be used for learning propositions introduced by implication $(\kw{pImpl})$ in the reified goal.
 We define what it means for all members of a context $\hyps$ to represent true propositions,
 and we prove some lemmas about this notion.
 
-The predicate \kw{all} (\cref{eq:all-func}) transform a list of $\cal{P}$ into conjunctions to represent a context.
+The predicate \kw{all} (\cref{eq:all-func}) transforms a list of $\cal{P}$ into conjunctions to represent a context.
 It used a fold right function from the Lambdapi standard library.
 \begin{equation}
 \kw{all}: \kw{list}~\cal{P} \ra \cal{P} \coloneqq \kw{foldr}~(\kw{pAnd})~\kw{pTrue}
@@ -829,6 +848,7 @@ We destruct conjunctions so that we can prove theorems such as $p \land q \Right
 \end{flalign*}
 
 Correctness of \kw{learn} says that if the original context is valid, and the fact that learning is valid, then the learned context is valid.
+In the following, we omit the context parameter $\sigma$ in both $\den{}$ and $\reify{}$ whenever it is clear from the context.
 
 \begin{lemma}[Correctness of learning]\label{lemma:learning_sound}
 Given $\mapty$ and a context $\hypst$ then for any $\kw{p}: \cal{P}$, if
@@ -844,7 +864,7 @@ then
 
 Since all the cases follow the same patterns, we provide the case for \kw{pAnd}, and a similar approach can be follow for the rest.
 We want to prove that $\prf (\deno{\kw{all} (\kw{learn}~(\kw{pAnd}~a~b)~\hyps))}$ which rewrites to $\prf (\deno{(a)} \land \deno{(b)} \land \deno{(\kw{foldr}~\kw{pTrue}~\Gamma))}$ by definition of \kw{all},
-and we suppose that $\prf (\deno{\kw{all}~\hyps}$ and $\prf \deno{\kw{pAnd}~a~b)}$.
+and we suppose that $\prf (\deno{\kw{all}~\hyps})$ and $\prf (\deno{\kw{pAnd}~a~b)}$.
 Then we apply the introduction rule of the conjunction ($\land_i$) giving us two case to prove.
 \begin{itemize}
 \item Case $\prf \deno{a}$ which follows directly from the hypothesis that $\prf (\deno{\kw{pAnd}~a~b)}$,
@@ -900,15 +920,15 @@ in the case that $\kw{pFalse} \in \Gamma$, by using \cref{lemma:know_correct} an
 \end{proof}
 \end{theorem}
 
-\begin{lstlisting}[language=Lambdapi, caption={Usage of Tauto}, label={lst:tauto-ex}]
-symbol reify goal ≔ propReify □ goal;
+\begin{lstlisting}[mathescape=true, language=Lambdapi, caption={Usage of Tauto}, label={lst:tauto-ex}]
+symbol reify goal ≔ $\Uparrow$ □ goal;
 
 symbol tauto_aux [goal] ≔
-  let res ≔ reify goal in provable_sound (res ₁) □ (res ₂);
+  let res ≔ reify goal in provable_sound (res ${}_1$) □ (res ${}_2$);
 
-symbol tauto ≔ #refine "(tauto_aux ⊤ᵢ ⊤ᵢ)";
+symbol tauto ≔ #refine "(tauto_aux $\top_i$ $\top_i$)";
 
-private symbol example1: π ((⊤ ∧ ⊤) ⇒ ⊤ ∨ ⊤ ∧ (⊤ ⇒ ⊤)) ≔
+symbol example1: $\prf$ ((⊤ ∧ ⊤) ⇒ ⊤ ∨ ⊤ ∧ (⊤ ⇒ ⊤)) ≔
 begin eval tauto; end;
 \end{lstlisting}
 
@@ -941,7 +961,7 @@ We first encode a simple canonical algebra of literals:
 \end{align*}
 
 A clause is then represented as a list of elements of $\cal{C}$.
-In this construction, contraction is performed solely on the left-hand side term $t_1$ representing the unreduce clause $l_1,\, \dots,\, l_{n}$ of step $i$.
+In this construction, contraction is performed solely on the left-hand side term $t_1$ representing the non-reduced clause $l_1,\, \dots,\, l_{n}$ of step $i$.
 
 \begin{center}
 \(\begin{tikzcd}[ampersand replacement=\&,column sep=small]
@@ -967,8 +987,8 @@ Given an assignment $\sigma : \bb{L}~o$, the denotation function
 \]
 maps a list of identifiers to the big disjunction of the corresponding literals:
 \begin{align*}
-&\Downarrow\,\sigma\,\Box \re \bot \\
-&\Downarrow\,\sigma\,(p\,i :: \ell) \re \sigma[i] \mathbin{\veedot} \Downarrow\,\sigma\,\ell.
+&\Downarrow\,\sigma~\Box \re \bot \\
+&\Downarrow\,\sigma~(p\,i :: \ell) \re \sigma[i] \mathbin{\veedot} \Downarrow\,\sigma\,\ell.
 \end{align*}
 \end{definition}
 
@@ -980,14 +1000,15 @@ looking up each literal in the current environment, and assigning it a fresh ide
   \Uparrow  : \bb{L}~o \to \kw{Clause} \to \el (\kw{list}~\kw{cl} \times \kw{list}~o)
 \]
 \begin{align*}
-&\Uparrow (l,\;\Box) \re (\Box,\,l) \\
-&\Uparrow (l,\; x \veedot xs) \re \\
-&\begin{cases}
-  (p\,i :: l,\; l) & \text{if }  i \text{ index already exists} \\
-  (p\,i :: (l \concat (x::\Box)),\; l) & \text{if } i \text{ new index},
+&\Uparrow (\ell,\;\Box) \re (\Box,\,\ell) \\
+&\Uparrow (\ell,\; x \veedot xs) \re \text{let } (p, \ell') = \\
+&\qquad\begin{cases}
+  (p\,i ,\; \ell) & \text{if index }  i \text{ already exists in } \ell \\
+  (p\,i, \ell \concat (x::\Box)) & \text{otherwise } i = \kw{length}(\ell) + 1
 \end{cases} \\
-&\qquad \text{then recursively reify the tail: } (xs',\,l') \coloneq \Uparrow~l~xs, \\
-&\qquad \text{and return } (p\,i :: xs',\, l').
+&\text{in}\\
+&\qquad \text{then recursively reify the tail: } (xs',\,\ell'') \coloneq \Uparrow~\ell'~xs, \\
+&\qquad \text{and return } (p :: xs',\, \ell'').
 \end{align*}
 
 \noindent

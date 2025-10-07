@@ -3,7 +3,7 @@
 
 Proof by reflection~\cite{reflection-origin-coq} is a technique for constructing certified procedures for automated reasoning by reducing the verification of a logical statement to a symbolic computation.
 This method is particularly applicable to two broad classes of problems. In the first class, we consider a predicate $P \colon T \to \prop$, where $T$ is a data type,
-together with a semi-decision procedure $f: T \ra \mathbb{B}$ (or $T \ra \tt{Comp}$) such that, whenever $f$ returns $\tt{true}$ on input $x$, the predicate $P(x)$ holds.
+together with a semi-decision procedure $f: T \ra \mathbb{B}$ such that, whenever $f$ returns $\tt{true}$ on input $x$, the predicate $P(x)$ holds.
 Formally, this relationship is captured by the following correctness theorem:
 
 \begin{equation*}
@@ -24,7 +24,7 @@ As an illustration, consider the property of a natural number being even. In Lam
 & \kw{even} : \N \ra \B \\
 & \kw{even}~0 \re \true \\
 & \kw{even}~1 \re \false \\
-& \kw{even}~(x + 2) \re \kw{even}~x
+& \kw{even}~(x +\!\!1 +\!\!1) \re \kw{even}~x
 \end{align*}
 \end{definition}
 The connection between the boolean value and the logical property is established through a correctness lemma stating that if \texttt{even n = true}, then $n$ is even.
@@ -66,4 +66,4 @@ In this thesis, we make use of both classes of reflection to encode certain \tex
 while the permutation of clauses for the \texttt{resolution} rule relies on the second class.
 
 We will make concrete use of both classes of proof by reflection in the subsequent sections. 
-In particular, \cref{sec:nary-rule-recon, sec:evaluation-recon} (N-ary rules and \kw{evaluate} cvc5 rule) employs proof by reflection of the first class,  while \cref{sec:contraction-recon} (\kw{contraction} rule) illustrates the use of the second class.
+In particular, \cref{sec:nary-rule-recon} and \cref{evaluation-recon} (N-ary rules and \kw{evaluate} cvc5 rule) employs proof by reflection of the first class,  while \cref{sec:contraction-recon} (\kw{contraction} rule) illustrates the use of the second class.

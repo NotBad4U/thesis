@@ -3,21 +3,21 @@
 %*****************************************
 
 We now describe how we encode input problems expressed in a given
-SMT-LIB signature \cite[\S 5.2.1]{smtlib}. In order to avoid a notational clash with the Lambdapi signature $\Sigma$, we denote the set of SMT-LIB sorts as $\Theta^\mathcal{S}$, the set of function symbols $\Theta^\cltodisj$, the set of natural numbers $\Theta^\cal{N}$, and the set of variables $\Theta^\cal{X}$.
+SMT-LIB signature \cite[\S 5.2.1]{smtlib}. In order to avoid a notational clash with the Lambdapi signature $\Sigma$, we denote the set of SMT-LIB sorts as $\Theta^\cal{S}$, the set of function symbols $\Theta^\cal{F}$, the set of natural numbers $\Theta^\cal{N}$, and the set of variables $\Theta^\cal{X}$.
 Alethe does not support the sorts \texttt{Array} and \texttt{String}. Our translation is based on the following functions:
 \begin{itemize}
-\item $\cal{D}$ translates declarations of SMT sorts and functions in $\Theta^\cal{S}$ and $\Theta^\mathcal{F}$ into declarations of constants,
+\item $\cal{D}$ translates declarations of SMT sorts and functions in $\Theta^\cal{S}$ and $\Theta^\cal{F}$ into declarations of constants,
 \item $\cal{S}$ maps SMT sorts to $\Sigma$ types,
-\item $\cal{E}$ translates SMT expression to \lpm terms,
+\item $\cal{E}$ translates SMT expression to {\lpm} terms,
 \item $\cal{C}$ translates a list of commands  $c_1 \dots c_n$ of the form\\
-  $i.~\Gamma \triangleright~\varphi~(\mathcal{R}~P)[A]$ to typing judgments $\Gamma \vdash_\Sigma i : N$ with $N$ the corresponding type of the clause $\varphi$.
+  $i.~\Gamma \triangleright~\varphi~(\cal{R}~P)[A]$ to typing judgments $\Gamma \vdash_\Sigma i : N$ with $N$ the corresponding type of the clause $\varphi$.
 \end{itemize}
 
 \smallskip
 
-\begin{definition}[Function $\mathcal{D}$ translating SMT sort and function symbol declarations]
+\begin{definition}[Function $\cal{D}$ translating SMT sort and function symbol declarations]
 For each sort symbol $s$ with arity $n$ in $\Theta^\cal{S}$ we create a constant $\cal{D}(s) : \set \ra \dots \ra \set$.
-For each function symbol $f~\sigma^+$ in $\Theta^\cltodisj$ we create a constant $\cal{D}(f) : \cal{S}(\sigma^+)$.
+For each function symbol $f~\sigma^+$ in $\Theta^\cal{F}$ we create a constant $\cal{D}(f) : \cal{S}(\sigma^+)$.
 \label{def:function-d}
 \end{definition}
 
@@ -28,14 +28,13 @@ For every function declared in the SMT prelude, we define a constant whose arity
 
 \smallskip
 
-\begin{definition}[Function $\mathcal{S}$ translating sorts of expression]
-  The definition of $\mathcal{S}$(s) is as follows.
+\begin{definition}[Function $\cal{S}$ translating sorts of expression]
+  The definition of $\cal{S}$(s) is as follows.
   \begin{itemize}
     \item Case $s =$ \smtinline{Bool}, then $\Sort{s} = \el\,o$,
     \item Case $s =$ \smtinline{Int}, then $\Sort{s} = \el~\tt{int}$,
     \item Case $s =$ \smtinline{Real}, then $\Sort{s} = \el\,\tt{rational}$,
-    \item Case $s =$ \smtinline{BitVec} $n$, then $\Sort{s} = \el\,(\tt{bitvec}~\cal{E}(n))$,
-    \item Case $s = \sigma_1\,\sigma_2 \dots \sigma_n$ then $\Sort{s} = \el{} (\mathcal{S}(\sigma_1) \leadsto \dots \leadsto \mathcal{S}(\sigma_n))$,
+    \item Case $s = \sigma_1\,\sigma_2 \dots \sigma_n$ then $\Sort{s} = \el{} (\cal{S}(\sigma_1) \leadsto \dots \leadsto \cal{S}(\sigma_n))$,
     \item otherwise $\Sort{s} = \el\, \mathcal{D}(s)$.
     % where the symbol $s$ on the right-hand side denotes the Lambdapi sort introduced for the SMT sort $s$.
   \end{itemize}
@@ -44,7 +43,7 @@ For every function declared in the SMT prelude, we define a constant whose arity
 
 \smallskip
 
-\begin{example}{Translation of the prelude in \cref{lst:smtexampleinput}.}
+\begin{example}{Translation of the prelude in \cref{lst:smtexampleinput-fol}.}
 \begin{lstlisting}[language=Lambdapi]
 symbol U : Set;
 symbol a : El U;
@@ -60,22 +59,21 @@ The definition of $\E{e}$ is as follows.
 \begin{itemize}
 \setlength{\parskip}{0pt}
 \item Case $e = c$, with $c \in \Theta^\cal{N}$ then $\E{e} = c$
-\item Case $e = (u \slash d)$, with $u,d \in \Theta^\cal{N}$ then $\E{c} = \E{u} \,\#\, \E{d}$
+\item Case $e = (u \slash d)$, then $\E{e} = \kw{frac}~\E{u}~\E{d}$
 \item Case $e =$ \smtinline{true}, then $\E{e} = \top$
 \item Case $e =$ \smtinline{false}, then $\E{e} = \bot$
 \item Case $e = (p~t_1~t_2\dots~t_n)$ and $p$ a logic operator, then $\E{e} = \E{t_1}~p~\dots~p~\E{t_n}$.
-\item Case $e = (f~t_1\dots~t_n)$ with $f \in \Theta^\cltodisj$,\\
+\item Case $e = (f~t_1\dots~t_n)$ with $f \in \Theta^\cal{F}$,\\
   then $\E{e} = (\mathcal{D}(f)~\E{t_1}~\dots~\E{t_n})$.
 \item Case $e = (\approx~t_1~t_2)$ then $\E{e} = (\E{t_1} = \E{t_2})$.
 \item Case $e = (Q~x_1  \dots x_n ~t)$ and $Q\in \{\kw{forall}, \kw{exists}\}$\\
-  then $\E{e} = Q x_1, \dots, Q x_n, \E{t}$.
+  then $\E{e} = Q\,x_1, \dots, Q\,x_n, \E{t}$.
 \item Case $e = (\kw{choice}~x : \sigma ~t)$ then $\E{e} = \epsilon~x: \cal{S}(\sigma),\, \E{t}$.
 \item Case $e = (x: \sigma )$ with $x \in \Theta^\mathcal{X}$ a sorted variable, then $\E{e} = x: \cal{S}(\sigma)$.
 \item Case $e = (\kw{ite}~c~t~e)$, then $\E{e} = \kw{ite}~\E{c}~\E{t}~\E{e}$.
 \item Case $e = (\kw{xor}~a~b)$, then $\E{e} = \kw{xor}~\E{a}~\E{b}$.
 \item Case $e = (\kw{distinct}~t_1 \dots t_n)$,\\
   then $\E{e} = \kw{distinct}~(\E{t_1} \mathbin{\cons_\bb{V}} \dots\, \mathbin{\cons_\bb{V}} ~\E{b} \mathbin{\cons_\bb{V}} \Box_\bb{V})$.
-\item Case $e = (\kw{bbt}~x_1 \dots x_n)$, \todo{WIP}
 \end{itemize}
 \label{def:function-e}
 \end{definition}
@@ -86,7 +84,7 @@ We define the function $\cal{C}$ that translates an Alethe step. Given a step:
 \[
   i. \, \Gamma \, \triangleright\, l_1 \dots l_n\,(R\,P)[A]
 \]
-the function $\cal{C}(i)$ produce a constant
+the function $\cal{C}(i)$ produces a constant
 \[
   \cal{C}(i) = i: \pid (\E{l_1}\veedot\dots\veedot\E{l_n}\veedot \nil) \coloneq M
 \]
@@ -97,4 +95,5 @@ Its proof term may refer to constants representing steps that precede $i$ in the
 \label{def:function-c}
 \end{definition}
 
-In the following sections, we present how different categories of rules are translated by $\cal{C}$. We will sometimes omit writing $\pid$ and $\prf$ in order to simplify the notation.
+In the following sections, we present how different categories of rules are translated by $\cal{C}$.
+We will sometimes omit writing $\pid$ and $\prf$ in order to simplify the notation.

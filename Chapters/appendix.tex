@@ -94,7 +94,7 @@ These rules can be used to rerun the tool in order to verify the confluence prop
 \section{Arithmetic definitions}\label{app:arith-def}
 \label{app:arith-defs}
 
-\begin{definition}
+\begin{definition}[Integer arithmetic functions]
 {\footnotesize
 % \centering
 % --- Integer Addition ---
@@ -197,6 +197,24 @@ These rules can be used to rerun the tool in order to verify the confluence prop
 & \kw{pred\_double}~Z0 \re \kw{Zneg}~H \\
 & \kw{pred\_double}~(\kw{Zpos}~p) \re \kw{Zpos}~(\kw{pos\_pred\_double}~p) \\
 & \kw{pred\_double}~(\kw{Zneg}~p) \re \kw{Zneg}~(I~p)
+\end{align*}
+\end{definition}
+
+\begin{definition}[cmp]\label{def:cmp-pos}
+\begin{align*}
+& \kw{cmp\_acc} : \bb{P} \ra \kw{Comp} \ra \bb{P} \ra \kw{Comp} \\
+\\
+& \kw{cmp\_acc}~(\kw{I}~x)~c~(\kw{I}~q) \re \kw{cmp\_acc}~x~c~q \\
+& \kw{cmp\_acc}~(\kw{I}~x)~\_~(\kw{O}~q) \re \kw{cmp\_acc}~x~\kw{Gt}~q \\
+& \kw{cmp\_acc}~(\kw{I}~\_)~\_~\kw{H} \re \kw{Gt} \\
+& \kw{cmp\_acc}~(\kw{O}~x)~\_~(\kw{I}~q) \re \kw{cmp\_acc}~x~\kw{Lt}~q \\
+& \kw{cmp\_acc}~(\kw{O}~x)~c~(\kw{O}~q) \re \kw{cmp\_acc}~x~c~q \\
+& \kw{cmp\_acc}~(\kw{O}~\_)~\_~\kw{H} \re \kw{Gt} \\
+& \kw{cmp\_acc}~\kw{H}~\_~(\kw{I}~\_) \re \kw{Lt} \\
+& \kw{cmp\_acc}~\kw{H}~\_~(\kw{O}~\_) \re \kw{Lt} \\
+& \kw{cmp\_acc}~\kw{H}~c~\kw{H} \re c \\
+\\
+& \kw{cmp}~x~y \is \kw{cmp\_acc}~x~\kw{Eq}~y
 \end{align*}
 \end{definition}
 

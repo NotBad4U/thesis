@@ -80,19 +80,13 @@ In order to reflect the concrete syntax of Alethe proofs, we denote proof steps 
 \label{eq:step}
 \tag{\textcolor{purple}{1}}
 \eqnmarkbox[indexClr]{node2}{i}. \quad \eqnmarkbox[blue]{node1}{\Gamma} ~\triangleright~ \eqnmarkbox[green]{node3}{l_1 \dots l_n} \quad (\eqnmarkbox[purple]{node4}{\mathcal{R}}~\eqnmarkbox[red]{node5}{p_1 \dots p_m})~\eqnmarkbox[orange]{node6}{[a_1 \dots a_r]}
-\end{equation}
-
-\vspace{0.3em}
 \annotate[yshift=-0.5em]{below, left}{node2}{index}
 \annotate[yshift=-0.5em]{below, right}{node1}{context}
 \annotate[yshift=0.5em]{above, left}{node3}{clause}
 \annotate[yshift=-0.5em]{below, right}{node4}{rule}
 \annotate[yshift=-0.5em]{below, right}{node5}{premises}
 \annotate[yshift=-0.5em]{below, right}{node6}{arguments}
-
-\vspace{0.3em}
-
-\medskip
+\end{equation}
 
 A step \cref{eq:step} consists of an index \colorbox{indexClr!30}{$i$} $\in \mathbb{I}$ where $\mathbb{I}$ is a countable infinite set of indices (e.g. \kw{a0}, \kw{t1}), and a clause of formulae \colorbox{green!30}{$l_1, \dots, l_n$} representing an $n$-ary disjunction.
 Steps that are not assumptions are justified by a proof rule \colorbox{purple!30}{$\mathcal{R}$} that depends on a possibly empty set of premises $\{\colorbox{red!30}{$p_1 \dots  p_m$}\} \subseteq \mathbb{I}$ that only references earlier steps such that the proof forms

@@ -4,17 +4,17 @@
 %*****************************************
 
 We describe our embedding of the logic of SMT and Alethe into Lambdapi.
-Our work applies to input problems expressed in the logics \texttt{UF}, \texttt{LIA}/\texttt{LA} and \texttt{BV} or their sub-logics.
+Our work applies to input problems expressed in the logics \texttt{UF}, \texttt{LIA}/\texttt{LA} or their sub-logics.
 We begin by detailing the encoding of the SMT-LIB sorts used in these logics, which is necessary for reconstructing their corresponding Alethe proofs.
 We then present our method for translating these proofs.
 
 \section{A Prelude Encoding for Alethe}
 \label{sec:encoding-prelude}
 
-We based our following definitions on the prelude presented in \cref{sec:prelude-lp}.
-SMT sorts are represented in \lpm{} as elements of type \set{}. We represent the terms of sort \lstinline[language=SMT,basicstyle=\ttfamily\normalsize]|Bool| of SMT by elements of type $\el{}\,o$.
+We base our following definitions on the prelude presented in \cref{sec:prelude-lp}.
+We represent user-declared SMT sorts in \lpm{} as elements of type \set{}. We represent the terms of sort \lstinline[language=SMT,basicstyle=\ttfamily\normalsize]|Bool| of SMT by elements of type $\el{}\,o$.
 The constructor $\leadsto$ (written infix) is used to encode SMT functions and predicates.
-Since Alethe extend the SMT format with the \smtinline{choice} operator (\cite[\S 2.1]{alethespec}), we add it to the prelude. 
+Since Alethe extends the SMT format with the \smtinline{choice} operator (\cite[\S 2.1]{alethespec}), we add it to the prelude. 
 % Thus, we will be able to quantify over SMT sorts that will be encoded as inhabit of type \set. 
 
 \begin{definition} \label{def:eps}
@@ -22,9 +22,9 @@ We define the choice operator named $\epsilon$.
 \begin{align}
 & \epsilon: \Pi\, {[a: \set]}, (\el\,a \ra \prop) \ra \el\,a \\
 & \epsilon_i: \Pi\, {[a: \set]}, \Pi (x : \el\,a), \Pi (P : \el\,a \ra \prop) \\
-& \quad \ra \prf\,(P\,x) \ra \prf\, P\,(\epsilon\,P) \\
+& \quad \ra \prf\,(P\,x) \ra \prf\, P\,(\epsilon\,P)  \notag\\
 & \epsilon_{d}: \Pi\, {[a: \set]}, \Pi (P\,Q : \el\,a \ra \prop) \\
-& \quad \ra \Pi\, x : \el\,a, \prf\,(P\,x = Q\,x) \ra (\epsilon \, P = \epsilon \, Q)
+& \quad \ra \Pi\, x : \el\,a, \prf\,(P\,x = Q\,x) \ra (\epsilon \, P = \epsilon \, Q)  \notag
 \end{align}
 The intended interpretation for the $\epsilon$ operator is that $(\epsilon\,x,\, P~x)$ denotes some $x$ satisfying the predicate $P$, if there is one.
 The characteristic proof rules for the $\epsilon$ operator are represented by the constants $\epsilon_i$ for proving a predicate $P\,(\epsilon\,P)$ by exhibiting a witness $x$ such that $P\,x$ is provable,
@@ -77,7 +77,7 @@ To enable quantification over elements of these types, we introduce constants su
 
 We make use of Lambdapi's \lstinline[language=Lambdapi,basicstyle=\ttfamily\normalsize]|builtin| mechanism to enable decimal notation for numeric values, for instance, writing $2$ for $\ZPos (\mathop{\tt{O}} \tt{H})$ to convert natural representations of values into elements of $\Z$.
 
-\begin{definition}[Integers operators]\label{def:arith-ops}
+\begin{definition}[$\Z$ operators]\label{def:arith-ops}
 Arithmetic operations over these types are implemented using rewrite rules, which necessitates proofs of both confluence and termination.
 We provide only the definitions of $(+)$ and $(*)$ over $\Z$:
 
@@ -97,27 +97,27 @@ We provide only the definitions of $(+)$ and $(*)$ over $\Z$:
 & \ZNeg    x *~\ZPos y \re \ZNeg    (\tt{mul}~x~y) \\
 & \ZNeg    x *~\ZNeg    y \re \ZPos (\tt{mul}~x~y) \\
 \end{align*}
-The definition of the auxiliaries functions $\kw{sub}$ and $\kw{mul}$ can be found in \cref{app:arith-def}.
+The definition of the auxiliaries functions $\kw{add}, \kw{sub}$ and $\kw{mul}$ can be found in \cref{app:arith-def}.
 \end{definition}
 
 \begin{notation}
-We will use the notation $+_\Z$ or $*_\Z$ to refer the operators defined in \cref{def:arith-ops} when the context need to be specified.
+We will use the notation $+_\Z$ or $*_\Z$ to refer the operators defined in \cref{def:arith-ops} when the context needs to be specified.
 \end{notation}
 
-\begin{definition}[Inequalities operators for integer]\label{def:arith-inequalities-def}
+\begin{definition}[Inequality operators for integer]\label{def:arith-inequalities-def}
 We introduce inductive types \tt{Comp} \index{\tt{Comp}} and $\B$ representing comparison operators and Booleans.
-
 \begin{align*}
-&\tt{Comp}: \type{} & \B: \type{} \\
-&|~\tt{Eq}: \tt{Comp} & |~\tt{true}: \B \\
-&|~\tt{Lt}: \tt{Comp} & |~\tt{false}: \B \\
-&|~\tt{Gt}: \tt{Comp} & \\
-&\tt{comp}: \set & \tt{bool}: \set  \\
-&\el{}~\tt{comp} \re \tt{Comp} & \el{}~\tt{bool} \re \B
+&\tt{Comp}: \type{} & &\B: \type{} \\
+&|~\tt{Eq}: \tt{Comp} & &|~\tt{true}: \B \\
+&|~\tt{Lt}: \tt{Comp} & &|~\tt{false}: \B \\
+&|~\tt{Gt}: \tt{Comp} & & \\
+&\tt{comp}: \set & &\tt{bool}: \set  \\
+&\el{}~\tt{comp} \re \tt{Comp} & &\el{}~\tt{bool} \re \B
 \end{align*}
 
+The type $\B$ is a simple inductive type with two constructors to represent binary value and providing an induction principle, while the type {\prop} represent the universe of propositions without an induction principle.
 
-The function $\doteq$ compares two integers, relying on the auxiliary function $\texttt{cmp}$ to perform comparisons between strictly positive binary numbers.
+The function $\doteq$ below compares two integers, relying on the auxiliary function $\texttt{cmp}$ (defined in \cref{def:cmp-pos}) to perform comparisons between strictly positive binary numbers.
 
 % --- Comparison and Integer comparison ---
 \[
@@ -203,7 +203,7 @@ with $1 = \ZPos~\tt{H}$ and $2 = \ZPos~(\tt{O}~\tt{H})$.
 The SMT sort \smtinline{Int} is mapped to $\el~\texttt{int}$, and the arithmetic operations of SMT to their counterparts in the Lambdapi encoding.
 
 \begin{notation}
-We will refer to the rewrites rules of \cref{def:arith-ops} and \cref{def:arith-inequalities-def} as $\ra_\Z$ and $\ra_\bb{P}$ in the following sections.
+We will refer to the rewrite rules of \cref{def:arith-ops} and \cref{def:arith-inequalities-def} as $\ra_\Z$ and $\ra_\bb{P}$ in the following sections.
 \end{notation}
 
 \begin{lemma}[Confluence of $\ra_\bb{Z}$ and $\ra_\bb{P}$]
@@ -220,7 +220,8 @@ CSI \cite{CSI} automatically proves the confluence of $\ra_\bb{Z}$ and $\ra_\bb{
 \section{Representing Linear Arithmetic (\uppercase{\textbf{LA})}}
 \label{ssec:encoding-la}
 
-SMT solver define the sort \smtinline{Real}, but in practice the reconstruction of Alethe proof with the logic \textbf{LA} only require the rational number (\Q) for most of the case.
+SMT solvers define the sort \smtinline{Real}, but in practice the reconstruction of Alethe proof with the logic \uppercase{\textbf{LA}} only requires the rational number (\Q).
+SMT solvers involve Real number in non-linear arithmetic logics such as \uppercase{\textbf{NRA}}, since rationals alone are insufficient because solutions may require algebraic numbers (roots of polynomials, e.g., $\sqrt{2}$) or even transcendental numbers (e.g., $\pi, e$).
 Our encoding of rationals (\cref{def:rat}) adapts the approach from~\cite{frac-rw}, which employs a balanced ternary numeral system
 \footnote{Balanced ternary is a ternary numeral system (i.e. base $3$ with three digits) that uses a balanced signed digit representation of the integers in which the digits have the values $-1$, $0$, and $1$.}
 to define integers and rationals.
@@ -230,7 +231,7 @@ Our encoding of rational numbers is still a work in progress.
 While core properties, such as normalization and basic arithmetic operations have been formalized, certain lemmas including the associativity of addition and multiplication, are currently accepted and remain to be proven.
 
 \begin{definition}[Rational]\label{def:rat}
-We define the type of rationals and some operators as follows:
+We define the type of rational numbers and some operators as follows:
 \begin{align*}
 & \Q: \type            & &\kw{frac}: \Z \ra \Z \ra \Q \\
 & \kw{rat}: \set       & &\slash: \Z \ra \Z \ra \Q \quad \text{(infix)} \\
@@ -256,10 +257,10 @@ We avoid this due to two complications:
 Instead, we introduce $\mathop{rgcd}$  in \cref{def:frac}, which simultaneously computes the GCD and divides the inputs by exploiting J. Stein's algorithm \cite{knuth}, an efficient division-free method adapted to binary representations.
 
 \begin{definition}[irreducible fractions]\label{def:frac}
-The auxiliary operator $\mathop{stein}$ implements for positive binary integers ($\bb{P}$) the logic to computes the GCD and divides the first inputs, while $\mathop{rgcd}$ extends it to $\Z$ by handling signs:
+The auxiliary operator $\mathop{stein}$ implements for positive binary integers ($\bb{P}$) the logic to compute the GCD and divide the first parameter ($x$ in $\mathop{rgcd}~x~y$), while $\mathop{rgcd}$ extends it to $\Z$ by handling signs:
 \begin{align*}
 &\kw{frac}~x~y \re ((\mathop{sign}~y) * \mathop{rgcd}~x~y) \slash ((\mathop{sign}~y) * \mathop{rgcd}~y~x) \\[1em]
-& \mathop{stein}: \bb{P} \ra \bb{P} \ra \Z \\
+& \mathop{stein}: \bb{P} \ra \bb{P} \ra \bb{P} \\
 & \mathop{stein}~H~\_ \;\re\; H \\
 & \mathop{stein}~a~H \;\re\; a \\
 & \mathop{stein}~(\kw{O}~a)~(\kw{O}~b) 
@@ -286,7 +287,7 @@ The auxiliary operator $\mathop{stein}$ implements for positive binary integers 
 & \mathop{rgcd}~(\kw{Zneg}~a)~(\kw{Zneg}~b) 
   \;\re\; \kw{Zneg}~(\mathop{stein}~a~b)
 \end{align*}
-Here, $\kw{sign}$ returns the sign of the argument in $\{-1, 1\}$, and $\kw{sub}: \bb{P} \ra \bb{P} \ra \bb{P}$ implements subtraction on binary numbers.
+Here, $\kw{sign}$ returns the sign of the argument in $\{-1, 1\}$.
 \end{definition}
 
 \begin{definition}[Normalization rules]
@@ -409,8 +410,12 @@ We can then define the rational operators as usual:
 \section{SMT-LIB helper operators}
 \label{sec:encoding-helper-operator}
 
-SMT-LIB provides the operator \smtinline{(distinct A A Bool)} that denotes the function that
-returns true if its two arguments are not identical as defined in \cref{tab:distinct-spec}, and \smtinline{(ite Bool A A A)} denotes the function that
+SMT-LIB provides the operators:
+\begin{itemize}
+  \item \smtinline{(par (A) (distinct A A Bool :pairwise))}
+  \item \smtinline{(par (A) (ite Bool A A A))}
+\end{itemize}
+The \smtinline{distinct} denotes the function that returns true if its two arguments are not identical as defined in \cref{tab:distinct-spec}, and \smtinline{ite} denotes the function that
 returns its second argument or its third depending on whether its first argument is true or not.
 
 \begin{definition}[Distinctness predicate]
@@ -444,13 +449,13 @@ To implement the behavior specified in \cref{tab:distinct-spec}, we formalize th
 &\mathop{\mathrm{distinct}}~\mathbin{\_}~ (x \cons_\bb{V} \Box_\bb{V}) \re \top \\
 &\mathop{\mathrm{distinct}}~\mathbin{\_}~ (x \cons_\bb{V} y \cons_\bb{V}  \Box_\bb{V}) \re \neg (x = y) \\
 &\mathop{\mathrm{distinct}}~o~(x \cons_\bb{V} y \cons_\bb{V} z \cons_\bb{V} tl)))) \re \bot \\
-&\mathop{\mathrm{distinct}}~\_~(x \cons_\bb{V} y \cons_\bb{V} tl \cons_\bb{V})))) \re \neg (x = y) \land \kw{distinct}~tl
+&\mathop{\mathrm{distinct}}~\_~(x \cons_\bb{V} y \cons_\bb{V} tl) \re \neg (x = y) \land \kw{distinct}~tl
 \end{align*}
 
 The first two rules capture the base cases: a \(\mathop{\mathrm{distinct}}\) check on an empty vector returns $\bot$, while a vector containing a single element trivially returns $T$.
 The third rule handles the case of two elements, reducing to the negation of their equality.
 For longer vectors, the fourth rule reflects the immediate elimination to  $\bot$ when parameter are type $\prop$ (\smtinline{Bool}),
-while the final rule encodes the recursive elimination for others type than $\prop$. It process by requiring that the head element differs from the second and that the
+while the final rule encodes the recursive elimination for others types than $\prop$. It process by requiring that the head element differs from the second and that the
 \(\mathop{\mathrm{distinct}}\) property holds for the remaining tail.
 \end{definition}
 
@@ -470,7 +475,7 @@ We define a conditional expression:
 \mathop{\mathrm{ite}} : \Pi [a: \set],\, \prop \ra \el\,a \ra \el\,a \ra \el\,a
 \end{align*}
 This conditional expression has the particularity that its condition is of type $\prop$ and not in \B.
-We also define the induction principle:
+We also define the introduction principle:
 \begin{align*}
 &\mathop{\mathrm{ite\_ind}} : \Pi [a],\, \Pi (c : \el\,o)\, (t\, e : \el\,a)\, (p : \el\,a \ra \mathrm{Prop})\\
 &\quad\left( \prf\,c \ra \prf(p~t) \right) \ra \\
@@ -505,14 +510,18 @@ By interpreting a clause as a disjunction, a clause $cl~(l_1~l_2~l_3~l_4)$ will 
 \end{itemize}
 
 Interpreting a clause as a disjunction, we obtain a concatenated form such as $((\textcolor{blue}{x_2} \lor \textcolor{blue}{x_3}) \lor (\textcolor{orange}{y_2} \lor \textcolor{orange}{y_3}))$.
-This aligns with the classical formulation of the \texttt{resolution} inference rule, expressed as $x \lor Y;\ \neg x \lor Z \vdash Y \lor Z$.
-However, in {\lpm} $((\textcolor{blue}{x_2} \lor \textcolor{blue}{x_3}) \lor (\textcolor{orange}{y_2} \lor \textcolor{orange}{y_3})) \nequiv_{\beta\Sigma} (\textcolor{blue}{x_2} \lor (\textcolor{blue}{x_3} \lor (\textcolor{orange}{y_2} \lor \textcolor{orange}{y_3})))
-\nequiv_{\beta\Sigma} (((\textcolor{blue}{x_2} \lor \textcolor{blue}{x_3}) \lor \textcolor{orange}{y_2}) \lor \textcolor{orange}{y_3})$ , even though these forms are semantically identical.
+This aligns with the classical formulation of the \texttt{resolution} inference rule, expressed as $x \lor Y$ and $\ \neg x \lor Z \vdash Y \lor Z$.
+However, in {\lpm} we have:
+\begin{align*}
+((\textcolor{blue}{x_2} \lor \textcolor{blue}{x_3}) \lor (\textcolor{orange}{y_2} \lor \textcolor{orange}{y_3})) & \nequiv_{\beta\Sigma} (\textcolor{blue}{x_2} \lor (\textcolor{blue}{x_3} \lor (\textcolor{orange}{y_2} \lor \textcolor{orange}{y_3}))) \\
+& \nequiv_{\beta\Sigma} (((\textcolor{blue}{x_2} \lor \textcolor{blue}{x_3}) \lor \textcolor{orange}{y_2}) \lor \textcolor{orange}{y_3})
+\end{align*}
+even though these forms are semantically identical.
 
-Additionally, if the pivot does not occur at the head of the clause, contrary to the expectation of the resolution rule,
-which requires the pivot to be in the leading position. As a result, resolving clauses requires reasoning modulo associativity and commutativity.
+Additionally, the pivot must occur at the head of the clause in order to apply the \kw{resolution} rule.
+As a result, resolving clauses requires reasoning modulo associativity and commutativity.
 To address the associativity issue, we propose a canonical representation for clauses.
-For commutativity, we will show in \cref{ssec:refl-reso} that permuting two clauses preserves their semantics, and thus they can be regarded as identical.
+For commutativity, instead of permuting the clauses, we simply provide the index of the pivot literal, allowing us to disregard its position in the clause.
 
 \end{remark}
 
@@ -526,7 +535,7 @@ We define the type $\kw{Clause}$ to represent an Alethe clause as a list of prop
 The constructor $\veedot$ prepends an element to a list, and $\nil$ denotes the empty list.
 \end{definition}
 
-\begin{definition}[Concatenation of clause]
+\begin{definition}[Concatenation of clauses]
 The operator $\pp$ is used to concatenate lists.
 \begin{align*}
 & \pp: \texttt{Clause} \ra \texttt{Clause} \ra \texttt{Clause} \\
@@ -551,7 +560,11 @@ We can now prove the equivalence between clause and disjunction.
 For any $p \colon \prop$ and $q,r \colon \texttt{Clause}$, If $\pid (p \veedot q)$ and $(\pid (p \veedot \nil) \ra  \pid r)$ and $(\pid q \ra  \pid r)$ then $\pid r$.
 \end{lemma}
 \begin{proof}
-Since the hypothesis $\pid (p \veedot q)$ is equivalent to $\prf\,(p \lor \cltodisj\,q)$, we apply the classic disjunction elimination rule.
+Since we have the equivalence in hypothesis 
+\[
+  \pid (p \veedot q) \equivL \prf\,(p \lor \cltodisj\,q)
+\]
+we apply the classic disjunction elimination rule.
 Then we can conclude $\prf\,p \ra \prf\,(\cltodisj\,r)$ wih the hypothesis $\pid (p \veedot \nil) \ra  \pid r$, and we can conclude $\prf\,(\cltodisj\,q) \ra \prf\,(\cltodisj\,r)$
 with the hypothesis $\pid q \ra  \pid r$.
 \end{proof}
@@ -567,7 +580,14 @@ For any two clauses $a\,b$, the equivalence $\prf\,(\cltodisj(a~\pp~b)) \Leftrig
     \[
         \prf\, (\cltodisj (\nil\, \pp \, b)) \Leftrightarrow \prf\, (\cltodisj\,\nil \lor \cltodisj\,b)
     \]
-    The implication ``$\Rightarrow$'' is trivial because $\nil\,\pp\,b$ rewrites to $b$. The implication ``$\Leftarrow$'' is proved using the standard elimination rule $\lor_e$ for disjunction, which requires proving $\prf\,(\cltodisj\,\nil) \ra \prf\,(\cltodisj\,(\nil\,\pp\,b))$ as well as $\prf\,(\cltodisj\,b) \ra \prf\,(\cltodisj\,(\nil\,\pp\,b))$. Both proofs are immediate since $\cltodisj\,\nil$ rewrites to $\bot$ and $\nil\,\pp\,b$ rewrites to $b$.
-    \item For the case $a = h \veedot tl$ we may use the induction hypothesis $\prf\,(\cltodisj\, (tl\, \pp\, b)) \Leftrightarrow \prf\,(\cltodisj\,tl \lor \cltodisj\, b)$. The conclusion is then easy to prove based on the rewriting rules for the operators $\cltodisj$ and $\pp$, together with associativity of $\lor$.
+    The implication ``$\Rightarrow$'' is trivial because $\nil\,\pp\,b$ rewrites to $b$.
+    The implication ``$\Leftarrow$'' is proved using the standard elimination rule $\lor_e$ for disjunction, which requires proving
+    \begin{itemize}
+      \item $\prf\,(\cltodisj\,\nil) \ra \prf\,(\cltodisj\,(\nil\,\pp\,b))$
+      \item as well as $\prf\,(\cltodisj\,b) \ra \prf\,(\cltodisj\,(\nil\,\pp\,b))$.
+    \end{itemize}
+    Both proofs are immediate since $\cltodisj\,\nil$ rewrites to $\bot$ and $\nil\,\pp\,b$ rewrites to $b$.
+    \item For the case $a = h \veedot tl$ we may use the induction hypothesis $\prf\,(\cltodisj\, (tl\, \pp\, b)) \Leftrightarrow \prf\,(\cltodisj\,tl \lor \cltodisj\, b)$.
+    The conclusion is then easy to prove based on the rewriting rules for the operators $\cltodisj$ and $\pp$, together with associativity of $\lor$.
     \end{itemize}
 \end{proof}
