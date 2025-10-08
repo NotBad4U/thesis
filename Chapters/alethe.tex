@@ -545,11 +545,8 @@ Steps \tt{t3} and \tt{t4} apply the \colorbox{purple!30}{\texttt{resolution}} ru
 Finally, the step \texttt{t6} concludes the proof by generating the empty clause $\bot$, denoted as \kw{(cl)} in \cref{lst:smtexampleproof}.
 Notice that the contexts \colorbox{blue!30}{$\Gamma$} of each step are all empty in this proof.
 
-The \tt{la\_generic} rule can be verified by showing that the negated inequalities are jointly unsatisfiable.
-After applying strengthening rules, the resulting conjunction is unsatisfiable,
-even when \lstinline[language=SMT,basicstyle=\ttfamily\footnotesize\upshape]{Int} variables are treated as \lstinline[language=SMT,basicstyle=\ttfamily\footnotesize\upshape]{Real} variables.
-Although the rule may introduce rational coefficients, they often reduce to integers—as shown in \cref{lst:smtexampleproof}, where the coefficients are $(\frac{1}{1}, \frac{1}{1})$.
-Cases where coefficients cannot be reduced to integers are rare in practice, however, we reduce them to integers by \emph{clearing denominators} using their least common denominator.
+\begin{algorithm}[!t]%[la\_generic]
+\caption{la\_generic rule}\label{alg:la-generic-description}
 Let $\varphi_1,\dots, \varphi_n$ be rational numbers linear inequalities, but different from $s_1 \approx s_2$, and $a_1, \dots, a_n$ rational numbers. Then a \tt{la\_generic} step has the general form
 %
 \[
@@ -596,8 +593,15 @@ we write $s1 \bowtie s2$ to denote the left and right-hand sides of an inequalit
   where $c_i^k$ and $t_i^k$ are the constant and term from the literal $\varphi_k$, and $d^k$ is the constant $d$ of $\varphi_k$.
   The operator $\bowtie$ is $=$ if all operators are $=$, $>$ if at least one is $>$, and $\geq$ otherwise.
   Finally, the sum on the left-hand side is $0$ and the right-hand side is $>0$ (or $\geq 0$ if $\bowtie$ is $>$).
-
 \end{enumerate}
+\end{algorithm}
+
+The \tt{la\_generic} rule can be verified by showing that the negated inequalities are jointly unsatisfiable.
+After applying strengthening rules, the resulting conjunction is unsatisfiable,
+even when \lstinline[language=SMT,basicstyle=\ttfamily\footnotesize\upshape]{Int} variables are treated as \lstinline[language=SMT,basicstyle=\ttfamily\footnotesize\upshape]{Real} variables.
+Although the rule may introduce rational coefficients, they often reduce to integers—as shown in \cref{lst:smtexampleproof}, where the coefficients are $(\frac{1}{1}, \frac{1}{1})$.
+Cases where coefficients cannot be reduced to integers are rare in practice, however, we reduce them to integers by \emph{clearing denominators} using their least common denominator.
+
 
 The above algorithm is adapted from the Alethe specification \cite{alethespec}, except that we clarified step 1: the subsequent steps in the original algorithm are designed for $>$ and $\geq$ and do not clearly address how to handle $<$ and $\leq$.
 Additionally, we added step 4 in order to ensure that our construction is independent of $\mathbb{Q}$.
@@ -646,6 +650,7 @@ Other tools may choose whether to accept or reject such proofs.
 % \end{remark}
 
 \section{Checking Alethe Proofs}
+\label{sec:checking-alethe-proofs}
 
 \subsection{Abstract procedure}
 
@@ -753,6 +758,7 @@ The following aspects are treated implicitly by Alethe:
 \end{itemize}
 
 Moreover, in simplification rules, the order of the rewrites matters since some rules are not confluent.
+Additionally, some rules such as \kw{la\_generic}, correspond to algorithmic procedures (\cref{alg:la-generic-description}) rather than to logical deductions.
 
 These implicit operations necessitate sophisticated proof reconstruction algorithms that can infer
 and generate the missing intermediate steps, effectively transforming coarse-grained Alethe proofs

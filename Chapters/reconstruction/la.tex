@@ -6,11 +6,9 @@
 \section{Reconstruction of Linear Integer Arithmetic}
 \label{sec:lia-reconstruction}
 
-\todo{Review also this section when Rational will be introduce. Maybe LRA will be introduce before LIA if LA is finished and well tested.}
-
-In this section, we address the challenge of reconstructing the rule $\kw{la\_generic}$, as detailed in \cref{sssect:la-in-alethe} when it is used in \textbf{LIA} logic.
-This rule corresponds to a proof step in which a set of linear inequalities is shown to be contradictory such as \cref{lst:example-lia-contra}.
-The Alethe specification guaranteed that the contradiction has to reduce to a normal form: $0 \bowtie k$ where $k$ is constant with $k > 0$, and $\bowtie \in \{ \geq, > \}$.
+In this section, we address the challenge of reconstructing the rule $\kw{la\_generic}$, as detailed in \cref{ssec:challenge-recon} when it is used in \textbf{LIA} logic.
+This rule corresponds to a proof step in which a set of linear inequalities is shown to be contradictory.
+The Alethe specification guarantees that the contradiction has to reduce to a normal form: $0 \bowtie k$ where $k$ is constant with $k > 0$, and $\bowtie \in \{ \geq, > \}$.
 
 \smallskip
 
@@ -23,7 +21,7 @@ The Alethe specification guaranteed that the contradiction has to reduce to a no
 
 Unlike most of the other arithmetic rules described in \cref{table:linear-arith-rules}, reconstructing $\kw{la\_generic}$ poses a distinct challenge.
 It often requires reasoning about algebraic identities that hold modulo the axioms of algebraic structures such as groups.
-These identities are typically derived through elementary combinations of canonical equalities. Other rules are just encoded as regular lemma
+These identities are typically derived through elementary combinations of canonical equalities. Other rules are just encoded as regular lemmas
 following the previous method we described in \cref{ch:reconstruction-ul}.
 
 We reconstruct steps using the $\kw{la\_generic}$ rule through a second-kind proof by reflection.
@@ -36,28 +34,32 @@ We will denote the first strategy as the \emph{inner normalization} and the seco
 
 \section{General scheme of the reflective reconstruction}
 
-The procedure operates on a group structure $\bb{G}$ that will differ between two strategies. It includes a base type for its elements and constructors to reflect $\Z$, together with the usual axioms defining a
+The procedure operates on a group structure $\bb{G}$ that will differ between the two strategies. It includes a base type for its elements and constructors to reflect $\Z$, together with the usual axioms defining a
 commutative group structure. The goal is to prove the contradiction of an inequality between two terms $g1 \bowtie g2$  of type $\bb{G}$ modulo the group axioms.
-Working by reflection means that we build a semi decision procedure, which will take $t1$ and $t2$ of type $\bb{Z}$ as arguments and compare them (i.e. returns a term of type $\kw{Comp}$ ) modulo associative-commutative rewriting in the group structure.
+Working by reflection means that we build a semi decision procedure like illustrated in \cref{fig:la-generic-comm-diagram}, which will take $t1$ and $t2$ of type $\bb{Z}$ as arguments and compare them (i.e. returns a term of type $\kw{Comp}$ ) modulo associative-commutative rewriting in the group structure.
 
-Once we have built the two $\bb{G}$, $g1$ and $g2$ with a reification $\reify{()}$, corresponding to $t1$ and $t2$,
-the idea is to check the equality of the normal forms of $g1$ and $g2$ denoted by the function $[\_]$ and to prove
-that this implies the same comparison of $t1$ and $t2$ in $\Z$ through a denotation function $\den{()}$. For this purpose, we should ensure the correctness of the following diagram:
+Once we have built $g_1, g_2: \bb{G}$,  by reifying $t_1$ and $t_2$ using the function $\reify{}$,
+the idea is to check the equality of the normal forms of $g_1$ and $g_2$ denoted by the function $[\_]$ and to prove
+that this implies the same comparison of $t_1$ and $t_2$ in $\Z$ through a denotation function $\den{()}$. For this purpose, we should ensure the correctness of the following diagram:
 
+\begin{figure}
 \begin{center}
 % % https://q.uiver.app/#q=WzAsOCxbMSwyLCJcXGJ1bGxldCJdLFsxLDAsIlxcYnVsbGV0Il0sWzMsMiwiXFxidWxsZXQiXSxbMywwLCJcXGJ1bGxldCJdLFswLDIsInRfMSA9X1xcbWF0aGJie1p9IHRfMiJdLFswLDAsIlxcRG93bmFycm93KFxcVXBhcnJvdyh0XzEpKSA9X1xcbWF0aGJie1p9IFxcRG93bmFycm93KFxcVXBhcnJvdyh0XzIpKSJdLFs0LDAsIlxcRG93bmFycm93KFtnXzFdKSA9X1xcbWF0aGJie1p9IFxcRG93bmFycm93KFtnXzJdKSJdLFs0LDIsImdfMSA9X1xcbWF0aGJie1p9IGdfMiJdLFswLDEsIlxcRG93bmFycm93KFxcVXBhcnJvdyhcXF8pKSJdLFswLDIsIlxcaWZmIiwxLHsic3R5bGUiOnsiYm9keSI6eyJuYW1lIjoiZG90dGVkIn0sImhlYWQiOnsibmFtZSI6Im5vbmUifX19XSxbMSwzLCJbXFxfXSIsMCx7InN0eWxlIjp7ImJvZHkiOnsibmFtZSI6ImRhc2hlZCJ9fX1dLFszLDIsIlxcRG93bmFycm93KFxcXykiXSxbMSwyLCIiLDAseyJzdHlsZSI6eyJuYW1lIjoiY29ybmVyIn19XV0=
-\(\begin{tikzcd}[ampersand replacement=\&,column sep=small]
-	{\Uparrow(t_1) \bowtie_\bb{G} (\Uparrow(t_2)} \& \bb{G} \&\& \bb{G} \& {[g_1] \bowtie_\bb{G} [g_2]} \\
+\(\begin{tikzcd}[ampersand replacement=\&,column sep=normal]
+	{g_1 \bowtie_\bb{G} g_2} \& \bb{G} \&\& \bb{G} \& {[g_1] \bowtie_\bb{G} [g_2]} \\
 	\\
 	{t_1 \bowtie_\Z t_2} \& \Z \&\& \Z \& {(\den{[g_1]}) \bowtie_\Z (\den{[g_2]}}
 	\arrow["{[\_]}", dashed, from=1-2, to=1-4]
 	\arrow["\lrcorner"{anchor=center, pos=0.125}, draw=none, from=1-2, to=3-4]
 	\arrow["{\Downarrow(\_)}", from=1-4, to=3-4]
 	\arrow["{\Uparrow(\_)}", from=3-2, to=1-2]
-	\arrow["\iff"{description}, dotted, no head, from=3-2, to=3-4]
+	\arrow["\equivL"{description}, dotted, no head, from=3-2, to=3-4]
 \end{tikzcd}\)
-with $\bowtie \in \{ \geq, > \}$.
 \end{center}
+with $\bowtie \in \{ \geq, > \}$.
+\caption{Reflexive normalization of linear polynomials.}
+\label{fig:la-generic-comm-diagram}
+\end{figure}
 
 \section{Reflection with inner normalization}
 
@@ -85,14 +87,14 @@ Lastly, the constructor $\add{}{}$ represents the addition between two elements 
 \end{definition}
 
 \begin{definition}[Reification and denotation]
-Reification ($\reify{}$) and denotation ($\den{}$) functions for $\bb{G} \rightleftarrows \bb{Z}$.
+Reification ($\reify{}$) and denotation ($\den{}$) functions for $\bb{G} \rightleftarrows \bb{Z}$ are defined as follows:
 \begin{align*}
 & \reify{} : \Z \ra \bb{G} & & \den{}: \bb{G} \ra \Z \\
 & \reify{\ZO} \re \cst{\ZO} & & \den{\cst{c}} \re c \\
 & \mathop{\reify{\ZPos}} c \re \cst{(\ZPos c)} & & \den{\opp{x}} \mathrel{\re}  \mathop{\sim (\den{x})} \\
-& \mathop{\reify{\ZNeg}} c \re \cst{(\ZNeg c)} & & \den{\mul{c}{x}} \re  c \times (\den{x}) \\
+& \mathop{\reify{\ZNeg}} c \re \cst{(\ZNeg c)} & & \den{\mul{c}{x}} \re  c * (\den{x}) \\
 & \reify{(x + y)} \re \add{(\reify{x})}{(\reify{y})} & & \den{\add{x}{y}} \re (\den{x}) + (\den{y}) \\
-& \reify{(\sim x)} \re \opp{(\reify{x})} & & \den{\var{c}{x}} \re  c \times x \\
+& \reify{(\sim x)} \re \opp{(\reify{x})} & & \den{\var{c}{x}} \re  c * x \\
 & \mathop{\reify{((\mathop{\ZPos} c) * x})} \re \mul{(\mathop{\ZPos} c)}{(\reify{x})} & & \\
 & \mathop{\reify{((\mathop{\ZNeg} c) * x)}} \re \mul{(\mathop{\ZNeg} c)}{(\reify{x})} & & \\
 & \mathop{\reify{(x * (\mathop{\ZPos} c))}} \re \mul{(\mathop{\ZPos} c)}{(\reify{x})} & & \\
@@ -125,8 +127,8 @@ Rewriting rules for reducing $\bb{G}$ expressions:
 \begin{align}
 &\add{\var{c_1}{x}}{\var{c_2}{x}} \re \var{(c_1 + c_2)}{x} \\
 &\add{\var{c_1}{x}}{(\add{\var{c_2}{x}}{y})} \re \add{\var{(c_1 + c_2)}{x}}{y} \\
-&\add{\cst{c_1}}{\cst{c_2}} \re \cst{c_1 + c_2} \\
-&\add{\cst{c_1}}{(\add{\cst{c_2}}{y})} \re \add{\cst{c_1 + c_2}}{y} \\
+&\add{\cst{c_1}}{\cst{c_2}} \re \kw{cst}(c_1 + c_2) \\
+&\add{\cst{c_1}}{(\add{\cst{c_2}}{y})} \re \add{\kw{cst}(c_1 + c_2)}{y} \\
 &\add{\cst{0}}{x} \re x \\
 &\add{x}{\cst{0}} \re x \\
 &\opp{\var{c}{x}} \re \var{(-c)}{x} \\
@@ -285,10 +287,10 @@ The argument is similar for all the following critical pairs:
   \var{c_1}{x} \oplus \underline{(\var{c_2}{x} \oplus (\var{c_3}{x} \oplus y))}
 }
 {
-  \var{(c_1 + c_2)}{x} \oplus ((\var{c_3}{x} \oplus y))
+  \var{(c_1 + c_2)}{x} \oplus (\var{c_3}{x} \oplus y) \qquad
 }
 {
-  \var{c_1}{x} \oplus (\var{(c_2 + c_3)}{x} \oplus y))
+  \qquad \var{c_1}{x} \oplus (\var{(c_2 + c_3)}{x} \oplus y)
 }{3}{3}
 \end{center}
 \medskip
@@ -333,8 +335,8 @@ The argument is similar for all the following critical pairs:
 \end{proof}
 
 We compare two $\Z$-terms $t_1$ and $t_2$ wrt $\ACcanon$ by reifying them into their corresponding $\bb{G}$-terms, denoted $[g_1]$ and $[g_2]$, using the reification function $\reify{}$,
-and normalizing them using $\twoheadrightarrow^{AC}$. Following the reduction rules specified in \cref{def:grp-rw}, we can then compare their corresponding $\Z$-terms by applying the denotation function $\den{}$.
-To validate this procedure, it is necessary to establish the correctness of the following diagram, formally expressed by \cref{thm:normalization}.
+and normalizing them using $\twoheadrightarrow^{AC}$. Following the reduction rules specified in \cref{def:grp-arith-ops}, we can then compare their corresponding $\Z$-terms by applying the denotation function $\den{}$.
+To validate this procedure, it is necessary to establish the correctness of the \cref{fig:la-generic-comm-diagram}, formally expressed by \cref{thm:normalization}.
 
 
 \begin{theorem}[Correctness of normalization]\label{thm:normalization}
@@ -375,18 +377,18 @@ Hence, $x = (\mathop{\den{(\reify{x})}})$ in all cases.
 \lstinputlisting[language=Lambdapi,mathescape=true,label={lst:inner-recon-example},caption={Lambdapi proof of List. \ref{lst:smtexampleproof}}]{Assets/short_lia.lp}
 
 We present in List. \ref{lst:inner-recon-example} the translation of Step \tt{t2} from List. \ref{lst:smtexampleproof} using our Carcara module.
-The \lstinline[language=Lambdapi,basicstyle=\ttfamily\footnotesize\upshape]|rewrite Zinv_lt_eq| step at line 3 performs the normalization from Step 1, rewriting $\neg (3 < x)$ as $\neg (\sim 3 > \sim x)$.
+The \lstinline[language=Lambdapi,basicstyle=\ttfamily\footnotesize\upshape]|rewrite Zinv_lt_eq| step at line 3 performs the normalization from Step 1 of the \cref{alg:la-generic-description}, rewriting $\neg (3 < x)$ as $\neg (\sim 3 > \sim x)$.
 The lemmas \lstinline[language=Lambdapi,basicstyle=\ttfamily\footnotesize\upshape]|Z_diff_gt_Z0| and \lstinline[language=Lambdapi,basicstyle=\ttfamily\footnotesize\upshape]|Z_diff_eq_Z0_eq| (lines 4–5) implement Step 2.
 Since the goal involves a $>$ inequality, Step 3 applies with the lemma \lstinline[language=Lambdapi,basicstyle=\ttfamily\footnotesize\upshape]|Zgt_le_succ_r_eq| (line 6).
 The coefficients $[\frac{1}{1}, -\frac{1}{1}]$ from Step 4 are trivially cast to $\bb{Z}$ and applied in lines 7–8.
-To express all inequalities uniformly, remaining equalities are rewritten as $\geq$ using \tt{Z\_eq\_implies\_ge} (line 12).
+To express all inequalities uniformly, the remaining equalities are rewritten as $\geq$ using \tt{Z\_eq\_implies\_ge} (line 12).
 Finally, Step 6 derives the contradiction by summing inequalities from lines 13 to 17.
 
 \section{Reflection with outer normalization}
 \label{sec:outer-normalization}
 
 We now describe the second strategy, which implements the normalization function entirely within Lambdapi.
-This approach benefits from an entirely internal correctness proof, but it typically results in slower performance compared to the first strategy.
+This approach benefits from an entirely correctness proof at the object theory level, but it typically results in slower performance compared to the first strategy.
 As in the first approach, an inductive type $\bb{G}$ reflects the syntactic representation of arithmetic expressions over $\Z$.
 
 \subsection{Reflecting integers}
@@ -397,6 +399,7 @@ As in the first approach, an inductive type $\bb{G}$ reflects the syntactic repr
 
 \begin{notation}
 We write $a[i]$ for $(\kw{nth}~0~i~a)$, i.e., the $i$-th element of the list $a$, with $0$ as default value to make the function total.
+This notation will mainly be used when inspecting an element of a context map during reification and denotation.
 \end{notation}
 
 % \begin{figure}[h]
@@ -437,7 +440,7 @@ It is defined recursively over the structure of $\bb{Z}$ expressions:
 \begin{align*}
 &\reify{\ell}{(x + y)} \re \mathrel{let} (g_1, \ell_1) = \reify{\ell}{x}, (g_2, \ell_2) = \reify{\ell_1}{y} \\
 & \qquad \mathrel{in} (g_1 \concat g_2, \ell_2) \\
-&\reify{\ell}{(-x)} \re \mathrel{let} (g, \ell') = \reify{\ell}{x} \mathrel{in} (\opp(g), \ell') \\
+&\reify{\ell}{(-x)} \re \mathrel{let} (g, \ell') = \reify{\ell}{x} \mathrel{in} (\kw{mul}~(-1)~g), \ell') \\
 &\reify{\ell}{(x - y)} \re \reify{\ell}{(x + (-y))} \\
 &\reify{\ell}{0} \re (\Cst~0 \concat \Box, l) \\
 &\reify{\ell}{(\ZPos~c)} \re (\Cst(\ZPos~c) \concat \Box, l) \\
@@ -454,7 +457,7 @@ It is defined recursively over the structure of $\bb{Z}$ expressions:
 &\reify{\ell}{x} \re
   \begin{cases}
     (\Var{i}{1} \concat \Box, \ell) & \text{if } x \text{ is } \ell[i] \\
-    (\Var{\kw{size}(\ell)}{1} \concat \Box, \ell \concat [x]) & \text{otherwise}
+    (\Var{(\kw{size}(\ell))}{1} \concat \Box, \ell \concat (x \cons \Box)) & \text{otherwise}
   \end{cases}
 \end{align*}
 \end{definition}
@@ -470,8 +473,8 @@ defines the semantic interpretation of reified arithmetic expressions of type $\
 &\den{(h \cons tl, \ell)} \re \den_\bb{G}{(h, \ell)} \,+ \den{(tl, \ell)} \\
 & \text{with} \\
 &\den_\bb{G}: \el (\kw{grp} \times \bb{L}~\kw{int}) \ra \Z\\
-&\den_\bb{G}{(\Cst(k), \ell)} \re k \\
-&\den_\bb{G}{(\Var{i}{k} \concat \Box, \ell)} \re \ell[i] * k \\
+&\den_\bb{G}{(\Cst(k), \_)} \re k \\
+&\den_\bb{G}{(\Var{i}{k}, \ell)} \re \ell[i] * k \\
 \end{align*}
 %
 \end{definition}
@@ -481,29 +484,25 @@ defines the semantic interpretation of reified arithmetic expressions of type $\
 Consider the arithmetic expression $x + y + x + 1$, where $x$ and $y$ are $\Z$ variables.
 When reifying this expression, we start with an empty context $\Box$ and apply the $\reify{}$ function recursively.
 \begin{equation*}
-\reify{\Box}{(x + y + x + 1)} \re^*
+\reify{\Box}{(x + 2 * y + x + 1)} \re^*
 (
-  \add{
-    \mathsf{Var}~0~1}
-    {
-      \add{\mathsf{Var}~1~1}
-      \add{\mathsf{Var}~0~1}{\cst{1}}
-    }
-  ),\
-  [x, y]
+  \mathsf{Var}~0~1 \cons \mathsf{Var}~1~2 \cons \mathsf{Var}~0~1 \cons \cst{1} \cons \Box
+  ,\
+  \ell
 )
 \end{equation*}
 
-The final context map $\ell = [x, y]$, so that $x$ has index $0$ and $y$ has index $1$.
+The final context map $\ell = x \cons y \cons \Box$, so that $x$ has index $0$ and $y$ has index $1$.
 
 \end{example}
 
 \subsection{Outer normalisation procedure}
 
-In this definition of merge sort algorithm, we reuse the split function defined in \cref{ssec:contraction-recon}.
+In this definition of merge sort algorithm, we reuse the split function defined in \cref{def:split} used for the \kw{contraction} rule.
 
 \begin{definition}[Merge]
-The function $\kw{merge}$ combines two lists of group elements:
+The function $\kw{merge}$ combines two lists of group elements by  folding constants and variables with the same index,
+and produces a single list that is sorted by variable indices  assuming the inputs are themselves sorted.
 \[
 \kw{merge} : \tlist{\kw{grp}} \times \tlist{\kw{grp}} \;\ra\; \tlist{\kw{grp}}.
 \]
@@ -615,15 +614,14 @@ The following lemma provides the necessary bound.
 \begin{lemma}[Size bound for split]\label{lem:size-split2}
 For all lists $\ell$, with $\kw{split}~\ell = (\ell_1, \ell_2)$, we have:
 \[
-  (\kw{size}~\ell_1) \text{ and } (\kw{size}~\ell_2) \leq \kw{size}(\ell)
+  \kw{size}~\ell_1 \text{ and } \kw{size}~\ell_2 \leq \kw{size}~\ell
 \]
 \begin{proof}
 By induction on $\ell$, using the definition of $\kw{split}$ and the monotonicity of $\kw{size}$.
 \end{proof}
 \end{lemma}
 
-We can now combine the above invariants to show that mergesort preserves
-denotations. The auxiliary version carries an explicit size bound for induction.
+We can now combine the above invariants to show that mergesort preserves denotations.
 
 \begin{lemma}[Correctness of mergesort]\label{lem:mergesort-correct-aux}
 For all $n, \ell, g$, if $\kw{size}(g)\leq n$, then
@@ -686,7 +684,7 @@ For all integers $x$ and all environments $\ell$, if
 \[
 \reify(x) \;=\; (g, \ell') \text{ then } \Downarrow(g, \ell') \;=\; x.
 \]
-\begin{proof} The proof is direct by induction on $x$ where the cases will be $\ZPos, \ZNeg, \ZO$. \end{proof}
+\begin{proof} Direct by induction on $x$ where cases are $\ZPos$, $\ZNeg$ and $\ZO$. \end{proof}
 \end{theorem}
 
 
@@ -706,8 +704,8 @@ This enables the proof to conclude by purely syntactic comparison of the normali
 \label{sec:bv-reconstruction}
 
 The reflective reconstruction for Linear Real Arithmetic (\textbf{LRA}) follows verbatim the integer case of the previous section (\cref{sec:outer-normalization}).
-We only change the ground domain from $\Z$ to $\Q$ defined at (\cref{ssec:encoding-la}), and adapt the typing of lists and constants accordingly.
-All definitions(\emph{reify}, denotation $\Downarrow$, $\kw{merge}$, $\kw{mergesort}$, $\kw{remove0}$, and
+We only change the ground domain from $\Z$ to $\Q$ defined at \cref{ssec:encoding-la}, and adapt the typing of lists and constants accordingly.
+All definitions (reification $\Uparrow$, denotation $\Downarrow$, $\kw{merge}$, $\kw{mergesort}$, $\kw{remove0}$, and
 $\kw{norm}$) and all proofs/lemmas carry over \emph{mutatis mutandis}, relying on the same
 algebraic laws (associativity, commutativity, and distributivity) which hold in the group
 $\Q$ just as they do in the group $\Z$.
@@ -726,20 +724,29 @@ default $\frac{0}{1} \in \Q$ to make indexing total.
 \end{definition}
 
 \paragraph{Reification and denotation.}
-The function $\Uparrow_\Q : \bb{L}~\kw{rat} \ra \Q \ra \el(\tlist{grp} \times \tlist{rat})$
-is obtained from the integer version by replacing integer constants and coefficients
-with rationals $0 \rightsquigarrow \frac{0}{1}$. The denotation $\Downarrow_\Q : \el(\tlist{grp} \times \bb{L}~\kw{rat}) \ra \Q$
-is unchanged apart from types: $\Cst(q)$ evaluates to $q \in \Q$ and
-$\Var{i}{q}$ evaluates to $\ell[i] *_\Q q$ for $\ell :\bb{L}~\kw{rat}$.
+The function $\Uparrow_\Q : \bb{L}~\kw{rat} \ra \Q \ra \el(\tlist{grp} \times \tlist{rat})$ is obtained from the integer version by replacing integer constants and coefficients with rational counterparts e.g. $\frac{0}{1}$ for $0$.
+The denotation $\Downarrow_\Q : \el(\tlist{grp} \times \bb{L}~\kw{rat}) \ra \Q$ is unchanged apart from types: $\Cst(q)$ evaluates to $q \in \Q$ and $\Var{i}{q}$ evaluates to $\ell[i] *_\Q q$ for $\ell :\bb{L}~\kw{rat}$.
 
 \paragraph{Normalization pipeline.}
 The operators $\kw{mul} : \Q \ra \List{grp} \ra \List{grp}$,
 $\kw{merge}$, $\kw{mergesort}$, and $\kw{remove0}$ are identical to the integer case,
 with coefficients and constants in $\Q$ and the environment of type $\bb{L}~\kw{rat}$.
 The normalization function remains
-\[
-\kw{norm}~x \;\is\; \kw{remove0}\big(\kw{mergesort}~x\big).
-\]
+
+\begin{equation}
+\label{eq:norm}
+\tag{\textcolor{purple}{2}}
+\kw{norm}\,(x : \bb{L}~\tt{grp}) 
+  \;\coloneq\; 
+  \eqnmarkbox[RoyalBlue]{rem0}{\kw{remove0}}
+  \Bigl(\,
+    \eqnmarkbox[lpurple]{msort}{\kw{mergesort}}\,x
+  \Bigr)
+\annotate[yshift=-0.5em]{below, left}{rem0}{cancel and removes neutral elements}
+\annotate[yshift=-0.5em]{below, right}{msort}{sorts a list of $\tt{grp}$}
+\end{equation}
+
+\bigskip
 
 \paragraph{Correctness results.}
 All statements and proofs from \cref{sec:outer-normalization} transfer:
