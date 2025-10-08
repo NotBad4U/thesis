@@ -607,6 +607,7 @@ We begin by introducing the following configuration:
 
 \begin{itemize}
   \item The function $\kw{indexes}: \Pi [a: \set],\, \bb{L}~a \ra \bb{L}~\kw{nat}$  takes a list of propositions and returns a list where each proposition is replaced by its position in the list.
+  
   \begin{example}[indexes]
   \(
     \mathop{\mathtt{indexes}} (x \mathbin{\cons} y \mathbin{\cons} x  \mathbin{\cons} z \mathbin{\cons} \Box) \equivL 0 \mathbin{\cons} 1 \mathbin{\cons} 2 \mathbin{\cons} 3 \mathbin{\cons} \Box
@@ -714,7 +715,7 @@ In contrast, we attempt to reconstruct them using a combination of simple intern
 
 For propositional formulas such as line 1 in \cref{lst:eval-step}, we reconstruct the proof using an embedded proof procedure based on proof by reflection of the first kind.
 For equalities over numerical constants, such as line 2, we simplify the expressions using the rewriting rules defined in $\mathcal{R}_{\mathbb{Z}}$ and $\mathcal{R}_{\mathbb{P}}$, and aim to conclude by \lpinline{reflexivity}.
-The rule \kw{TTR} (TRUST\_THEORY\_REWRITE) describes steps performed by cvc5’s internal theory rewriter.
+The rule TRUST\_THEORY\_REWRITE or \kw{TTR} for short describes steps performed by cvc5’s internal theory rewriter.
 These steps may involve rewriting quantified propositions or other expressions too complex for the tautology solver.
 Instead, we attempt reconstruct them by invoking the first-order automated theorem prover Zenon Modulo \cite{zenonmodulo} with the tactic \lpinline{why3} of Lambdapi, configured to call Zenon Modulo.
 This prover produces proof certificates in both Lambdapi and Dedukti formats, which are currently not integrated,  though this step could potentially be automated.
