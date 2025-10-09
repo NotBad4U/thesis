@@ -239,7 +239,7 @@ We define the type of rational numbers and some operators as follows:
 &                      & &*_\Q : \Q \ra \Q \ra \Q \quad \text{(infix)}\\
 \end{align*}
 The symbol \kw{frac} denotes any fraction, while $\slash$ denotes irreducible fractions.
-Since the SMT-LIB standard (\cref{ssec:smt-la}) allows denominators to be zero, , we use $\Z$ instead of $\bb{P}$ but normalize such cases via rewrite rules.
+Since the SMT-LIB standard (\cref{ssec:smt-la}) allows denominators to be zero, we use $\Z$ instead of $\bb{P}$ but normalize such cases via rewrite rules.
 \end{definition}
 
 The Mathematical Components library \textsc{MathComp} \cite{mathcomp}  in Rocq \cite{Rocq-refman}, and the mathlib library \cite{mathlib} in Lean \cite{lean4:2021} encode rational numbers as pairs of integers reduced by their greatest common divisor (GCD), accompanied by a proof certifying their coprimality and the positivity of the denominator.

@@ -606,12 +606,20 @@ We define the constant \( \mathop{\mathrm{Vec}}\,a\,n \) inductively for \( n : 
 \end{align*}
 \end{definition}
 
-\section{Modifiers on symbols}
+\section{Language extensions}
+\label{sec:lambdapi-extension}
+
+Lambdapi extends the language accepted by the $\lpm$-calculus to make it easier to use.
+For example, this lets the user to define implicit coercions, programmable tactics, modifiers on symbols that qualify the visibility, reduction, and compilation behaviour of declared symbols.
+
+\subsection{Modifiers on symbols}
+\label{sec:modifiers}
 
 Lambdapi modifiers are keywords that precede a constant declaration to provide the system with additional information on its properties and behavior.
 We will present the modifiers \lpinline{sequential} and \lpinline{associative commutative} that will be use in the contributions of this thesis.
 
-\subsection{Sequential}
+\subsubsection{Sequential}
+\label{ssec:sequential}
 
 The modifier \lpinline{sequential} alters the pattern matching algorithm.
 By default, the order of rule declarations is not taken into account.
@@ -642,7 +650,7 @@ Consider the constant $\kw{eq}: \prop \ra \prop \ra \B$ defined \lpinline{sequen
 Then it is not stable by substitution given the following substitution $\vdash\kw{eq}[x \leftarrow y]$ which breaks \cref{lem:stability}.
 \end{example}
 
-\subsection{Associative commutative}
+\subsubsection{Associative commutative}\label{ssec:assoc}
 
 Lambdapi handles associative and commutative symbols via \lpinline{associative commutative}, normalizing terms to a canonical form using a built-in ordering (\cite{ACorigin}, \cite[\S 5]{univAC}).
 
@@ -704,6 +712,74 @@ is normalized to:
 The properties of \emph{local confluence} and \emph{termination} need to take AC-canonicalization into account to prove that they still hold.
 \end{remark}
 
+\subsection{Metatactics}
+\label{sec:metatactic}
+
+In addition to primitive tactics \footnote{\url{https://lambdapi.readthedocs.io/en/latest/tactics.html}}, Lambdapi provides \emph{metatactics}\footnote{\url{https://lambdapi.readthedocs.io/en/latest/tacticals.html}}, a small language of tactic combinators that is interpreted by the tactic \eval.
+A metatactic is an ordinary term of type $\kw{Tactic}: \type$ that rewrites to an expression over a collection of builtins and is then executed as a primitive tactic on the current proof state.
+This design lets us program tactic behaviour with rewriting and higher-level composition, which is particularly convenient for robust, automation-friendly scripts in our reconstruction setting.
+
+\begin{lstlisting}[language=Lambdapi,caption={Example of builtins metatactics},label={lst:meta-builtins}, mathescape=true]
+symbol Tactic : TYPE;
+symbol tactic : Set;
+rule $\el$ tactic ↪ Tactic;
+
+symbol and : Tactic → Tactic → Tactic;
+builtin "and" ≔ and;
+
+symbol #apply [p] : $\prf$ p → Tactic;
+builtin "apply" ≔ #apply;
+
+symbol #fail : Tactic;
+builtin "fail" ≔ #fail;
+
+symbol #orelse : Tactic → Tactic → Tactic;
+builtin "orelse" ≔ #orelse;
+\end{lstlisting}
+
+Concretely, {\eval} expects a term that reduces to a composition of builtin tactics like the one from \cref{lst:meta-builtins} , and the control combinators \repeatT, \andT, etc.
+The combinator {\andT} sequences two tactics , \kw{orelse} encodes left-biased choice, {\repeatT} iterates a tactic as long as it makes progress.
+
+\begin{example}[The {\doT} metatactic.]
+The metatactic {\doT} below provides a simple example of how iterative control structures can be defined directly in Lambdapi without extending the core Lambdapi tactics.
+
+\begin{align*}
+&\kw{nothing} \;\is\; \try~\fail \\[0.5em]
+&\doT : \N \ra \kw{Tactic} \ra \kw{Tactic} \\
+&\doT~0~t \re \kw{nothing} \\
+&\doT~(n +\!\!1)~t \re t~\andT~(\doT~n~t)
+\end{align*}
+
+It acts as a counted loop over tactics: given a natural number and a tactic, it sequentially executes the tactic that many times.
+Because {\doT} is defined purely by rewrite rules rather than as a primitive command, it demonstrates the reflective nature of metatactics—proof automation patterns can be expressed and combined within the logical framework itself, using existing tactic combinators such as \andT.
+\end{example}
+
+\subsection{Implicit Coercions}
+\label{ssec:coercion}
+
+Lambdapi can be instructed to insert function applications into terms whenever needed for typability.
+Such functions are known as \emph{coercions}, which we denote as:
+\[
+\kw{coerce}~A~B~x \re f~x,
+\]
+meaning that a term $x : A$ is coerced by $f$ into a term of type $B$.
+
+\begin{example}
+Consider the types {\B} and {\N} (\cref{def-bool,def-nat}), and a function:
+
+\begin{align*}
+&\kw{bool2nat}:~\B \ra \N \\
+&\kw{bool2nat}~\true \re 1 \\
+&\kw{bool2nat}~\false \re 0\\[1em]
+&\kw{coerce}~\B~\N~x \re \kw{bool2nat}~x 
+\end{align*}
+
+which maps {\true} to $1$ and {\false} to $0$.
+By declaring this function as a coercion from booleans to natural numbers, Lambdapi can implicitly apply it whenever a term of type {\B} is used in a context expecting a \N.
+In other words, the coercion mechanism makes it possible to write mixed expressions such as $x + b$, where $x : \N$ and $b : \B$, and have Lambdapi automatically interpret it as $x + (\kw{bool2nat}~b)$.
+\end{example}
+
+\section*{Summary}
 
 This chapter presented the \lp{}-calculus modulo rewriting as implemented in Lambdapi, highlighting how user rewrite rules at both the term and type levels extend LF.
 We presented concrete data structures and the modifiers that will be used throughout the next chapters for our encoding.

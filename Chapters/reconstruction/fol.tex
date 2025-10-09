@@ -344,7 +344,8 @@ Each transformation associated with this rule is implemented by a separate lemma
   \label{fig:not-simplify}
 \end{figure}
 
-To apply these tactics sequentially, we define a meta-tactic $\mathop{\mathtt{applyAny}}$ that attempts each tactic in the list until one succeeds:
+To apply these tactics sequentially, we define a meta-tactic $\mathop{\mathtt{applyAny}}$ that attempts each tactic in the list until one succeeds.
+The general concept of meta-tactics is described in \cref{sec:metatactic}.
 
 \begin{align*}
 &\mathop{\mathtt{all\_not\_simplify}} \is (\rewrite \kw{not\_simplify1}) \cons  \\
