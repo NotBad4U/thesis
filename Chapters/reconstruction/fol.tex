@@ -607,12 +607,12 @@ We begin by introducing the following configuration:
 
 \begin{itemize}
   \item The function $\kw{indexes}: \Pi [a: \set],\, \bb{L}~a \ra \bb{L}~\kw{nat}$  takes a list of propositions and returns a list where each proposition is replaced by its position in the list.
-  
   \begin{example}[indexes]
   \(
     \mathop{\mathtt{indexes}} (x \mathbin{\cons} y \mathbin{\cons} x  \mathbin{\cons} z \mathbin{\cons} \Box) \equivL 0 \mathbin{\cons} 1 \mathbin{\cons} 2 \mathbin{\cons} 3 \mathbin{\cons} \Box
   \)
   \end{example}
+  The function $\kw{indexes}~n$ will be used to represent a range $0..n$.
   \item The function $\in_k : \N \rightarrow \bb{L}~\kw{nat} \rightarrow \bb{B}$  determines whether a given index is present in a list of indexes ($\bb{L}~\kw{nat}$).
   \item The denotation function $\kw{conj}: \bb{L}~o \ra \prop$ decodes a list of propositions into an n-ary conjunction:
   \[
