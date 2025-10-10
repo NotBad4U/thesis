@@ -84,20 +84,20 @@ The first formula is interpreted as $\neg P$ and the second as just $P$ to perfo
 Alethe allows resolution steps without providing the pivots; however, Carcara's elaborated proof incorporates the pivots as arguments in the resolution rule, eliminating the need for an additional intermediate step to search for the pivots in our translation to Lambdapi.
 In addition, pivots may appear anywhere in a clause rather than just as the head literal.
 
-In our encoding of the \kw{resolution} rule, we will represent clauses as disjunctions of literals constructed from $\List{o}$, using the function $\kw{disj}$, rather than the abstract type $\kw{Clause}$.
+In our encoding of the \kw{resolution} rule, we will represent clauses as disjunctions of literals constructed from $\List{o}$, using the function $\kw{disj}$, rather than the type $\kw{Clause}$.
 This choice allows us to work within the type \prop, where equality is already defined and can be exploited for reasoning (\cref{lem:orN_remove} below).
 In particular, we need to express that a disjunction remains identical when an element is removed and reinserted, an equivalence that relies on propositional equality.
 
 \begin{definition}[disj]
 The function $\kw{disj}$ converts a list of proposition formulas into a disjunction.
 \begin{align*}
-&\kw{disj} : \List{o} \ra \el~o \\[0.3em]
-&\kw{disj}~(l_1~\cons~l) \re (l_1 \lor \kw{disj}~l) \\[0.3em]
+&\kw{disj} : \List{o} \ra \el~o \\
+&\kw{disj}~(l_1 \cons \ell) \re (l_1 \lor \kw{disj}~\ell) \\
 &\kw{disj}~\nil \re \bot
 \end{align*}
 \end{definition}
 
-To avoid explicit conversions, we rely on Lambdapi's coercion mechanism (detailed in \cref{ssec:coercion}) to implicitly translate between $\kw{Clause}$ and list, allowing the two representations to be used interchangeably in proofs.
+To avoid explicit conversions, we rely on Lambdapi's coercion mechanism (detailed in \cref{ssec:coercion}) to implicitly translate between $\kw{Clause}$ and $\List{o}$, allowing the two representations to be used interchangeably in proofs.
 We recall that a  clause $C$ is rewritten into disjunctions in $\prfcl~C$.
 
 \begin{definition}[Clause$\leftrightarrows$List Coercions]\label{def:coerce-clause-list}
@@ -123,47 +123,49 @@ and together they provide the tools needed for the final resolution argument.
 The \cref{lem:orN_subList} lemma below ensures that if a subclause of a clause is provable, then the entire clause is also provable, thus allowing provability to lift from parts to wholes.
 
 \begin{lemma}[Sublist disjunction]\label{lem:orN_subList}
-Let $ps$ and $qs$ be two $\List{o}$ and two index $i,j \in \mathbb{N}$. If
+Let $ps, qs : \List{o}$ and two index $i,j \in \mathbb{N}$. If
 \[
 \prf \bigl(\kw{disj}~ps\bigr)
 \quad\text{and}\quad
-\prf\bigl(ps = \mathrm{subclause}(qs,i,j)\bigr),
+\prf\bigl(ps = \kw{subclause}~qs~i~j\bigr),
 \]
 then
 \[
 \prf\bigl(\kw{disj}~qs\bigr).
 \]
-Here $\mathrm{subclause}(qs,i,j)$ abbreviates $\mathrm{drop}~i~\bigl(\mathrm{take}~j~qs\bigr)$ which take the part of the clause $qs$ between positions $i$ and $j-1$.
+Here $(\kw{subclause}~qs~i~j)$ abbreviates $\kw{drop}~i~\bigl(\kw{take}~j~qs\bigr)$ which take the part of the clause $qs$ between positions $i$ and $j-1$.
 So the result is simply the slice of $qs$ starting at index  $i$ and ending right before $j$.
 \begin{proof}
 The proof proceeds by structural induction on $qs$.
 \begin{itemize}
   \item[] Case $qs=\Box$, the second premise forces $ps=\Box$; hence the hypothesis $\prf(\kw{disj}~ps) \equivL \prf(\bot)$, thus the goal follows immediately by \emph{ex falso quodlibet}.
-  \item[] Case $qs=t \cons \ell$ with the induction hypothesis saying that for every clause $xs$ and every pair of indices $n,m$, if $\prf(\kw{disj}~xs)$ and $xs$ is equal to the subclause of $\ell$ from position $n$ up to $m$, then $\prf(\kw{disj}~\ell)$.
+  \item[] Case $qs=t \cons \ell$ with the induction hypothesis saying that for every clause $L$ interpreted as list, and every pair of indices $n$ and $m$, if $\prf(\kw{disj}~L)$ and $L$ is equal to the subclause of $\ell$ from position $n$ up to $m$, then $\prf(\kw{disj}~\ell)$.
     Now we must show that:
     \[
-        \prf (\kw{disj}~(t \cons \ell)) \equivL \prf (t \lor \kw{disj}~\ell).
+        \prf (\kw{disj}~t \cons \ell) \equivL \prf (t \lor \kw{disj}~\ell).
     \]
     We reason by cases on the index $j$ and then $i$.
     \begin{itemize}
-      \item For $j=0$, we have $\mathrm{take}~0~(t \cons \ell)=\Box$, hence the subclause $ps$ of $qs$ is empty i.e. $ps = \Box$.
+      \item For $j=0$, we have $\kw{take}~0~(t \cons \ell)=\Box$, hence the subclause $ps$ of $qs$ is empty i.e. $ps = \Box$.
       Similar to the previous case, the hypothesis $\prf(\kw{disj}~ps) \equivL \prf(\bot)$, thus the goal follows immediately by \emph{ex falso quodlibet}.
 
       \item When $j > 0$, we then analyze $i$.
         \begin{itemize}
           \item If $i=0$, then
             \[
-              \mathrm{subclause}(t \cons \ell,0,j{+}1)= t \cons \mathrm{subclause}(\ell,0,j).
+              \kw{subclause}(t \cons \ell,0,j{+}1)= t \cons \kw{subclause}(\ell,0,j).
             \]
             and the equality hypothesis yields
             \[
-              \prf \bigl( \kw{disj}~ps = t \lor \mathrm{take}~j~\ell \bigr).
+              \prf \bigl( ps = t \cons \kw{take}~j~\ell \bigr)
+              \text{ and so } \prf \bigl( t \lor \kw{disj}~(\kw{take}~j~\ell) \bigr)
             \]
             Thus, there are two subcases to consider.
             When $\prf(t)$ holds, we immediately obtain $\prf(\kw{disj}~t \cons \ell)$ by left introduction.
-            Otherwise, $\prf(\kw{disj}~(\mathrm{take}~j~\ell))$ holds; by the induction hypothesis we lift provability to $\prf(\kw{disj}~\ell)$, and then conclude $\prf(\kw{disj}~t \cons \ell)$ by right introduction.
-          \item If $i > 0$, we peel one element from both $\mathrm{drop}$ and $qs$.
-            So the hypothesis specializes to $ps=\mathrm{subclause}(\ell,i,j)$, and the desired claim follows from the induction hypothesis on $\ell$.
+            In the second case, $\prf(\kw{disj}~(\kw{take}~j~\ell))$ holds; by the induction hypothesis with the identities that $\kw{sublist}~\ell~0~j = \kw{drop}~0~(\kw{take}~j~\ell)$,
+            we lift provability to $\prf(\kw{disj}~\ell)$, and then conclude $\prf(\kw{disj}~t \cons \ell)$ by right introduction.
+          \item If $i > 0$, we peel one element from both $\kw{drop}$ and $qs$.
+            So the hypothesis specializes to $ps=\kw{subclause}~\ell~i~j$, and the desired claim follows from the induction hypothesis on $\ell$.
           \end{itemize}
     \end{itemize}
   In all cases we infer $\prf(\kw{disj}~qs)$, as required.
@@ -177,13 +179,13 @@ These capture the monotonicity of disjunction ($\lor$) with respect to clause co
 \begin{lemma}[Right Append Preservation]\label{lem:orN_append_right}
 Let $ps,qs: \List{o}$, if $\prf(\kw{disj}~qs)$ then also $\prf(\kw{disj}~(ps \concat qs))$.
 \begin{proof}
-The clause $qs$ appears as a subclause of $ps \concat qs$, starting at position $\mathrm{size}(ps)$.
+The clause $qs$ appears as a subclause of $ps \concat qs$, starting at position $\kw{size}(ps)$.
 By Lemma~\ref{lem:orN_subList}, provability of the disjunction of a sublist lifts to provability of the whole list.
 Therefore from $\prf(\kw{disj}~qs)$ we conclude $\prf(\kw{disj}~ps \concat qs)$.
 
 Concretely, if
 \[
-  qs = q_1 \lor q_2 \lor \cdots \lor q_m,
+  qs = q_1 \lor q_2 \lor \cdots \lor q_m
 \]
 then
 \[
@@ -223,7 +225,7 @@ We proceed by induction on the structure of $qs$.
   \]
   We distinguish two subcases according to $j$.
   \begin{itemize}
-    \item If $j=0$, then $\kw{remove}(qs,0)=\ell$ and $qs[0]=t$.
+    \item If $j=0$, then $(\kw{remove}~qs~0) = \ell$ and $qs[0] = t$.
     Removing the head element $t$ and then reintroducing it yields the same disjunction.
     Hence the equality holds immediately.
     \item If $j = j' +1$, we need to show that
@@ -237,17 +239,18 @@ We proceed by induction on the structure of $qs$.
       \end{itemize}
       So it is enough to prove that:
        \[
-          \ell[j'+1] \lor t \lor \kw{disj}~(\kw{remove}~\ell~j') \bigr) = t \lor \kw{disj}~\ell
+          \ell[j'] \lor t \lor \kw{disj}~(\kw{remove}~\ell~j') \bigr) = t \lor \kw{disj}~\ell
       \]
       By the induction hypothesis applied to $\ell$ at index $j'$, we know that:
       \[
-        \prf\bigl(\,\ell[j'] \lor (\kw{disj}~(\kw{remove}~\ell~j')) = \kw{disj}~\ell\,\bigr).
+        \ell[j'] \lor (\kw{disj}~(\kw{remove}~\ell~j')) = \kw{disj}~\ell.
       \]
       Combining this with the identities above, we obtain
       \begin{flalign*}
-        l[j'] \lor t \lor \kw{disj}~(\kw{remove}~\ell~j') &= \kw{disj}~(t \cons \ell) && \\
+        \ell[j'] \lor t \lor \kw{disj}~(\kw{remove}~\ell~j') &= \kw{disj}~(t \cons \ell) && \\
         &= t \lor \kw{disj}~\ell  && \\
-        &= t \lor \ell[j'] \, \lor \kw{disj}~(\kw{remove}~\ell~j' &&
+        &= t \lor \ell[j'] \, \lor \kw{disj}~(\kw{remove}~\ell~j') && \\
+        &= \ell[j'] \lor t \lor \kw{disj}~(\kw{remove}~\ell~j') &&
       \end{flalign*}
       as required.
   \end{itemize}
@@ -270,7 +273,7 @@ Then the clause obtained by removing these two complementary literals and  conca
   (hqs : \prf(\kw{disj}~qs)) \\
   (hi  : \prf(i < \tt{size}~ps) \\
   (hj  : \prf(j < \tt{size}~qs) \\
-  (hij : \prf(ps[i] = \lnot(qs[j]))) \\
+  (hij : \prf(ps[i] = \lnot qs[j])) \\
   : \prf(\kw{disj}~(\tt{remove}~ps~i \;\pp\; \tt{remove}~qs~j))
 \end{array}
 \]
@@ -286,7 +289,7 @@ We reason by case analysis on the pivot literal truth.
   \begin{align*}
   &ps = ps[i] \lor \kw{disj}~(\kw{remove}~ps~i) \\
   &qs = qs[j] \lor \kw{disj}~(\kw{remove}~qs~j)
-  \end{align*}.
+  \end{align*}
   Combining this with the fact that $qs[j]$ is false, we deduce $\prf(\kw{disj}~(\kw{remove}~qs~j))$.
   Now observe that $\kw{disj}~(\kw{remove}~qs~j)$ is appended on the right to $\kw{disj}~\kw{remove}~ps~i$
   in the resolvent disjunctions:
@@ -318,6 +321,7 @@ symbol p5 ≔ p a;
 symbol a0 : Prf$\textcolor{purple}{\smash{^\bullet}}$ (p5 ⟇ ▩);
 symbol a1 : Prf$\textcolor{purple}{\smash{^\bullet}}$ (a = b ⟇ ▩);
 symbol a2 : Prf$\textcolor{purple}{\smash{^\bullet}}$ (¬ p b ⟇ ▩);
+
 opaque symbol t1 : Prf$\textcolor{purple}{\smash{^\bullet}}$ ((¬ ((p_5 = p_2))) ⟇ (¬ (p_5)) ⟇ p_2 ⟇ ▩) ≔
 begin apply equiv_pos2; end;
 
