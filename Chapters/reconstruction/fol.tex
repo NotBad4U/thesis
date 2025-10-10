@@ -980,7 +980,11 @@ begin eval tauto; end;
 \end{lstlisting}
 
 As shown in \cref{lst:tauto-ex}, we define a new tactic \kw{tauto} using a tactic script at line 5, and demonstrate its usage at lines 8-9.
-
+While this procedure is sound, it is incomplete: it may not always find proofs for all provable statements.
+Empirical results, however, show that it is sufficient to handle problems like those in \cref{lst:eval-step}.
+That said, the current implementation fails to prove goals involving quantifiers, such as:
+$(\forall x, \forall y, x \land p~y) = (\forall x, x \land (\forall y, p~y))$.
+For such cases, we still rely on the Why3 prover until the procedure is extended to support quantifiers, reducing the need for external ATP.
 
 \section{The \texttt{\upshape{contraction}} rule}
 \label{sec:contraction-recon}
@@ -1022,7 +1026,7 @@ In this construction, contraction is performed solely on the left-hand side term
 	\arrow["\equivL"{description}, dotted, no head, from=3-2, to=3-4]
 \end{tikzcd}\)
 \[
-  \text{with } [\_] = \kw{remove} \circ \kw{sort}
+  \text{with } [\_] = \kw{remove\_duplicates} \circ \kw{sort}
 \]
 \end{center}
 
@@ -1035,7 +1039,7 @@ Given an assignment $\sigma : \bb{L}~o$, the denotation function
 maps a list of identifiers to the big disjunction of the corresponding literals:
 \begin{align*}
 &\Downarrow\,\sigma~\Box \re \bot \\
-&\Downarrow\,\sigma~(p\,i :: \ell) \re \sigma[i] \mathbin{\veedot} \Downarrow\,\sigma\,\ell.
+&\Downarrow\,\sigma~(p\,i :: \ell) \re \sigma[i] \veedot \Downarrow\,\sigma\,\ell.
 \end{align*}
 \end{definition}
 
@@ -1066,7 +1070,7 @@ We then define the top-level reification function
 \end{definition}
 
 \begin{example}[Reification]
-Given $\sigma \eqcolon x \cons y \cons \Box$, the clause:
+Given $\sigma \is x \cons y \cons \Box$, the clause:
 \[
     x \veedot y \veedot x \veedot y \veedot \nil 
 \]
@@ -1102,7 +1106,7 @@ For all lists \(x,y\) of identifiers and any assignment \(\sigma\),
 \begin{lemma}[Split preserves denotation]\label{lem:split-correct}
 For all identifier lists \(g\) and assignments \(\sigma\),
 \[
-  \prf\bigl(\Downarrow\,\sigma\,((\kw{split} g)_1 \concat (\kw{split} g)_2) \;=\; \Downarrow\,\sigma\,g\bigr).
+  \prf\bigl(\Downarrow\,\sigma\,((\kw{split}\,g)_1 \concat (\kw{split}\,g)_2) \;=\; \Downarrow\,\sigma\,g\bigr).
 \]
 \end{lemma}
 
