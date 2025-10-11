@@ -23,21 +23,21 @@ symbol f72 : τ S39;
 symbol f80 : τ (S46 ⤳ S4 ⤳ S39);
 symbol f81 : τ S46;
 
-symbol p_2 ≔ ((((∀ (x : τ S1), ∀ (y : τ S1), (x = y))) ⇒ ((f2 = f1))) = (((∀ (x : τ S1), ∀ (y : τ S1), (x = y))) ⇒ ((f1 = f2))));
-symbol p_3 ≔ (((∀ (x : τ S1), ∀ (y : τ S1), (x = y))) ⇒ ((f2 = f1)));
-symbol p_4 ≔ (∀ (x : τ S1), ∀ (y : τ S1), (x = y));
+symbol p_2 ≔ ((∀ x : τ S1, ∀ y : τ S1, x = y) ⇒ f2 = f1) = (∀ x : τ S1, ∀ y : τ S1, x = y) ⇒ f1 = f2;
+symbol p_3 ≔ ((∀ x : τ S1, ∀ y : τ S1, x = y) ⇒ f2 = f1);
+symbol p_4 ≔ (∀ x : τ S1, ∀ y : τ S1, x = y);
 symbol p_5 ≔ (f2 = f1);
-symbol p_6 ≔ (((∀ (x : τ S1), ∀ (y : τ S1), (x = y))) ⇒ ((f1 = f2)));
-symbol p_7 ≔ (f1 = f2);
-symbol p_11 ≔ (¬ ((∀ (x : τ S1), ∀ (y : τ S1), (x = y))));
+symbol p_6 ≔ (∀ x : τ S1, ∀ y : τ S1, x = y) ⇒ f1 = f2;
+symbol p_7 ≔ f1 = f2;
+symbol p_11 ≔ ¬ (∀ x : τ S1, ∀ y : τ S1, x = y);
 
-opaque symbol t0 : $\prfcl$ ((¬ ((p_3 = p_6)))  ⟇ (¬ (p_3))  ⟇ p_6 ⟇ ▩) ≔ 
+opaque symbol t0 : $\prfcl$ (¬ (p_3 = p_6)  ⟇ ¬ p_3  ⟇ p_6 ⟇ ▩) ≔ 
 begin apply equiv_pos2; end;
 
-opaque symbol t1 : $\prfcl$ ((p_4 = p_4) ⟇ ▩) ≔ 
+opaque symbol t1 : $\prfcl$ (p_4 = p_4 ⟇ ▩) ≔ 
 begin apply $\lor_{i1}$; reflexivity; end;
 
-opaque symbol t2 : $\prfcl$ ((p_5 = p_7) ⟇ ▩) ≔ 
+opaque symbol t2 : $\prfcl$ (p_5 = p_7 ⟇ ▩) ≔ 
 begin apply $\lor_{i1}$; apply eq-symm f2 f1; end;
 
 opaque symbol t3 : $\prfcl$ (p_2 ⟇ ▩) ≔ 
@@ -58,7 +58,7 @@ end;
 
 opaque symbol t5_t1 : $\prfcl$ (p_11 ⟇ p_5 ⟇ ▩) ≔ 
 begin
-refine ((¬ ((∀ (x : τ (S1)), ∀ (y : τ (S1)), (x = y)))) ⸬ (f2 = f1) ⸬ □) _;
+refine (¬ (∀ x : τ S1, ∀ y : τ S1, x = y) ⸬ f2 = f1 ⸬ □) _;
 simplify;
 eval #repeat_or_id_r ;
 refine (headcl t5_t0);
@@ -72,7 +72,7 @@ have t5_t1_t5_a0 : $\prfcl$ (p_5 ⟇ ▩) {
 refine t5_t1_t5_a0;
 end;
 
-opaque symbol t5 : $\prfcl$ ((¬ (p_4)) ⟇ p_5 ⟇ ▩) ≔ 
+opaque symbol t5 : $\prfcl$ (¬ p_4 ⟇ p_5 ⟇ ▩) ≔ 
 begin
 apply $\lor_{i2}$;
 apply $\lor_{i1}$;
@@ -87,10 +87,8 @@ have t4_t5 : $\prfcl$ (p_3  ⟇ p_5 ⟇ ▩) {
 refine t4_t5;
 end;
 
-opaque symbol t7 : $\prfcl$ (p_3 ⟇ (¬ (p_5)) ⟇ ▩) ≔ 
-begin
-apply implies_neg2;
-end;
+opaque symbol t7 : $\prfcl$ (p_3 ⟇ (¬ p_5 ⟇ ▩) ≔ 
+begin apply implies_neg2; end;
 
 opaque symbol t8 : $\prfcl$ (p_3 ⟇ p_3 ⟇ ▩) ≔ 
 begin
@@ -102,15 +100,16 @@ end;
 
 opaque symbol t9 : $\prfcl$ (p_3 ⟇ ▩) ≔ 
 begin
-set ir ≔ (reify_cl ((((∀ (x : τ (S1)), ∀ (y : τ (S1)), (x = y))) ⇒ ((f2 = f1)))
-     ⟇ (((∀ (x : τ (S1)), ∀ (y : τ (S1)), (x = y))) ⇒ ((f2 = f1)))
-    ⟇ ▩));
+set ir ≔ reify_cl ((∀ (x : τ S1), ∀ (y : τ S1), x = y) ⇒ f2 = f1
+    ⟇ ((∀ (x : τ S1), ∀ (y : τ S1), x = y)) ⇒ f2 = f1
+    ⟇ ▩
+);
 have H : $\prf$ (
-    (cl2disj ((((∀ (x : τ (S1)), ∀ (y : τ (S1)), (x = y))) ⇒ ((f2 = f1))) ⟇ (((∀ (x : τ (S1)), ∀ (y : τ (S1)), (x = y))) ⇒ ((f2 = f1))) ⟇ ▩))
-    = 
-    (cl2disj ((((∀ (x : τ (S1)), ∀ (y : τ (S1)), (x = y))) ⇒ ((f2 = f1))) ⟇ ▩)))
-{
-    change $\prf$ ((den (ir ₂) (ir ₁)) = (cl2disj ((((∀ (x : τ (S1)), ∀ (y : τ (S1)), (x = y))) ⇒ ((f2 = f1))) ⟇ ▩)));
+  cl2disj (((∀ x : τ S1, ∀ y : τ S1, x = y) ⇒ f2 = f1) ⟇ (∀ x : τ S1, ∀ y : τ S1, x = y) ⇒ f2 = f1 ⟇ ▩)
+  = 
+  cl2disj (((∀ x : τ S1, ∀ y : τ S1, x = y) ⇒ f2 = f1) ⟇ ▩)
+) {
+    change $\prf$ (($\Uparrow$ (ir ₂) (ir ₁)) = (cl2disj ((∀ x : τ S1, ∀ y : τ S1, x = y) ⇒ f2 = f1 ⟇ ▩)));
     rewrite left  contraction_correct;
     reflexivity;
 };
@@ -119,7 +118,7 @@ end;
 
 opaque symbol t10 : $\prfcl$ (p_6 ⟇ ▩) ≔ 
 begin
-have t0_t3 : $\prfcl$ ((¬ (p_3)) ⟇ p_6 ⟇ ▩) {
+have t0_t3 : $\prfcl$ (¬ p_3 ⟇ p_6 ⟇ ▩) {
     apply resolutionL 0 0 t0 t3 $\top_i$ $\top_i$ (eq_refl _);
 };
 have t0_t3_t9 : $\prfcl$ (p_6 ⟇ ▩) {
@@ -135,7 +134,7 @@ end;
 
 symbol a2 : $\prfcl$ (p_4 ⟇ ▩);
 
-symbol a0 : $\prfcl$ ((¬ (p_7)) ⟇ ▩);
+symbol a0 : $\prfcl$ (¬ p_7 ⟇ ▩);
 
 opaque symbol t13 : $\prfcl$ ▩ ≔ 
 begin
