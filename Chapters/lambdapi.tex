@@ -599,8 +599,8 @@ The type \( \kw{Vec}\,a\,n \) \index{$\kw{Vec}$} of vectors of elements of $a$ o
 We define the constant \( \kw{Vec}\,a\,n \) inductively for \( n : \N \) as:
 \begin{align*}
 &(a: \set) \kw{Vec}: \N \ra \type \\
-&|~\Box_\bb{V} : \kw{Vec} a \, 0 \\
-&|~\cons_\bb{V}\,[n:\N]: \el\,a \ra \kw{Vec}\,a\,n \ra  \kw{Vec}\,a\,(n +1) \quad (\text{infix})\\
+&|~\Box_\bb{V} \index{$\Box_\bb{V}$} : \kw{Vec} a \, 0 \\
+&|~\cons_\bb{V} \index{$\cons_\bb{V}$} \,[n:\N]: \el\,a \ra \kw{Vec}\,a\,n \ra  \kw{Vec}\,a\,(n +1) \quad (\text{infix})\\
 &\kw{vec}: \set \ra \N \ra \set \\
 &\el~(\kw{vec}\,a\,n) \re \kw{Vec}\,a\,n
 \end{align*}
@@ -758,7 +758,7 @@ Because {\doT} is defined purely by rewrite rules rather than as a primitive com
 \label{ssec:coercion}
 
 Lambdapi can be instructed to insert function applications into terms whenever needed for typability.
-Such functions are known as \emph{coercions}, which we denote as:
+Such functions are known as \emph{coercions} \index{\kw{coerce}}, which we denote as:
 \[
 \kw{coerce}~A~B~x \re f~x,
 \]

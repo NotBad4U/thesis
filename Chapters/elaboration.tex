@@ -203,8 +203,8 @@ The RARE framework has been implemented in cvc5 and replaces the original simpli
 \draw[bidirectional] (combined1) -- (rewriter);
 \draw[bidirectional] (combined2) -- (rewriter);
 
-\draw[arrow] (rewriter) -- node[right] {$t$} (proof_reconstructor);
-\draw[arrow] (proof_reconstructor) -- node[right] {$t\downarrow$} (rewriter);
+\draw[arrow] (rewriter) -- node[right] {} (proof_reconstructor);
+\draw[arrow] (proof_reconstructor) -- node[right] {} (rewriter);
 
 \draw[bidirectional] (proof_reconstructor) -- (rule_database);
 
