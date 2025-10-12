@@ -343,7 +343,7 @@ begin
   apply resolution 0 0 a2 t3 $\top_i$ $\top_i$ (eq_refl _);
 end;
 \end{lstlisting}
-The function $\kw{headcl}$ at line 11 has type $\prfcl (a \veedot \nil) \ra \prf\,a$, and $\top_i: \prf (\top)$ denote the introduction for $\top$.
+The function $\kw{headcl}$ \index{\kw{headcl}} at line 11 has type $\prfcl (a \veedot \nil) \ra \prf\,a$, and $\top_i: \prf (\top)$ denote the introduction for $\top$.
 \end{example}
 
 \section{Simplification rules}
@@ -774,14 +774,14 @@ We start by defining the target theory that represents formulas of propositional
 This is represented by the inductive type $\mathcal{P}$, with seven constructors listed in \cref{def:prop}.
 
 \begin{align*}
-& \cal{P} : \type \\
+& \cal{P} \index{$\cal{P}$}: \type \\
 & |~\textbf{pTrue} : \cal{P} \\
 & |~\textbf{pAnd} : \cal{P} \ra \cal{P} \ra \cal{P} \\
 & |~\textbf{pFalse} : \cal{P} \\
 & |~\textbf{pOther} : \N \ra \cal{P} \\
 & |~\textbf{pOr} : \cal{P} \ra \cal{P} \ra \cal{P} \\
 & |~\textbf{pImpl} : \cal{P} \ra \cal{P} \ra \cal{P} \\
-& \kw{propS}: \set \\
+& \kw{propS} \index{$\kw{propS}$}: \set \\
 & \el\,\kw{propS} \re \cal{P}
 \end{align*}
 We define the constant $propS: \set$ to be able to quantify over $\cal{P}$.
@@ -794,7 +794,7 @@ Note that during reification, repeated expressions are assigned the same index i
 However, we do not attempt to prove that different indices refer to distinct expressions.
 
 \begin{definition}[Reification and denotation $\cal{P} \rightleftarrows \prop$]
-We define a reification function $\reify{\_} : \mathbb{L}~o \rightarrow \prop \rightarrow \mathcal{P}$:
+We define a reification function $\reify{\_} \index{$\reify{\_}$} : \mathbb{L}~o \rightarrow \prop \rightarrow \mathcal{P}$:
 
 \begin{align*}
 &\reify{}: \bb{L}~o \ra \prop \ra \el (\kw{propS} \times \kw{list}~o) \\
@@ -825,7 +825,7 @@ We define a reification function $\reify{\_} : \mathbb{L}~o \rightarrow \prop \r
 \end{cases} \\
 \end{align*}
 
-and an interpretation function $\deno{\_} : \mathbb{L}~o \rightarrow \mathcal{P} \rightarrow \prop$:
+and an interpretation function $\deno{\_} \index{$\deno{\_}$} : \mathbb{L}~o \rightarrow \mathcal{P} \rightarrow \prop$:
 
 
 \begin{align*}
@@ -1007,7 +1007,7 @@ Correctness follows from three ingredients: a denotational interpreter $\Downarr
 We first encode a simple canonical algebra of literals:
 
 \begin{align*}
-&\cal{C} : \type & \kw{cl}: \set  \\
+&\cal{C} \index{$\cal{C}$} : \type & \kw{cl} \index{$\kw{cl}$}: \set  \\
 &\pipe p : \N \ra \cal{C} &\el~\kw{cl} \re \cal{C}
 \end{align*}
 

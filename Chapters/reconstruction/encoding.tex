@@ -20,10 +20,10 @@ Since Alethe extends the SMT format with the \smtinline{choice} operator (\cite[
 \begin{definition} \label{def:eps}
 We define the choice operator named $\epsilon$.
 \begin{align}
-& \epsilon: \Pi\, {[a: \set]}, (\el\,a \ra \prop) \ra \el\,a \\
-& \epsilon_i: \Pi\, {[a: \set]}, \Pi (x : \el\,a), \Pi (P : \el\,a \ra \prop) \\
+& \epsilon \index{$\epsilon$}: \Pi\, {[a: \set]}, (\el\,a \ra \prop) \ra \el\,a \\
+& \epsilon_i \index{$\epsilon_i$}: \Pi\, {[a: \set]}, \Pi (x : \el\,a), \Pi (P : \el\,a \ra \prop) \\
 & \quad \ra \prf\,(P\,x) \ra \prf\, P\,(\epsilon\,P)  \notag\\
-& \epsilon_{d}: \Pi\, {[a: \set]}, \Pi (P\,Q : \el\,a \ra \prop) \\
+& \epsilon_{d} \index{$\epsilon_d$}: \Pi\, {[a: \set]}, \Pi (P\,Q : \el\,a \ra \prop) \\
 & \quad \ra \Pi\, x : \el\,a, \prf\,(P\,x = Q\,x) \ra (\epsilon \, P = \epsilon \, Q)  \notag
 \end{align}
 The intended interpretation for the $\epsilon$ operator is that $(\epsilon\,x,\, P~x)$ denotes some $x$ satisfying the predicate $P$, if there is one.
@@ -46,8 +46,8 @@ we extend our system with the law of excluded middle and propositional extension
 \begin{definition}[Classical facts]
 We introduce the classical axioms:
 \begin{align*}
-\texttt{em}:\ & \Pi\, [p: \prop], \prf\,(p \lor \neg p) \\
-\texttt{prop\_ext}:\ & \Pi\, [p\,q: \prop], \prf\,(p \Leftrightarrow q ) \rightarrow \prf\,(p = q)
+\tt{em} \index{$\tt{em}$}:\ & \Pi\, [p: \prop], \prf\,(p \lor \neg p) \\
+\tt{prop\_ext} \index{$\tt{prop\_ext}$}:\ & \Pi\, [p\,q: \prop], \prf\,(p \Leftrightarrow q ) \rightarrow \prf\,(p = q)
 \end{align*}
 \label{def:classical-facts}
 \end{definition}
@@ -59,11 +59,11 @@ We introduce the classical axioms:
 The definition we use of natural numbers and integers in Lambdapi follows a common encoding found in many other theories, including the one in the Rocq standard library \cite{Rocq-refman}.
 
 \begin{align*}\label{eq:eq1}
-&\N: \type & &\bb{P}: \type & &\Z: \type \\
-&|~0: \N  & &|~\tt{H} : \bb{P} & &|~\ZO: \Z \\
-&|~+\!1:\N \ra \N & &|~\tt{O}: \bb{P} \ra \bb{P} & &|~\ZPos: \bb{P} \ra \Z \\
-& & &|~\tt{I}: \bb{P} \ra \bb{P} & &|~\ZNeg: \bb{P} \ra \Z \\
-&\tt{nat}: \set & &\tt{pos}: \set & &\tt{int}: \set \\
+&\N: \type & &\bb{P}\index{$\bb{P}$}: \type & &\Z\index{$\bb{Z}$}: \type \\
+&|~0: \N  & &|~\tt{H}\index{$\tt{H}$} : \bb{P} & &|~\ZO\index{$\ZO$}: \Z \\
+&|~+\!1:\N \ra \N & &|~\tt{O}\index{$\tt{O}$}: \bb{P} \ra \bb{P} & &|~\ZPos\index{$\ZPos$}: \bb{P} \ra \Z \\
+& & &|~\tt{I}\index{$\tt{I}$}: \bb{P} \ra \bb{P} & &|~\ZNeg\index{$\ZNeg$}: \bb{P} \ra \Z \\
+&\tt{nat}\index{$\tt{nat}$}: \set & &\tt{pos}\index{$\tt{pos}$}: \set & &\tt{int}\index{$\tt{int}$}: \set \\
 &\el~\tt{nat} \re \N & &\el~\tt{pos} \re \bb{P} & &\el~\tt{int} \re \Z
 \end{align*}
 
@@ -105,14 +105,14 @@ We will use the notation $+_\Z$ or $*_\Z$ to refer the operators defined in \cre
 \end{notation}
 
 \begin{definition}[Inequality operators for integer]\label{def:arith-inequalities-def}
-We introduce inductive types \tt{Comp} \index{\tt{Comp}} and $\B$ representing comparison operators and Booleans.
+We introduce inductive types \tt{Comp} \index{$\tt{Comp}$} and $\B$ representing comparison operators and Booleans.
 \begin{align*}
 &\tt{Comp}: \type{} & &\B: \type{} \\
 &|~\tt{Eq}: \tt{Comp} & &|~\tt{true}: \B \\
 &|~\tt{Lt}: \tt{Comp} & &|~\tt{false}: \B \\
 &|~\tt{Gt}: \tt{Comp} & & \\
 &\tt{comp}: \set & &\tt{bool}: \set  \\
-&\el{}~\tt{comp} \re \tt{Comp} & &\el{}~\tt{bool} \re \B
+&\el{}~\tt{comp}\index{$\tt{comp}$} \re \tt{Comp} & &\el{}~\tt{bool} \re \B
 \end{align*}
 
 The type $\B$ is a simple inductive type with two constructors to represent binary value and providing an induction principle, while the type {\prop} represent the universe of propositions without an induction principle.
@@ -123,7 +123,7 @@ The function $\doteq$ below compares two integers, relying on the auxiliary func
 \[
 \begin{array}[t]{l@{\hspace{4em}}l}
 \begin{aligned}
-&\doteq : \Z \ra \Z \ra \tt{Comp} \\
+&\doteq\index{$\doteq$} : \Z \ra \Z \ra \tt{Comp} \\
 & \ZO \doteq \ZO \re \tt{Eq} \\
 & \ZO \doteq \ZPos~\_ \re \tt{Lt} \\
 & \ZO \doteq \ZNeg~\_ \re \tt{Gt} \\
@@ -203,7 +203,7 @@ with $1 = \ZPos~\tt{H}$ and $2 = \ZPos~(\tt{O}~\tt{H})$.
 The SMT sort \smtinline{Int} is mapped to $\el~\texttt{int}$, and the arithmetic operations of SMT to their counterparts in the Lambdapi encoding.
 
 \begin{notation}
-We will refer to the rewrite rules of \cref{def:arith-ops} and \cref{def:arith-inequalities-def} as $\ra_\Z$ and $\ra_\bb{P}$ in the following sections.
+We will refer to the rewrite rules of \cref{def:arith-ops} and \cref{def:arith-inequalities-def} as $\ra_\Z$ \index{$\ra_\Z$} and $\ra_\bb{P}$ \index{$\ra_\bb{P}$} in the following sections.
 \end{notation}
 
 \begin{lemma}[Confluence of $\ra_\bb{Z}$ and $\ra_\bb{P}$]
@@ -233,8 +233,8 @@ While core properties, such as normalization and basic arithmetic operations hav
 \begin{definition}[Rational]\label{def:rat}
 We define the type of rational numbers and some operators as follows:
 \begin{align*}
-& \Q: \type            & &\kw{frac}: \Z \ra \Z \ra \Q \\
-& \kw{rat}: \set       & &\slash: \Z \ra \Z \ra \Q \quad \text{(infix)} \\
+& \Q \index{$\Q$}: \type            & &\kw{frac} \index{$\kw{frac}$}: \Z \ra \Z \ra \Q \\
+& \kw{rat} \index{$\kw{rat}$}: \set       & &\slash \index{$\slash$}: \Z \ra \Z \ra \Q \quad \text{(infix)} \\
 & \el\,\kw{rat} \re \Q & &+_\Q : \Q \ra \Q \ra \Q \quad \text{(infix)}\\
 &                      & &*_\Q : \Q \ra \Q \ra \Q \quad \text{(infix)}\\
 \end{align*}
@@ -310,8 +310,8 @@ We can then define the rational operators as usual:
 
 \begin{definition}[operator fractions]\label{def:ops-frac}
 \begin{align}
-&x \slash y +_\Q u \slash v \re \kw{frac}~((x * v) + (u * y))~(y * v) \\
-&x \slash y *_\Q u \slash v \re \kw{frac}~(x * u)~(y * v)
+&x \slash y +_\Q \index{$+_\Q$} u \slash v \re \kw{frac}~((x * v) + (u * y))~(y * v) \\
+&x \slash y *_\Q \index{$*_\Q$} u \slash v \re \kw{frac}~(x * u)~(y * v)
 \end{align}
 \end{definition}
 
@@ -422,7 +422,7 @@ returns its second argument or its third depending on whether its first argument
 We encode the distinct parameter of SMT by introducing a predicate over dependent vectors \cref{def:dependent-vector},
 since both the size of the collection and the type of its elements influence how the predicate is computed.
 \begin{equation*}
-\kw{distinct}~[a: Set] [n: \N] : \kw{Vec}~a~n \ra \prop
+\kw{distinct}\index{\kw{distinct}}~[a: Set] [n: \N] : \kw{Vec}~a~n \ra \prop
 \end{equation*}
 \end{definition}
 
@@ -472,7 +472,7 @@ and
 \begin{definition}[\texttt{ite}]
 We define a conditional expression:
 \begin{align*}
-\mathop{\mathrm{ite}} : \Pi [a: \set],\, \prop \ra \el\,a \ra \el\,a \ra \el\,a
+\kw{ite}\index{\kw{ite}}: \Pi [a: \set],\, \prop \ra \el\,a \ra \el\,a \ra \el\,a
 \end{align*}
 This conditional expression has the particularity that its condition is of type $\prop$ and not in \B.
 We also define the introduction principle:
@@ -480,7 +480,7 @@ We also define the introduction principle:
 &\mathop{\mathrm{ite\_ind}} : \Pi [a],\, \Pi (c : \el\,o)\, (t\, e : \el\,a)\, (p : \el\,a \ra \mathrm{Prop})\\
 &\quad\left( \prf\,c \ra \prf(p~t) \right) \ra \\
 &\quad\left( (\prf\,c \ra \prf\,\bot) \ra \prf(p~e) \right) \ra \\
-&\quad\prf(p~(\mathop{\mathrm{ite}}~c~t~e)))
+&\quad\prf(p~(\kw{ite}~c~t~e)))
 \end{align*}
 \end{definition}
 
@@ -528,17 +528,17 @@ For commutativity, instead of permuting the clauses, we simply provide the index
 \begin{definition}[Clause encoding]\label{def:encoding-clause}
 We define the type $\kw{Clause}$ to represent an Alethe clause as a list of propositions, thereby ensuring a canonical form.
 \begin{align*}
-&\texttt{Clause}: \type \\
-&\nil: \texttt{Clause} \\
-&\veedot: \prop \ra \texttt{Clause}  \ra \texttt{Clause}
+&\tt{Clause} \index{$\tt{Clause}$}: \type \\
+&\nil\index{$\nil$}: \tt{Clause} \\
+&\veedot\index{$\veedot$}: \prop \ra \tt{Clause}  \ra \tt{Clause}
 \end{align*}
 The constructor $\veedot$ prepends an element to a list, and $\nil$ denotes the empty list.
 \end{definition}
 
 \begin{definition}[Concatenation of clauses]
-The operator $\pp$ is used to concatenate lists.
+The operator $\pp$ \index{$\pp$} is used to concatenate lists.
 \begin{align*}
-& \pp: \texttt{Clause} \ra \texttt{Clause} \ra \texttt{Clause} \\
+& \pp: \tt{Clause} \ra \tt{Clause} \ra \tt{Clause} \\
 & \nil \mathop{\pp} x \re x \\
 & (x \veedot y) \mathop{\pp} z \re x \veedot (y \mathop{\pp} z)
 \end{align*}
@@ -547,17 +547,17 @@ The operator $\pp$ is used to concatenate lists.
 \begin{definition}[Proof on \kw{Clause}]\label{def:cl2disj}
 Clauses are logically interpreted as disjunctions via the function $\cltodisj$, defined through rewriting rules. For convenience, we also introduce the predicate $\pid$, which asserts the provability of a clause.
 \begin{align*}
-& \kw{cl2disj}: \texttt{Clause} \ra \prop \\
+& \kw{cl2disj} \index{$\kw{cl2disj}$}: \tt{Clause} \ra \prop \\
 & \cltodisj~\nil \re \bot\\
 & \cltodisj~(x \veedot y) \re x \lor (\cltodisj~y) \\
-& \pid (c : \texttt{Clause}) \coloneqq \prf\,(\cltodisj~c)
+& \pid \index{$\pid$} (c : \tt{Clause}) \coloneqq \prf\,(\cltodisj~c)
 \end{align*}
 \end{definition}
 
 We can now prove the equivalence between clause and disjunction.
 
 \begin{lemma}[Clause elimination]\label{lemma:clause-elim}
-For any $p \colon \prop$ and $q,r \colon \texttt{Clause}$, If $\pid (p \veedot q)$ and $(\pid (p \veedot \nil) \ra  \pid r)$ and $(\pid q \ra  \pid r)$ then $\pid r$.
+For any $p \colon \prop$ and $q,r \colon \tt{Clause}$, If $\pid (p \veedot q)$ and $(\pid (p \veedot \nil) \ra  \pid r)$ and $(\pid q \ra  \pid r)$ then $\pid r$.
 \end{lemma}
 \begin{proof}
 Since we have the equivalence in hypothesis 

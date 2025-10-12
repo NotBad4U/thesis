@@ -124,7 +124,7 @@ have H : $\prf$ (
   rewrite left  contraction_correct;
   reflexivity;
 };
-refine subst_equiv_clause H t8;
+refine subst_cl H t8;
 end;
 
 opaque symbol t10 : $\prfcl$ (p_6 ⟇ ▩) ≔ 

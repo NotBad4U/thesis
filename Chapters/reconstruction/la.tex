@@ -72,13 +72,13 @@ We start by presenting the first strategy based on a reflection with inner norma
 The procedure is based on an algebraic group structure, denoted as  $\bb{G}$, which represents linear polynomials.
 The base type for its elements is $\bb{G}: \type$. The unary operator $\tt{cst}$ injects constants from $\Z$ into $\bb{G}$.
 \begin{align*}
-& \bb{G}: \type \\
-&|~\add{}{}: \bb{G} \ra \bb{G} \ra \bb{G} \\
-&|~\tt{var}: \Z \ra \Z \ra \bb{G} \\
-&|~\tt{mul}: \Z \ra \bb{G} \ra \bb{G} \\
-&|~\tt{opp}: \bb{G} \ra \bb{G} \\
-&|~\tt{cst}: \Z \ra \bb{G} \\
-&\tt{grp}: \set \\
+& \bb{G}\index{$\bb{G}$}: \type \\
+&|~\add{}{} \index{$\add{}{}$}: \bb{G} \ra \bb{G} \ra \bb{G} \\
+&|~\tt{var} \index{$\tt{var}$}: \Z \ra \Z \ra \bb{G} \\
+&|~\tt{mul} \index{$\tt{mul}$}: \Z \ra \bb{G} \ra \bb{G} \\
+&|~\tt{opp} \index{$\tt{opp}$}: \bb{G} \ra \bb{G} \\
+&|~\tt{cst} \index{$\tt{cst}$}: \Z \ra \bb{G} \\
+&\tt{grp} \index{$\tt{grp}$}: \set \\
 &\el~\tt{grp} \re \bb{G}
 \end{align*}
 The term $\tt{var}~c~x$ is intended for representing expressions $c \times x$ that appear as constituents of linear inequalities, where $c$ is an integer coefficient and $x$ a $\Z$ term, in particular a variable.
@@ -89,7 +89,7 @@ Lastly, the constructor $\add{}{}$ represents the addition between two elements 
 \begin{definition}[Reification and denotation]
 Reification ($\reify{}$) and denotation ($\den{}$) functions for $\bb{G} \rightleftarrows \bb{Z}$ are defined as follows:
 \begin{align*}
-& \reify{} : \Z \ra \bb{G} & & \den{}: \bb{G} \ra \Z \\
+& \reify{} \index{$\reify{}$}: \Z \ra \bb{G} & & \den{} \index{$\den{}$}: \bb{G} \ra \Z \\
 & \reify{\ZO} \re \cst{\ZO} & & \den{\cst{c}} \re c \\
 & \mathop{\reify{\ZPos}} c \re \cst{(\ZPos c)} & & \den{\opp{x}} \mathrel{\re}  \mathop{\sim (\den{x})} \\
 & \mathop{\reify{\ZNeg}} c \re \cst{(\ZNeg c)} & & \den{\mul{c}{x}} \re  c * (\den{x}) \\
@@ -159,7 +159,7 @@ Let $\twoheadrightarrow^{AC}$ be the relation mapping every term t to its unique
 Two terms $t$ and $u$ are AC-equivalent (written $t \simeq_{AC} u$) iff their AC-canonical forms are equal.
 
 \begin{definition}%[Rewriting modulo AC-canonization]
-The relation $\ACcanon$ is defined as $\re_\Sigma\,\twoheadrightarrow^{AC}$, where $\Sigma$ contains the rewrite rules of \cref{def:arith-ops,def:grp-arith-ops}.
+The relation $\ACcanon$ \index{$\ACcanon$} is defined as $\re_\Sigma\,\twoheadrightarrow^{AC}$, where $\Sigma$ contains the rewrite rules of \cref{def:arith-ops,def:grp-arith-ops}.
 \end{definition}
 
 An $\ACcanon$ step is a standard $\re_\Sigma$ step with syntactic matching followed by AC-canonicalization. We now prove that the relation $\ACcanon$ terminates and is confluent.
@@ -168,7 +168,7 @@ An $\ACcanon$ step is a standard $\re_\Sigma$ step with syntactic matching follo
 	The relation $\mathop{\rwModAC} \mathrel{=} \mathop{\simeq_{AC} \, \re_\Sigma \, \simeq_{AC}}$ of matching modulo AC, which contains $\ACcanon$, terminates.
 \end{lemma}
 \begin{proof}
-AProVE \cite{aprove} proves the termination of $\rwModAC$.
+AProVE \cite{aprove} proves the termination of $\rwModAC$ \index{$\mathop{\rwModAC}$}.
 \end{proof}
 
 
@@ -406,9 +406,9 @@ This notation will mainly be used when inspecting an element of a context map du
 \begin{definition}\label{outer-g-def}
 The algebraic group $\bb{G}$ reflecting $\bb{Z}$ atoms:
 \begin{align*}
-& \bb{G}: \type \\
-&|~\kw{var}: \N \ra \Z \ra \bb{G} \\
-&|~\kw{cst}: \Z \ra \bb{G} \\[1em]
+& \bb{G} \index{$\bb{G}$}: \type \\
+&|~\kw{var} \index{$\kw{var}$}: \N \ra \Z \ra \bb{G} \\
+&|~\kw{cst} \index{$\kw{cst}$}: \Z \ra \bb{G} \\[1em]
 &\kw{grp}: \set \\
 &\el~\kw{grp} \re \bb{G}
 \end{align*}
@@ -421,7 +421,7 @@ Third, the operator $\kw{mul}$ is defined externally, so as to simplify subseque
 
 \begin{definition}[multiplication of coefficient]\label{outer-mul-def}
 \begin{align*}
-&\kw{mul} : \Z \ra \List{grp} \ra \List{grp} \\
+&\kw{mul}\index{$\kw{mul}$} : \Z \ra \List{grp} \ra \List{grp} \\
 &\kw{mul}~\_~\Box \re \Box \\
 &\kw{mul}~k~(\Cst{c} \cons tl) \re \kw{mul}~(k * c)~tl \\
 &\kw{mul}~k~(\var{i}{c} \cons tl) \re \var{i}{(k*c)} \cons \kw{mul}~k~tl
@@ -431,7 +431,7 @@ Third, the operator $\kw{mul}$ is defined externally, so as to simplify subseque
 \begin{definition}[Reification function]
 The \tt{reify} function:
 \[
-  \Uparrow : \List{int} \ra \Z \ra \el (\tlist{grp} \times \tlist{int})
+  \Uparrow \index{$\reify{\_}$} : \List{int} \ra \Z \ra \el (\tlist{grp} \times \tlist{int})
 \]
 performs reification of arithmetic expressions from $\bb{Z}$ into the abstract type $\bb{G}$,
 producing a pair consisting of a reified term of type $\bb{G}$, and a list of variable values $\tlist{int}$ called the \emph{context map} that represents uninterpreted terms in domain of $\bb{G}$ such as variable.
@@ -465,14 +465,14 @@ It is defined recursively over the structure of $\bb{Z}$ expressions:
 \begin{definition}[Denotation function]
 The function: 
 \[
-  \den{}: \el (\tlist{grp} \times \bb{L}~\kw{int}) \ra \Z 
+  \den{} \index{$\den{\_}$}: \el (\tlist{grp} \times \bb{L}~\kw{int}) \ra \Z 
 \]
 defines the semantic interpretation of reified arithmetic expressions of type $\bb{G}$.
 \begin{align*}
 &\den{\Box} \re 0 \\
 &\den{(h \cons tl, \ell)} \re \den_\bb{G}{(h, \ell)} \,+ \den{(tl, \ell)} \\
 & \text{with} \\
-&\den_\bb{G}: \el (\kw{grp} \times \bb{L}~\kw{int}) \ra \Z\\
+&\den_\bb{G} \index{$\den_\bb{G}$}: \el (\kw{grp} \times \bb{L}~\kw{int}) \ra \Z\\
 &\den_\bb{G}{(\Cst(k), \_)} \re k \\
 &\den_\bb{G}{(\Var{i}{k}, \ell)} \re \ell[i] * k \\
 \end{align*}
@@ -713,10 +713,10 @@ $\Q$ just as they do in the group $\Z$.
 \begin{definition}[Real reflection signature]
 We replace the integer reflection carrier by its rational counterpart:
 \begin{align*}
-& \bb{G}_\bb{R}: \type \\
+& \bb{G}_\bb{R} \index{$\bb{G}_\bb{R}$}: \type \\
 &|~\kw{var}: \N \ra \Q \ra \bb{G}_\bb{R} \\
 &|~\kw{cst}: \Q \ra \bb{G}_\bb{R} \\
-&\kw{rgrp}: \set\\
+&\kw{rgrp} \index{$\kw{rgrp}$}: \set\\
 &\el~\kw{rgrp} \re \bb{G}_\bb{R}
 \end{align*}
 We continue to write $\ell[i]$ for $(\kw{nth}~\frac{0}{1}~i~\ell)$, now with $\ell : \bb{L}~\kw{rat}$ and
@@ -724,8 +724,8 @@ default $\frac{0}{1} \in \Q$ to make indexing total.
 \end{definition}
 
 \paragraph{Reification and denotation.}
-The function $\Uparrow_\Q : \bb{L}~\kw{rat} \ra \Q \ra \el(\tlist{grp} \times \tlist{rat})$ is obtained from the integer version by replacing integer constants and coefficients with rational counterparts e.g. $\frac{0}{1}$ for $0$.
-The denotation $\Downarrow_\Q : \el(\tlist{grp} \times \bb{L}~\kw{rat}) \ra \Q$ is unchanged apart from types: $\Cst(q)$ evaluates to $q \in \Q$ and $\Var{i}{q}$ evaluates to $\ell[i] *_\Q q$ for $\ell :\bb{L}~\kw{rat}$.
+The function $\Uparrow_\Q \index{$\Uparrow_\Q$} : \bb{L}~\kw{rat} \ra \Q \ra \el(\tlist{grp} \times \tlist{rat})$ is obtained from the integer version by replacing integer constants and coefficients with rational counterparts e.g. $\frac{0}{1}$ for $0$.
+The denotation $\Downarrow_\Q \index{$\Downarrow_\Q$} : \el(\tlist{grp} \times \bb{L}~\kw{rat}) \ra \Q$ is unchanged apart from types: $\Cst(q)$ evaluates to $q \in \Q$ and $\Var{i}{q}$ evaluates to $\ell[i] *_\Q q$ for $\ell :\bb{L}~\kw{rat}$.
 
 \paragraph{Normalization pipeline.}
 The operators $\kw{mul} : \Q \ra \List{grp} \ra \List{grp}$,
