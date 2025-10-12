@@ -79,7 +79,7 @@ In order to reflect the concrete syntax of Alethe proofs, we denote proof steps 
 \begin{equation}
 \label{eq:step}
 \tag{\textcolor{purple}{1}}
-\eqnmarkbox[sunorange]{node2}{i}. \quad \eqnmarkbox[RoyalBlue]{node1}{\Gamma} ~\triangleright~ \eqnmarkbox[Emerald]{node3}{l_1 \dots l_n} \quad (\eqnmarkbox[rxpurple]{node4}{\mathcal{R}}~\eqnmarkbox[RedOrange]{node5}{p_1 \dots p_m})~\eqnmarkbox[orange]{node6}{[a_1 \dots a_r]}
+\eqnmarkbox[midpurple]{node2}{i}. \quad \eqnmarkbox[RoyalBlue]{node1}{\Gamma} ~\triangleright~ \eqnmarkbox[Emerald]{node3}{l_1 \dots l_n} \quad (\eqnmarkbox[rxpurple]{node4}{\mathcal{R}}~\eqnmarkbox[darkpurple]{node5}{p_1 \dots p_m})~\eqnmarkbox[rxpink]{node6}{[a_1 \dots a_r]}
 \annotate[yshift=-0.5em]{below, left}{node2}{index}
 \annotate[yshift=-0.5em]{below, right}{node1}{context}
 \annotate[yshift=0.5em]{above, left}{node3}{clause}
@@ -88,19 +88,19 @@ In order to reflect the concrete syntax of Alethe proofs, we denote proof steps 
 \annotate[yshift=-0.5em]{below, right}{node6}{arguments}
 \end{equation}
 
-A step \cref{eq:step} consists of an index \colorbox{indexClr!30}{$i$} $\in \mathbb{I}$ where $\mathbb{I}$ is a countable infinite set of indices (e.g. \kw{a0}, \kw{t1}), and a clause of formulae \colorbox{green!30}{$l_1, \dots, l_n$} representing an $n$-ary disjunction.
-Steps that are not assumptions are justified by a proof rule \colorbox{purple!30}{$\mathcal{R}$} that depends on a possibly empty set of premises $\{\colorbox{red!30}{$p_1 \dots  p_m$}\} \subseteq \mathbb{I}$ that only references earlier steps such that the proof forms
-a directed acyclic graph. A rule might also depend on a list of arguments \colorbox{orange!30}{$[a_1 \dots a_r]$} where each argument $a_i$ is either a term or a pair $(x_i, t_i)$ where $x_i$ is a variable and $t_i$ is a term. The interpretation of the arguments is rule specific.
-The context \colorbox{blue!30}{$\Gamma$} of a step is a list $c_1 \dots c_l $ where each element $c_j$ is either a variable or a variable-term tuple denoted $x_j \mapsto t_j$.
-Therefore, steps with a non-empty context contain variables $x_j$ that appear in \colorbox{green!30}{$l_i$} and will be substituted by $t_j$.
-Proof rules \colorbox{purple!30}{$\mathcal{R}$} include theory lemmas and \texttt{resolution}, which corresponds to hyper-resolution on ground first-order clauses.
+A step \cref{eq:step} consists of an index \colorbox{midpurple!30}{$i$} $\in \mathbb{I}$ where $\mathbb{I}$ is a countable infinite set of indices (e.g. \kw{a0}, \kw{t1}), and a clause of formulae \colorbox{Emerald!30}{$l_1, \dots, l_n$} representing an $n$-ary disjunction.
+Steps that are not assumptions are justified by a proof rule \colorbox{rxpurple!30}{$\mathcal{R}$} that depends on a possibly empty set of premises $\{\colorbox{darkpurple!30}{$p_1 \dots  p_m$}\} \subseteq \mathbb{I}$ that only references earlier steps such that the proof forms
+a directed acyclic graph. A rule might also depend on a list of arguments \colorbox{rxpink!30}{$[a_1 \dots a_r]$} where each argument $a_i$ is either a term or a pair $(x_i, t_i)$ where $x_i$ is a variable and $t_i$ is a term. The interpretation of the arguments is rule specific.
+The context \colorbox{RoyalBlue!30}{$\Gamma$} of a step is a list $c_1 \dots c_l $ where each element $c_j$ is either a variable or a variable-term tuple denoted $x_j \mapsto t_j$.
+Therefore, steps with a non-empty context contain variables $x_j$ that appear in \colorbox{Emerald!30}{$l_i$} and will be substituted by $t_j$.
+Proof rules \colorbox{rxpurple!30}{$\mathcal{R}$} include theory lemmas and \texttt{resolution}, which corresponds to hyper-resolution on ground first-order clauses.
 
 We now have the key components to explain the guiding proof in the bottom part of \cref{lst:smtexampleinput-fol} that consists of seven steps. The proof starts with three \texttt{assume} steps \texttt{a0}, \texttt{a1}, \texttt{a2} that restate the assertions from the input problem.
 In the concrete syntax, assume steps have a dedicated command \smtinline{assume} to clearly distinguish them from normal steps that use the \smtinline{step} command.
-Step \texttt{t1} introduces a tautology of the form $\neg (\varphi_1 \approx \varphi_2) \lor \neg \varphi_1 \lor \varphi_2$, justified by the rule \colorbox{purple!30}{\texttt{equiv\_pos2}}. Steps \texttt{t2}, \texttt{t3}, \texttt{t4} use earlier premises that correspond to previous steps.
-Step \texttt{t2} proves $p(a) \approx p(b)$ by congruence (rule \colorbox{purple!30}{\texttt{cong}}) from the assumption \texttt{a1}.
-Step \texttt{t3} applies the \colorbox{purple!30}{\texttt{resolution}} rule of propositional logic to the premises \texttt{t1, t2, a0} to derive $p(b)$. Finally, the step \texttt{t4} concludes the proof by generating the empty clause $\bot$, concretely denoted as \kw{(cl)} in \cref{lst:smtexampleinput-fol}. %(line 8)
-Notice that the contexts \colorbox{blue!30}{$\Gamma$} of all steps are empty in this proof.
+Step \texttt{t1} introduces a tautology of the form $\neg (\varphi_1 \approx \varphi_2) \lor \neg \varphi_1 \lor \varphi_2$, justified by the rule \colorbox{rxpurple!30}{\texttt{equiv\_pos2}}. Steps \texttt{t2}, \texttt{t3}, \texttt{t4} use earlier premises that correspond to previous steps.
+Step \texttt{t2} proves $p(a) \approx p(b)$ by congruence (rule \colorbox{rxpurple!30}{\texttt{cong}}) from the assumption \texttt{a1}.
+Step \texttt{t3} applies the \colorbox{rxpurple!30}{\texttt{resolution}} rule of propositional logic to the premises \texttt{t1, t2, a0} to derive $p(b)$. Finally, the step \texttt{t4} concludes the proof by generating the empty clause $\bot$, concretely denoted as \kw{(cl)} in \cref{lst:smtexampleinput-fol}. %(line 8)
+Notice that the contexts \colorbox{RoyalBlue!30}{$\Gamma$} of all steps are empty in this proof.
 
 \subsection{Subproofs and Lemmas}
 \label{ssec:subproof-desc}
@@ -109,7 +109,7 @@ Alethe uses subproofs to prove lemmas and to create and manipulate the context. 
 local assumptions. The \kw{subproof} use at step 2 in \cref{ex:subproof} discharges the local assumptions.
 As the example shows, the abstract notation denotes subproofs by a frame around the steps in the subproof.
 A subproof step cannot use a premise from a subproof nested within the current subproof.
-Subproofs are also used to manipulate the context \colorbox{blue!30}{$\Gamma$}.
+Subproofs are also used to manipulate the context \colorbox{RoyalBlue!30}{$\Gamma$}.
 
 \begin{example}\label{ex:subproof}
 This example shows a refutation of the formula $(2 + 2 ) \simeq 5$. The proof uses a subproof to prove the lemma $((2 + 2 ) \simeq 5) \implies 4 \simeq 5$.
@@ -523,7 +523,7 @@ The \cref{lst:smtexampleproof} shows an example of a linear arithmetic proof in 
 The proof begins with \tt{assume} steps \tt{a0}, \tt{a1}, \tt{a2} that restate the assertions from the \emph{input problem}. % (\cref{lst:smtexampleproof}).
 Step \tt{t1} transforms the disjunction \texttt{a0} into a clause by using the Alethe rule \tt{or}.
 Steps \tt{t2} and \tt{t5} are tautologies introduced by the main rule \tt{la\_generic}
-in Linear Real Arithmetic (LRA) logic and also used in LIA logic, where \colorbox{green!30}{$l_1, l_2,\dots, l_n$} represent linear inequalities.
+in Linear Real Arithmetic (LRA) logic and also used in LIA logic, where \colorbox{Emerald!30}{$l_1, l_2,\dots, l_n$} represent linear inequalities.
 The \lstinline[language=SMT,basicstyle=\ttfamily\footnotesize]{Real} terms in LRA and LIA logic are constructed over the \lstinline[language=SMT,basicstyle=\ttfamily\footnotesize]{Real} and \lstinline[language=SMT,basicstyle=\ttfamily\footnotesize]{Int} signatures from SMT-LIB with free variables, but containing only linear atoms; that is
 atoms of the form \lstinline[language=SMT,basicstyle=\ttfamily\footnotesize]{d}, \lstinline[language=SMT,basicstyle=\ttfamily\footnotesize]{(* d x)}, or \lstinline[language=SMT,basicstyle=\ttfamily\footnotesize]{(* x d)}  where \lstinline[language=SMT,basicstyle=\ttfamily\footnotesize]{x} is a free variable and  \lstinline[language=SMT,basicstyle=\ttfamily\footnotesize]{d} is an integer or rational constant.
 A linear inequality is an expression of the form:
@@ -537,9 +537,9 @@ where $\mathop{\bowtie} \mathrel{\in} \mathop{\{=, <, >, \leq, \geq\}}$, $m\geq 
 and where $c_i$ and $t_i$ have the same sort for all $i$.
 Checking the clause validity of \tt{t2} and \tt{t5} in \cref{lst:smtexampleproof}, amounts to checking the unsatisfiability of the system of linear equations e.g. $3 < x$ and $x = 2$ in \tt{t2}.
 Coefficients for each inequality are passed as arguments e.g. $(\frac{1}{1},\frac{1}{1})$ in \tt{t2}.
-Steps \tt{t3} and \tt{t4} apply the \colorbox{purple!30}{\texttt{resolution}} rule to the premises \tt{a1}, \tt{t2} (respectively \tt{t1} and \tt{t3}).
+Steps \tt{t3} and \tt{t4} apply the \colorbox{rxpurple!30}{\texttt{resolution}} rule to the premises \tt{a1}, \tt{t2} (respectively \tt{t1} and \tt{t3}).
 Finally, the step \texttt{t6} concludes the proof by generating the empty clause $\bot$, denoted as \kw{(cl)} in \cref{lst:smtexampleproof}.
-Notice that the contexts \colorbox{blue!30}{$\Gamma$} of each step are all empty in this proof.
+Notice that the contexts \colorbox{RoyalBlue!30}{$\Gamma$} of each step are all empty in this proof.
 
 \begin{algorithm}[!t]%[la\_generic]
 \caption{la\_generic rule}\label{alg:la-generic-description}
