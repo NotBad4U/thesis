@@ -1,5 +1,5 @@
 opaque symbol t2: $\pid$ ((¬ (3 < x) ∨ ¬ (x = 2)) ⟇ ▩) {
-    apply ∨ᶜᵢ₁;
+    apply ∨ᵢ₁;
     rewrite Zinv_lt_eq;
     rewrite Z_diff_gt_Z0_eq (— 3) (— x);
     rewrite Z_diff_eq_Z0_eq (x) 2;
@@ -10,10 +10,10 @@ opaque symbol t2: $\pid$ ((¬ (3 < x) ∨ ¬ (x = 2)) ⟇ ▩) {
     
     set H0l' ≔ (1 * ((— 3) - (— x))); set H0r' ≔ (1 * (0 + 1));
     set H1l' ≔ ((— 1) * (x - 2)); set H1r' ≔ ((— 1) * 0);
-    have H1': $\pic$ (H1l' ≥ H1r') { refine Z_eq_implies_ge H1 }; remove H1;
+    have H1': $\prf$ (H1l' ≥ H1r') { refine Z_eq_implies_ge H1 }; remove H1;
     set l ≔ H0l' + H1l';
     set r ≔ H0r' + H1r';
-    have sum : $\pic$ (l ≥ r){
+    have sum : $\prf$ (l ≥ r){
         apply (Zsum_geq_s H0l' H0r' H1l' H1r' H0 H1');
     };
     refine sum _;
