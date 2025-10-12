@@ -504,17 +504,17 @@ By interpreting a clause as a disjunction, a clause $cl~(l_1~l_2~l_3~l_4)$ will 
 \begin{itemize}
     \setlength{\itemsep}{5pt}
     \setlength{\parskip}{0pt}
-    \item[] $A.~\triangleright~(\text{cl}~\textcolor{purple}{x_1}~\textcolor{blue}{x_2~x_3}) \quad (\dots)[\dots]$
-    \item[] $B.~\triangleright~ (\text{cl}~\textcolor{purple}{\neg x_1}~\textcolor{orange}{y_2}~\textcolor{orange}{y_3}) \quad  (\dots)[\dots]$
-    \item[] $C.~\triangleright~(\text{cl}~\textcolor{blue}{x_2~x_3}~\textcolor{orange}{y_2~y_3}) \quad (\texttt{resolution A B})[(\textcolor{purple}{x_1}~\texttt{true})]$
+    \item[] $A.~\triangleright~(\text{cl}~\textcolor{purple}{x_1}~\textcolor{RoyalBlue}{x_2~x_3}) \quad (\dots)[\dots]$
+    \item[] $B.~\triangleright~ (\text{cl}~\textcolor{purple}{\neg x_1}~\textcolor{lpurple}{y_2}~\textcolor{lpurple}{y_3}) \quad  (\dots)[\dots]$
+    \item[] $C.~\triangleright~(\text{cl}~\textcolor{RoyalBlue}{x_2~x_3}~\textcolor{lpurple}{y_2~y_3}) \quad (\texttt{resolution A B})[(\textcolor{purple}{x_1}~\texttt{true})]$
 \end{itemize}
 
-Interpreting a clause as a disjunction, we obtain a concatenated form such as $((\textcolor{blue}{x_2} \lor \textcolor{blue}{x_3}) \lor (\textcolor{orange}{y_2} \lor \textcolor{orange}{y_3}))$.
+Interpreting a clause as a disjunction, we obtain a concatenated form such as $((\textcolor{RoyalBlue}{x_2} \lor \textcolor{RoyalBlue}{x_3}) \lor (\textcolor{lpurple}{y_2} \lor \textcolor{lpurple}{y_3}))$.
 This aligns with the classical formulation of the \texttt{resolution} inference rule, expressed as $x \lor Y$ and $\ \neg x \lor Z \vdash Y \lor Z$.
 However, in {\lpm} we have:
 \begin{align*}
-((\textcolor{blue}{x_2} \lor \textcolor{blue}{x_3}) \lor (\textcolor{orange}{y_2} \lor \textcolor{orange}{y_3})) & \nequiv_{\beta\Sigma} (\textcolor{blue}{x_2} \lor (\textcolor{blue}{x_3} \lor (\textcolor{orange}{y_2} \lor \textcolor{orange}{y_3}))) \\
-& \nequiv_{\beta\Sigma} (((\textcolor{blue}{x_2} \lor \textcolor{blue}{x_3}) \lor \textcolor{orange}{y_2}) \lor \textcolor{orange}{y_3})
+((\textcolor{RoyalBlue}{x_2} \lor \textcolor{RoyalBlue}{x_3}) \lor (\textcolor{lpurple}{y_2} \lor \textcolor{lpurple}{y_3})) & \nequiv_{\beta\Sigma} (\textcolor{RoyalBlue}{x_2} \lor (\textcolor{RoyalBlue}{x_3} \lor (\textcolor{lpurple}{y_2} \lor \textcolor{lpurple}{y_3}))) \\
+& \nequiv_{\beta\Sigma} (((\textcolor{RoyalBlue}{x_2} \lor \textcolor{RoyalBlue}{x_3}) \lor \textcolor{lpurple}{y_2}) \lor \textcolor{lpurple}{y_3})
 \end{align*}
 even though these forms are semantically identical.
 

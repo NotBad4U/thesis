@@ -112,7 +112,7 @@ The same thing happens with the $c$ literal. In the elaborated \tt{resolution} s
 \label{ssec:elaboration-lia}
 
 The rule \tt{lia\_generic} is similar to \tt{la\_generic}, but omits the coefficients,
-i.e.\ \colorbox{orange!30}{$[a_1 \dots a_r]$} is empty.
+i.e.\ \colorbox{rxpink!30}{$[a_1 \dots a_r]$} is empty.
 We decided to leverage the elaboration process of \tt{lia\_generic} performed by Carcara, as doing otherwise would require implementing Fourier-Motzkin elimination for integers, as done in \cite{micromega,omegatest}, hence reimplementing work that was already done by the solver.
 
 Carcara considers $\tt{lia\_generic}$ steps as holes in the proof, given that ``their checking is as hard as solving'' \cite[\S 3.2]{carcara}.
