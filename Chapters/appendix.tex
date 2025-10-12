@@ -277,14 +277,11 @@ are used exclusively by veriT, and do not appear in cvc5 proof traces. Among the
 
 \begin{figure}[H]
 \centering
-\begin{tabular}{|lll|}
+\begin{tabular}{|ll|}
 \hline
-\kw{arith-elim-gt} & \kw{arith-elim-leq} & \kw{arith-geq-norm1} \\
-\kw{arith-geq-norm2} & \kw{arith-geq-tighten} & \kw{arith-int-eq-elim} \\
-\kw{arith-leq-norm} & \kw{arith-poly-norm} & \kw{arith-refl-geq} \\
-\kw{arith-refl-leq} & \kw{arith-refl-lt} & \kw{comp\_simplify} \\
-\kw{evaluate} & \kw{la\_disequality} & \kw{la\_generic} \\
-\kw{la\_rw\_eq} & \kw{la\_totality} & \kw{lia\_generic} \\
+\kw{comp\_simplify} & \kw{evaluate} \\
+\kw{la\_disequality} & \kw{la\_generic} \\
+\kw{la\_totality} & \kw{lia\_generic} \\
 \hline
 \end{tabular}
 \caption{List of LIA/LA rules supported in our reconstruction (alphabetical order).}
@@ -295,15 +292,18 @@ are used exclusively by veriT, and do not appear in cvc5 proof traces. Among the
 \centering
 \begin{tabular}{|cc|}
 \hline
+\kw{arith-elim-gt} & \kw{arith-elim-leq} \\
 \kw{arith-elim-lt} & \kw{arith-geq-norm} \\
 \kw{arith-geq-norm1} & \kw{arith-geq-norm2} \\
-\kw{arith-geq-tighten} & \kw{arith-leq-norm} \\
-\kw{bool-and-de-morgan} & \kw{bool-and-false} \\
-\kw{bool-and-flatten} & \kw{bool-and-true} \\
-\kw{bool-double-not-elim} & \kw{bool-eq-false} \\
-\kw{bool-eq-true} & \kw{bool-impl-elim} \\
-\kw{bool-impl-false1} & \kw{bool-impl-false2} \\
-\kw{bool-impl-true2} & \kw{bool-impl-true2} \\
+\kw{arith-geq-tighten} & \kw{arith-int-eq-elim} \\
+\kw{arith-leq-norm} & \kw{arith-poly-norm} \\
+\kw{arith-refl-geq} & \kw{arith-refl-leq} \\
+\kw{arith-refl-lt} & \kw{bool-and-de-morgan} \\
+\kw{bool-and-false} & \kw{bool-and-flatten} \\
+\kw{bool-and-true} & \kw{bool-double-not-elim} \\
+\kw{bool-eq-false} & \kw{bool-eq-true} \\
+\kw{bool-impl-elim} & \kw{bool-impl-false1} \\
+\kw{bool-impl-false2} & \kw{bool-impl-true2} \\
 \kw{bool-or-de-morgan} & \kw{bool-or-false} \\
 \kw{bool-or-flatten} & \kw{distinct-binary-elim} \\
 \kw{eq-refl} & \kw{eq-symm} \\
