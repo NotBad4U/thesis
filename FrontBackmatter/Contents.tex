@@ -17,6 +17,8 @@
 %*******************************************************
 \clearpage
 
+
+
 \begingroup 
     \let\clearpage\relax
     \let\cleardoublepage\relax
@@ -46,12 +48,34 @@
     
     %*******************************************************
     % List of Listings
-    %*******************************************************      
-      %\phantomsection 
-    \refstepcounter{dummy}
+    %*******************************************************     
+    \renewcommand\lstlistlistingname{list of listings}
+
+    
+    % *******************************************************
+    % ClassicThesis customization: List of Listings formatting
+    % ------------------------------------------------------------
+    % This block:
+    %   • prefixes entries in \listoflistings by “Listing <n>”
+    %   • removes the dotted leader between title and page number
+    %   • keeps page numbers right-aligned
+    % *******************************************************
+    \makeatletter
+    \@ifundefined{l@lstlisting}{}{%
+    \let\l@lstlisting\l@listings
+    }
+    % Prefix before number
+    \renewcommand{\cftlistingspresnum}{Listing~\scshape\MakeTextLowercase}
+
+    % Remove dotted leaders and avoid large stretch
+    \settowidth{\listingslabelwidth}{\cftlistingspresnum~999}
+    \makeatother
+    %*******************************************************
+ 
+   \refstepcounter{dummy}
     %\addcontentsline{toc}{chapter}{\lstlistlistingname}
     \pdfbookmark[1]{\lstlistlistingname}{lol}
-    \listoflistings 
+    \listoflistings
 
     \vspace{8ex}
        
@@ -63,9 +87,10 @@
     \pdfbookmark[1]{Acronyms}{acronyms}
     \markboth{\spacedlowsmallcaps{Acronyms}}{\spacedlowsmallcaps{Acronyms}}
     \chapter*{Acronyms}
-    \begin{acronym}[UMLX]
-        \acro{DRY}{Don't Repeat Yourself}
-        \acro{API}{Application Programming Interface}
-        \acro{UML}{Unified Modeling Language}
+    \begin{acronym}[ATPX]
+        \acro{SMT}{Satisfiability Modulo Theories}
+        \acro{ATP}{Automated Theorem Proving}
+        \acro{AR}{automated Reasoning}
+        \acro{SAT}{Boolean Satisfiability Problem}
     \end{acronym}                     
 \endgroup

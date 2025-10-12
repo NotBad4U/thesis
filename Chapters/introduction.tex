@@ -6,7 +6,7 @@ Powerful modern automated theorem provers are widely used now to prove security 
 These tools are capable of handling complex logical reasoning tasks with a degree of automation and efficiency that complements or extends manual mathematical proof development.
 Their ability to automatically generate and check formal proofs has made them indispensable for ensuring the reliability and safety of both hardware and software systems, where correctness is paramount.
 
-Satisfiability Modulo Theories (SMT) solvers \cite{cvc5,verit} are automated reasoning (AR) tools that have become especially essential in a wide range of formal reasoning tasks, including program verification and interactive theorem proving.
+\ac{SMT} solvers \cite{cvc5,verit} are \ac{AR} tools that have become especially essential in a wide range of formal reasoning tasks, including program verification and interactive theorem proving.
 Their efficiency and expressive power enable them to handle complex logical proofs and verifications with speed.
 At the same time, the growing reliance on SMT solvers raises a fundamental question of trust: \textit{can we be confident that the results produced by these highly complex SMT solvers are correct?}
 
@@ -22,7 +22,7 @@ Simplifying a solver’s design to ease certification would necessarily come at 
 Moreover, certification tends to ``freeze'' the implementation: once a system is verified, the integration of new features, heuristics, or optimizations becomes prohibitively costly, since each change would require a new certification effort.
 Consequently, directly certifying solvers in a late lifecycle of development might not scale with the pace of their development.
 
-A first alternative is to develop a certified solver in a proof assistant environment such as the IsaSAT solver \cite{fleury:tel-02963301,fleury:hal-01904647} that is a fully verified SAT solver developed in Isabelle/HOL \cite{isabelle-hol-ref}.
+A first alternative is to develop a certified solver in a proof assistant environment such as the IsaSAT solver \cite{fleury:tel-02963301,fleury:hal-01904647} that is a fully verified \ac{SAT} solver developed in Isabelle/HOL \cite{isabelle-hol-ref}.
 This alternative offers strong guarantees about the correctness of the implementation itself, since the solver is extracted from a machine-checked formalization.
 Moreover, it has been demonstrated to achieve competitive performance in SAT solving \cite{EDA-challenge}.
 In this respect, IsaSAT advances the state of the art by providing a verified implementation of SAT solving.
@@ -41,7 +41,7 @@ DRAT proofs \cite{drat} is a standard for verifying unsatisfiability proofs emit
 The independent checker rupee \cite{drat-checking} verify DRAT proofs produced by modern SAT solvers.
 An attractive way of building and verifying a trace checker is to have a proof assistant interpret a trace and produce a proof that is accepted by the kernel of the proof assistant.
 This method is known as \emph{proof reconstruction} \cite{z3recon}.
-For example, this approach has been adopted in several proof assistants that employ \emph{hammers} for discharging goals to automatic theorem provers (ATPs), including SMT solvers.
+For example, this approach has been adopted in several proof assistants that employ \emph{hammers} for discharging goals to \ac{ATP} systems, including SMT solvers.
 Examples include Sledgehammer \cite{Sledgehammer} for Isabelle/HOL and CoqHammer \cite{coqhammer1,coqhammer2} for Coq.
 The hammer translates the conjecture and facts supplied by the user or harvested from the context to the input language of the back-end, invokes it, and, in the case of success, attempts to reconstruct the proof in the logic of the proof assistant, based on a trace of the proof found by the back-end.
 
@@ -50,11 +50,9 @@ As the example \cref{lst:alethe-ex-intro} shows, the format is close to SMT-LIB 
 However, it lacks a stand-alone checker, which harms its usability and hinders its adoption. 
 Moreover, the coarse-grained steps can be too expensive to check and lead to verification failures.
 
-\lstinputlisting[language=SMT]{Assets/example_uf.smt2}
-\begin{center}
-$\lightning$
-\end{center}
-\lstinputlisting[language=SMT,label={lst:alethe-ex-intro},caption={An SMT problem and its Alethe proof found by cvc5.}]{Assets/example_uf.proof}
+\lstinputlisting[language=SMT,label={lst:smt-ex-intro},caption={A Simple SMT Problem}]{Assets/example_uf.smt2}
+
+\lstinputlisting[language=SMT,label={lst:alethe-ex-intro},caption={Alethe Proof of \cref{lst:smt-ex-intro} Found by cvc5.}]{Assets/example_uf.proof}
 
 
 \begin{figure}[b]
@@ -111,7 +109,7 @@ The thesis is structured as follows:
     This chapter establishes the formal basis for encoding SMT proofs.
     It demonstrates why Lambdapi is uniquely suited for this task due to its interoperability with other proof assistants and its support for user-defined rewriting.
 
-\item In \cref{ch:smt}, we provide background on Satisfiability Modulo Theories (SMT), covering the SMT-LIB standard, the semantics of first-order logic with theories, and the architecture of modern SMT solvers.
+\item In \cref{ch:smt}, we provide background on SMT, covering the SMT-LIB standard, the semantics of first-order logic with theories, and the architecture of modern SMT solvers.
 We discuss the role of proof production in ensuring solver correctness and motivate the need for a standardised, verifiable proof format like Alethe.
 
 \item In \cref{ch:alethe}, we dive into the Alethe proof format, detailing its design, syntax, and logical rule system including resolution, quantifier instantiation, and theory specific rules (e.g., for linear arithmetic).

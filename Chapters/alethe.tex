@@ -516,13 +516,9 @@ A step of the rule \tt{la\_generic} represents a tautological clause of linear i
 While the \tt{la\_generic rule} is primarily intended for \textbf{LRA} logic, it is also applied in \textbf{LIA} proofs when all variables in the (in)equalities are of integer sort.
 The \cref{lst:smtexampleproof} shows an example of a linear arithmetic proof in Alethe.
 
-\lstinputlisting[language=SMT]{Assets/example_lia.smt2}
+\lstinputlisting[language=SMT,caption={Example of a Linear Arithmetic Input Problem},label={lst:input-smtexampleproof}]{Assets/example_lia.smt2}
 
-\begin{center}
-$\lightning$
-\end{center}
-
-\lstinputlisting[language=SMT,caption={Linear arithmetic proof},label={lst:smtexampleproof}]{Assets/example_lia.proof}
+\lstinputlisting[language=SMT,caption={Alethe Proof of \cref{lst:input-smtexampleproof} found by cvc5},label={lst:smtexampleproof}]{Assets/example_lia.proof}
 
 The proof begins with \tt{assume} steps \tt{a0}, \tt{a1}, \tt{a2} that restate the assertions from the \emph{input problem}. % (\cref{lst:smtexampleproof}).
 Step \tt{t1} transforms the disjunction \texttt{a0} into a clause by using the Alethe rule \tt{or}.
