@@ -2,22 +2,384 @@
 \chapter{Evaluation}\label{ch:evaluation}
 %*****************************************
 
-upcoming
+\begin{figure}
+\begin{tikzpicture}[
+    node distance=1,
+    box/.style={rectangle, draw, minimum width=5pt, minimum height=0.8cm, align=center, font=\footnotesize},
+    arrow/.style={->, >=Stealth, thick},
+    group/.style={rectangle, draw, rounded corners, inner sep=2pt, label={[font=\footnotesize]above:Carcara}}
+]
+\node[box] (proof) {\faFileTextO~*.smt2};
+\node[box, right=of proof] (cvc5) {cvc5};
+\node[box, right=of cvc5] (carcara_elab) {Elaboration};
+\node[box, draw=RoyalBlue, right=of carcara_elab] (carcara_recon) {Translation};
+\node[box, right=of carcara_recon] (lambdapi) {Lambdapi};
 
-% \section{Evaluation FOL}
-% \label{sect:evaluation-fol}
+% Group box around the two Carcara nodes
+\node[group, fit=(carcara_elab) (carcara_recon)] (carcara_group) {};
 
-% We describe our experience with applying our approach to the reconstruction of SMT proofs to benchmark problems collected from the SMT-LIB library and from the TLAPS proof assistant.
+% Arrows
+\draw[arrow] (proof) -- (cvc5);
+\draw[arrow] (cvc5) -- (carcara_elab);
+\draw[arrow] (carcara_elab) -- (carcara_recon);
+\draw[arrow] (carcara_recon) -- (lambdapi);
+\end{tikzpicture}
+\caption{Pipeline of the benchmarks}
+\label{fig:bench-pipeline}
+\end{figure}
 
-% \subsection{Parallel reconstruction and checking optimizations}
-% \label{ssec:parallel}
+\section{Benchmark Suite and Evaluation Settings}
+\label{sec:benchs-and-setting}
 
-% In order to speed up the checking of Alethe proofs in Lambdapi, we can take advantage of multiprocess execution.
-% This is possible because there are no cyclic dependencies between steps in Alethe proof traces, so one can assume all hypotheses $h$ used in a proof of step $t$ and check their proofs independently.
-% In practice, we divide the proof trace into files that contains at most a fixed number of steps and include in each of them the hypotheses of previous files as axioms.
 
-% In addition, to reduce the memory usage and checking time, we define a constant for any closed subterm that is used more than once in the Alethe proof trace.
-% This is similar to the \kw{:named} attribute of SMT-LIB used by solvers.
+We evaluate our approach to SMT-proof reconstruction on benchmarks drawn from SMT-LIB and the TLAPS proof assistant.
+We chose SMT-LIB because it is an actively maintained, community-curated suite used in the SMT-COMP \cite{SMT-COMP},
+and because the Carcara checker likewise benchmarks on SMT-LIB \cite[\S 4]{carcara}. We included TLAPS proofs to align with our objective of verifying proofs produced by the TLAPS solver, as outlined in \cref{sec:problem-tlaps-proof}.
+
+Our evaluation targets exactly the fragments supported by our current encoding of uninterpreted functions and linear integer arithmetic (\cref{ch:reconstruction-ul}, \cref{ch:reconstruction-la}).
+Accordingly, we select the SMT-LIB samples \tt{QF\_UF}, \tt{UF}, \tt{LIA},  \tt{UFLIA} and \tt{QF\_LIA}.
+These choices ensure that the benchmark suite exercises precisely the reasoning capabilities our reconstruction currently implements.
+However, we do not yet include \tt{LRA}: support for real arithmetic (\cref{sec:reconstruction-lra}) remains experimental, and we have so far evaluated it only on small illustrative examples.
+
+\paragraph{pipeline}
+
+As illustrated in \cref{fig:bench-pipeline}, each benchmark starts from an SMT-LIB input file (\tt{*.smt2}) that we feed to cvc5 to produce an Alethe proof.
+The proof is then processed by Carcara in two phases: an \emph{elaboration} pass that checks and enriches the trace, followed by our \emph{translation} pass that reconstructs the proof into Lambdapi terms.
+We execute \emph{elaboration} and \emph{translation} as two distinct steps so their costs can be measured independently.
+The resulting Lambdapi file is finally type-checked by the Lambdapi kernel.
+Each phase is invoked separately and its wall-clock time recorded, allowing us to report elaboration and reconstruction throughput without confounding effects from the other phase.
+The commands used to run cvc5, Alethe and Lambdapi are as follows:
+
+\noindent Generate an Alethe proof with cvc5.
+\begin{lstlisting}[language=bash,numbers=none]
+cvc5 --produce-proofs --dump-proofs
+  --proof-format-mode=alethe
+  --proof-granularity=dsl-rewrite
+  --proof-alethe-res-pivots
+  --proof-elim-subtypes
+  --print-arith-lit-token
+  *.smt2
+\end{lstlisting}
+
+\noindent Elaborate with Carcara.
+\begin{lstlisting}[language=bash,numbers=none]
+carcara elaborate --no-print-with-sharing
+  --expand-let-bindings
+  -i --log off
+  *.alethe
+\end{lstlisting}
+
+\noindent Type-check the reconstructed proof with Lambdapi.
+\begin{lstlisting}[language=bash,numbers=none]
+lambdapi check -w -v0 *.lp
+\end{lstlisting}
+
+\paragraph{Setting}
+
+The experiments presented in this chapter were conducted on the {Grid'5000} \cite{grid5000} infrastructure.
+All experiments were run on a server equipped with:
+\begin{itemize}
+  \item $2$ CPU AMD EPYC $9754$ processor,
+  \item $256$ hardware cores ($512$~threads) at $2.4$~GHz,
+  \item  $1024$ GB RAM,
+  \item $1490$ GB SSD,
+  \item configured with a Ubuntu $24.04$ LTS.
+\end{itemize} 
+
+We selected this configuration to support a multi-stage pipeline that emits numerous intermediate and large final artifacts.
+The workflow spawns many independent jobs, so a high core count enables broad parallelism to reduce end-to-end runtime.
+Substantial memory is required to hold large terms, caches, and in-memory indices without excessive swapping.
+A fast SSD mitigates I/O bottlenecks from frequent reads and writes of intermediate files.
+In preliminary runs on a smaller machine, we encountered operational limits—including file descriptor exhaustion and sporadic I/O stalls motivating the move to a higher capacity setup.
+The benchmarks infrastructure has been published \footnote{\url{https://ithub.com:NotBad4U/benchmarks-reconstruction.git}} to ensure reproducibility with a {grid'5000} ready for being reproduce by anyone with access to the platform,
+however, the benchmarks can be reproduce on any platform.
+
+\paragraph{Managing identifiers.} Names are an important source of conflicts because the class of identifiers
+of SMT and Lambdapi language is different. We need to replace identifiers of the SMT input problem that are
+invalid in the Lambdapi language by valid identifiers. For example, the character `\$' is not allowed in Lambdapi identifiers,
+or some reserved keywords such as ``\lpinline{apply}'' in Lambdapi cannot be used as identifiers but are used in some input problems.
+
+\begin{figure}[t]
+\resizebox{\linewidth}{!}{%
+\pgfkeys{/forest,
+  my rounded corners/.append style={rounded corners=2pt},
+}
+\begin{forest}
+  for tree={
+      font=\sffamily,
+      line width=1pt,
+      s sep=20pt,   % space between siblings
+      l sep=6pt,    % space between levels
+      fit=rectangle,
+      inner xsep=6pt,    % horizontal padding
+      inner ysep=4pt,    % vertical padding
+      edge={thick, >={Triangle[]}, ->},
+      where level=0{%
+        l sep+=15pt,
+        calign=child,
+        calign child=2,
+        align=center,
+        my rounded corners,
+        for descendants={%
+          calign=first,
+        },
+      }{%
+        where level=1{%
+          my rounded corners,
+          align=center,
+          parent anchor=south west,
+          tier=three ways,
+          for descendants={%
+            child anchor=west,
+            parent anchor=west,
+            align=left,
+            anchor=west,
+            edge path={
+              \noexpand\path[\forestoption{edge}]
+              (!to tier=three ways.parent anchor) |-
+              (.child anchor)\forestoption{edge label};
+            },
+          },
+        }{}%
+      },
+  }
+  [\faFileText~Main.lp
+    [\faFileTextO~chunck\_1..N
+      [\faFileText~definitions.lp]
+    ]
+    [\faFileTextO~Chunck\_N..N+$k$
+      [\faFileText~Definitions.lp
+        [\faFileTextO~Axioms\_1..N.lp ]
+      ]
+    ]
+    [$\dots$]
+    [\faFileTextO~Chunck\_M..M'+$k$
+      [\faFileText~Definitions.lp
+        [\faFileTextO~Axioms\_1..N.lp
+            [ \faFileTextO~Axioms\_N..N+$k$.lp
+              [$\dots$] ]
+        ]
+      ]
+    ]
+  ]
+\end{forest}
+}
+\caption{Parallel translation and checking.}
+\label{fig:parallel-check}
+\end{figure}
+
+\section{Parallel reconstruction and checking optimizations}
+\label{ssec:parallel}
+
+
+\paragraph{Parallel checking.}
+
+Translating proof traces with several thousand steps can yield Lambdapi files so large that type checking becomes unwieldy.
+Lambdapi is not yet optimized for very large files \cite[\S 4]{blanqui:hal-04613926}, and checking may take minutes or even hours.
+To accelerate the verification, we exploit parallelism across CPU cores.
+The key observation is locality: translating step $k$ of Alethe proof does not require knowledge of any future step $k' > k$.
+The only global constraint is ordering in the final build: the translation that defines the evidence for step $k$ must be available before any file that uses it.
+
+As sketched in \cref{fig:parallel-check}, we partition the trace into fixed-size chunks of $k$ consecutive steps and translate each chunk independently.
+For every chunk $[N..M]$ we generate two files: one file with lemmas and their proofs (\tt{Chunk\_N..M.lp}), and one with the same statements declared as axioms (\tt{Axioms\_N..M.lp}) to be imported by later chunks.
+Each \tt{Chunk\_N..M.lp} depends on \tt{definitions.lp} and on prior \tt{Axioms\_*.lp} files as required.
+A main file (\tt{main.lp}) then includes the chunk files in order.
+
+With these dependency edges in place, the project can be built in parallel using \texttt{make -jN}, which checks independent chunk files concurrently.
+We do not yet perform a final ``gluing'' pass that eliminates the axioms by substituting the corresponding proved lemmas, but this is unnecessary for checking correctness.
+Such a post-processing step would be needed only if one intends to reuse the resulting proof objects for further developments.
+
+\paragraph{Term sharing.}
+In addition, to reduce the memory usage and checking time of Lambdapi, we define a constant for any closed subterm that is used more than three times in the Alethe proof trace.
+This is similar to the behavior of SMT \kw{:named} attribute of SMT-LIB used by solvers with \lstinline|--dag-thresh N| dagify common sub expressions appearing more than N times.
+However, this can make proof reconstruction more difficult because \lpinline{rewrite} tactics may need to unfold these definitions.
+
+
+
+\section{Evaluation FOL}
+\label{sect:evaluation-fol}
+
+\begin{center}
+{%
+\scriptsize
+\pgfplotstabletypeset[
+  font=\ttfamily,
+  col sep=comma,
+  every even row/.style={
+    before row={\rowcolor[gray]{0.9}}},
+  every head row/.style={
+    before row=\toprule,after row=\midrule},
+  every last row/.style={
+    after row=\bottomrule},
+  columns={name,benchmark_type, cvc5_count,cvc5_results, elaboration_results},
+  columns/name/.style={string type},
+  columns/benchmark_type/.style={string type, column name={logic}},
+  columns/cvc5_count/.style={column name={number}},
+  columns/cvc5_results/.style={string type, column name={cvc5}},
+  columns/elaboration_results/.style={string type, column name={alethe}},
+]{Assets/benchs/pass.csv}%
+}
+\end{center}
+
+\medskip
+
+\begin{center}
+{%
+\scriptsize
+\pgfplotstabletypeset[
+  col sep=comma,
+  every even row/.style={
+    before row={\rowcolor[gray]{0.9}}},
+  every head row/.style={
+    before row=\toprule,after row=\midrule},
+  every last row/.style={
+    after row=\bottomrule},
+  columns={name,translate_small_results, lambdapi_small_check_results, translate_large_results, lambdapi_large_check_results},
+  columns/name/.style={string type},
+  columns/translate_small_results/.style={string type, column name={translate}},
+  columns/translate_large_results/.style={string type, column name={translate XL}},
+  columns/lambdapi_small_check_results/.style={string type, column name={check}},
+  columns/lambdapi_large_check_results/.style={string type, column name={check XL}},
+]{Assets/benchs/pass.csv}%
+}
+\end{center}
+
+\begin{center}
+{%
+\scriptsize
+\pgfplotstabletypeset[
+  col sep=comma,
+  every even row/.style={
+    before row={\rowcolor[gray]{0.9}}},
+  every head row/.style={
+    before row=\toprule,after row=\midrule},
+  every last row/.style={
+    after row=\bottomrule},
+  columns={name,weighted_mean_time,min_lp,q1_lp,median_lp,q3_lp,max_lp},
+  columns/name/.style={string type},
+  columns/weighted_mean_time/.style={column name={Mean}},
+  columns/min_lp/.style={column name={Min}},
+  columns/q1_lp/.style={column name={Q1}},
+  columns/median_lp/.style={column name={Median}},
+  columns/q3_lp/.style={column name={Q3}},
+  columns/max_lp/.style={column name={Max}},
+]{Assets/benchs/pass.csv}%
+}
+\end{center}
+
+
+
+% https://tex.stackexchange.com/questions/399163/create-boxplots-from-file
+% https://tex.stackexchange.com/questions/117435/read-boxplot-prepared-values-from-a-table/117439#117439
+\pgfplotsset{
+    boxplot prepared from table/.code={
+        \def\tikz@plot@handler{\pgfplotsplothandlerboxplotprepared}%
+        \pgfplotsset{
+            /pgfplots/boxplot prepared from table/.cd,
+            #1,
+        }
+    },
+    /pgfplots/boxplot prepared from table/.cd,
+        table/.code={\pgfplotstablecopy{#1}\to\boxplot@datatable},
+        row/.initial=0,
+        make style readable from table/.style={
+            #1/.code={
+                \pgfplotstablegetelem{\pgfkeysvalueof{/pgfplots/boxplot prepared from table/row}}{##1}\of\boxplot@datatable
+                \pgfplotsset{boxplot/#1/.expand once={\pgfplotsretval}}
+            }
+        },
+        make style readable from table=lower whisker,
+        make style readable from table=upper whisker,
+        make style readable from table=lower quartile,
+        make style readable from table=upper quartile,
+        make style readable from table=median,
+        make style readable from table=lower notch,
+        make style readable from table=upper notch
+}
+\makeatother
+
+
+\pgfplotstableread[col sep=comma]{Assets/benchs/passtime.csv}\datatable
+
+\pgfplotstablegetrowsof{\datatable}
+\pgfmathtruncatemacro{\NumRows}{\pgfplotsretval} % total number of rows
+
+% Put this in the preamble or before the figure:
+\pgfplotscreateplotcyclelist{benchcolors}{%
+  {draw=blue,        fill=blue!20},
+  {draw=red,         fill=red!20},
+  {draw=ForestGreen, fill=ForestGreen!20},
+  {draw=orange,      fill=orange!20},
+  {draw=magenta,     fill=magenta!20},
+  {draw=black,       fill=black!10},
+}
+
+\begin{tikzpicture}
+\begin{axis}[
+  width=0.9\textwidth,
+  boxplot/draw direction=x,
+  cycle list name=benchcolors,
+  ytick={1,...,\NumRows},
+  yticklabels from table={\datatable}{acronym},
+  yticklabel style={font=\scriptsize\ttfamily},
+  xmode=log,          % <--- log scale on x
+  log basis x=10,     % optional: log10; default is e
+  legend cell align={left},
+  legend style={
+    font=\ttfamily\scriptsize,
+    at={(0.5,-0.15)},
+    anchor=north,
+    % draw=none, % optional: no box around legend
+  },
+  legend columns=2,
+]
+% \pgfplotstablegetrowsof{\datatable}
+\pgfmathtruncatemacro\TotalRows{\NumRows-1}
+\pgfplotsinvokeforeach{0,...,\TotalRows}
+{
+  \addplot+[
+  boxplot prepared from table={
+    table=\datatable,
+    row=#1,
+    lower whisker=min,
+    lower quartile=q1,
+    upper quartile=q3,
+    upper whisker=max,
+    median=median
+  },
+  boxplot prepared,
+  area legend
+  ] coordinates{};
+
+    % --- single point at lt for this sample ---
+  \pgfplotstablegetelem{#1}{mean}\of\datatable
+  \pgfmathsetmacro{\meanvalue}{\pgfplotsretval} % x = lt
+  \pgfmathtruncatemacro{\cat}{#1+1}           % y = 1,2,3,... (row index)
+
+  \addplot+[
+    only marks,
+    mark=*,
+    mark size=1.2pt,
+    forget plot,    % do not create legend entries for every point
+  ] coordinates {(\meanvalue,\cat)};
+
+
+  % \pgfplotstablegetelem{#1}{name}\of\datatable
+  % \addlegendentryexpanded{\pgfplotsretval}
+  % \pgfplotstablegetelem{#1}{acronym}\of\datatable
+  % \edef\thisacro{\pgfplotsretval}
+    % --- legend entry: name(acronym) ---
+  \pgfplotstablegetelem{#1}{name}\of\datatable
+  \edef\thisname{\pgfplotsretval}
+  \pgfplotstablegetelem{#1}{acronym}\of\datatable
+  \edef\thisacro{\pgfplotsretval}
+
+  \addlegendentryexpanded{\thisname~(\thisacro)}
+}
+\end{axis}
+\end{tikzpicture}
+% }
+
 
 % \subsection{Benchmarks}
 
