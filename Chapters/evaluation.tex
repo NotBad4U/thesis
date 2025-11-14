@@ -195,11 +195,11 @@ This is similar to the behavior of SMT \kw{:named} attribute of SMT-LIB used by 
 However, this can make proof reconstruction more difficult because \lpinline{rewrite} tactics may need to unfold these definitions.
 
 
-
 \section{Evaluation FOL}
 \label{sect:evaluation-fol}
 
-\begin{center}
+\begin{table}[t]
+\centering
 {%
 \scriptsize
 \pgfplotstabletypeset[
@@ -212,21 +212,27 @@ However, this can make proof reconstruction more difficult because \lpinline{rew
   every last row/.style={
     after row=\bottomrule},
   columns={name,benchmark_type, cvc5_count,cvc5_results, elaboration_results},
-  columns/name/.style={string type},
-  columns/benchmark_type/.style={string type, column name={logic}},
-  columns/cvc5_count/.style={column name={number}},
+  columns/name/.style={string type,column name={Name}},
+  columns/benchmark_type/.style={string type, column name={Logic}},
+  columns/cvc5_count/.style={column name={Samples}},
   columns/cvc5_results/.style={string type, column name={cvc5}},
-  columns/elaboration_results/.style={string type, column name={alethe}},
+  columns/elaboration_results/.style={string type, column name={Carcara}},
 ]{Assets/benchs/pass.csv}%
 }
-\end{center}
+\caption{
+  Summary of benchmark.\\
+  The format $S-F-T$ indicates respectively the number of success (S), failed (F) and timeout (T) samples.
+} 
+\label{tab:benchmarks}
+\end{table}
 
-\medskip
 
-\begin{center}
+\begin{table}[t]
+\centering
 {%
 \scriptsize
 \pgfplotstabletypeset[
+  font=\ttfamily,
   col sep=comma,
   every even row/.style={
     before row={\rowcolor[gray]{0.9}}},
@@ -235,20 +241,27 @@ However, this can make proof reconstruction more difficult because \lpinline{rew
   every last row/.style={
     after row=\bottomrule},
   columns={name,translate_small_results, lambdapi_small_check_results, translate_large_results, lambdapi_large_check_results},
-  columns/name/.style={string type},
-  columns/translate_small_results/.style={string type, column name={translate}},
-  columns/translate_large_results/.style={string type, column name={translate XL}},
-  columns/lambdapi_small_check_results/.style={string type, column name={check}},
-  columns/lambdapi_large_check_results/.style={string type, column name={check XL}},
+  columns/name/.style={string type,column name={Name}},
+  columns/translate_small_results/.style={string type, column name={Translate}},
+  columns/translate_large_results/.style={string type, column name={Translate XL}},
+  columns/lambdapi_small_check_results/.style={string type, column name={Check}},
+  columns/lambdapi_large_check_results/.style={string type, column name={Check XL}},
 ]{Assets/benchs/pass.csv}%
 }
-\end{center}
+\caption{
+  Translation and checking results.\\
+  The format $S-F-T$ indicates respectively the number of success (S), failed (F) and timeout (T) samples.
+} 
+\label{tab:benchmarks-translate-check}
+\end{table}
 
-\begin{center}
+\begin{table}[t]
+\centering
 {%
 \scriptsize
 \pgfplotstabletypeset[
   col sep=comma,
+  font=\ttfamily,
   every even row/.style={
     before row={\rowcolor[gray]{0.9}}},
   every head row/.style={
@@ -265,7 +278,9 @@ However, this can make proof reconstruction more difficult because \lpinline{rew
   columns/max_lp/.style={column name={Max}},
 ]{Assets/benchs/pass.csv}%
 }
-\end{center}
+\caption{Lambdapi checking times (in ms).} 
+\label{tab:benchmarks-times}
+\end{table}
 
 
 
@@ -306,14 +321,17 @@ However, this can make proof reconstruction more difficult because \lpinline{rew
 
 % Put this in the preamble or before the figure:
 \pgfplotscreateplotcyclelist{benchcolors}{%
-  {draw=blue,        fill=blue!20},
-  {draw=red,         fill=red!20},
-  {draw=ForestGreen, fill=ForestGreen!20},
-  {draw=orange,      fill=orange!20},
-  {draw=magenta,     fill=magenta!20},
-  {draw=black,       fill=black!10},
+  {draw=rxpurple, fill=rxpurple!10},
+  {draw=rxpink, fill=rxpink!10},
+  {draw=darkpurple, fill=darkpurple!10},
+  {draw=midpurple,  fill=midpurple!10},
+  {draw=purple2,    fill=purple2!10},
+  {draw=RoyalBlue,  fill=RoyalBlue!10},
+  {draw=black,      fill=black!10},
+  {draw=MidnightBlue,  fill=MidnightBlue!10},
 }
 
+\begin{figure}[t]
 \begin{tikzpicture}
 \begin{axis}[
   width=0.9\textwidth,
@@ -322,12 +340,16 @@ However, this can make proof reconstruction more difficult because \lpinline{rew
   ytick={1,...,\NumRows},
   yticklabels from table={\datatable}{acronym},
   yticklabel style={font=\scriptsize\ttfamily},
-  xmode=log,          % <--- log scale on x
-  log basis x=10,     % optional: log10; default is e
+  xmode=log,
+  log basis x=10,
+  xlabel={Checking time (ms), $\log(1 + t)$ scale},
+  xlabel style={ font=\ttfamily },
+  ylabel={Benchmarks},
+  ylabel style={ font=\ttfamily },
   legend cell align={left},
   legend style={
     font=\ttfamily\scriptsize,
-    at={(0.5,-0.15)},
+    at={(0.5,-0.25)},
     anchor=north,
     % draw=none, % optional: no box around legend
   },
@@ -373,13 +395,15 @@ However, this can make proof reconstruction more difficult because \lpinline{rew
   \edef\thisname{\pgfplotsretval}
   \pgfplotstablegetelem{#1}{acronym}\of\datatable
   \edef\thisacro{\pgfplotsretval}
-
-  \addlegendentryexpanded{\thisname~(\thisacro)}
+  \addlegendentryexpanded{\thisname\;(\thisacro)}
 }
 \end{axis}
 \end{tikzpicture}
-% }
+\label{fig:benchmarks-times-boxplot}
+\caption{Lambdapi checking time variations between samples}
+\end{figure}
 
+The boxes are plotted as $log(1 + time)$ to make them comparable. The mean is indicated by a dot.
 
 % \subsection{Benchmarks}
 

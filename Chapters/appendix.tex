@@ -338,3 +338,474 @@ The fragment \(\kw{t5\_t0}\)–\(\kw{t5\_t2}\), spanning lines~56–87, reconstr
 A concrete example of a contraction step (\cref{sec:contraction-recon}) appears in \(\kw{t9}\), starting at line~108.
 Finally, the \kw{resolutionL} (e.g., line~77) and \kw{resolutionR} (e.g., line~92) lemmas correspond to two instances of \cref{th:resolution}: the former operates when the negated pivot appears on the left of the clause, and the latter when it occurs on the right.
 Overall, this example demonstrates how our framework integrates advanced Alethe features such as subproofs, contraction, RARE-based simplification, and N-ary reasoning into a unified, checkable proof reconstruction using Lambdapi.
+
+\section{Complete benchmark results}
+
+
+\begin{table}[t]
+\centering
+\caption{Summary of benchmark.}
+{%
+\scriptsize
+\pgfplotstabletypeset[
+  font=\ttfamily,
+  col sep=comma,
+  every even row/.style={
+    before row={\rowcolor[gray]{0.9}}},
+  every head row/.style={
+    before row=\toprule,after row=\midrule},
+  every last row/.style={
+    after row=\bottomrule},
+  columns={name, acronym,logic,cvc5_count},
+  columns/name/.style={string type},
+  columns/acronym/.style={string type},
+  columns/logic/.style={string type, column name={logic}},
+    columns/cvc5_count/.style={column name={number of problems}},
+]{Assets/benchs/all.csv}%
+}
+\label{tab:all-benchmarks}
+\end{table}
+
+
+\begin{table}[t]
+\centering
+\caption{cvc5 and Alethe elaboration results.}
+{%
+\scriptsize
+\pgfplotstabletypeset[
+  font=\ttfamily,
+  col sep=comma,
+  every even row/.style={
+    before row={\rowcolor[gray]{0.9}}},
+  every head row/.style={
+    before row=\toprule,after row=\midrule},
+  every last row/.style={
+    after row=\bottomrule},
+  columns={acronym,logic, cvc5_count,cvc5_results, elaboration_results},
+  columns/acronym/.style={string type},
+  columns/logic/.style={string type, column name={logic}},
+  columns/cvc5_count/.style={column name={number}},
+  columns/cvc5_results/.style={string type, column name={cvc5}},
+  columns/elaboration_results/.style={string type, column name={alethe}},
+]{Assets/benchs/all.csv}%
+}
+\label{tab:benchmarks-app}
+\end{table}
+
+\begin{table}[t]
+\centering
+{%
+\scriptsize
+\caption{Time measurements for cvc5 in seconds. }
+\label{tab:benchmarks-cvc5-time}
+\pgfplotstabletypeset[
+  font=\ttfamily,
+  col sep=comma,
+  every even row/.style={
+    before row={\rowcolor[gray]{0.9}}},
+  every head row/.style={
+    before row=\toprule,after row=\midrule},
+  every last row/.style={
+    after row=\bottomrule},
+  columns={acronym, cvc5_mean,cvc5_min,cvc5_q1,cvc5_median,cvc5_q3,cvc5_max},
+  columns/acronym/.style={string type},
+  % columns/cvc5_count/.style={
+  % column name={number},
+  %   /pgf/number format/fixed,
+  %   /pgf/number format/precision=0, % No decimal places for integers
+  % },
+  columns/cvc5_mean/.style={column name={mean}},
+  columns/cvc5_min/.style={column name={min}},
+  columns/cvc5_q1/.style={column name={Q1}},
+  columns/cvc5_median/.style={column name={median}},
+  columns/cvc5_q3/.style={column name={Q3}},
+  columns/cvc5_max/.style={column name={max}},
+  /pgf/number format/precision=2,
+  /pgf/number format/fixed,
+  /pgf/number format/fixed zerofill=true,
+]{Assets/benchs/all.csv}%
+}
+\end{table}
+
+
+% https://tex.stackexchange.com/questions/399163/create-boxplots-from-file
+% https://tex.stackexchange.com/questions/117435/read-boxplot-prepared-values-from-a-table/117439#117439
+\pgfplotsset{
+    boxplot prepared from table/.code={
+        \def\tikz@plot@handler{\pgfplotsplothandlerboxplotprepared}%
+        \pgfplotsset{
+            /pgfplots/boxplot prepared from table/.cd,
+            #1,
+        }
+    },
+    /pgfplots/boxplot prepared from table/.cd,
+        table/.code={\pgfplotstablecopy{#1}\to\boxplot@datatable},
+        row/.initial=0,
+        make style readable from table/.style={
+            #1/.code={
+                \pgfplotstablegetelem{\pgfkeysvalueof{/pgfplots/boxplot prepared from table/row}}{##1}\of\boxplot@datatable
+                \pgfplotsset{boxplot/#1/.expand once={\pgfplotsretval}}
+            }
+        },
+        make style readable from table=lower whisker,
+        make style readable from table=upper whisker,
+        make style readable from table=lower quartile,
+        make style readable from table=upper quartile,
+        make style readable from table=median,
+        make style readable from table=lower notch,
+        make style readable from table=upper notch
+}
+\makeatother
+
+\pgfplotstableread[col sep=comma]{Assets/benchs/cvc5time.csv}\cvctable
+
+\pgfplotstablegetrowsof{\cvctable}
+\pgfmathtruncatemacro{\NumRows}{\pgfplotsretval} % total number of rows
+
+% Put this in the preamble or before the figure:
+\pgfplotscreateplotcyclelist{benchcolors}{%
+  {draw=rxpurple, fill=rxpurple!10},
+  {draw=rxpink, fill=rxpink!10},
+  {draw=darkpurple, fill=darkpurple!10},
+  {draw=midpurple,  fill=midpurple!10},
+  {draw=purple2,    fill=purple2!10},
+  {draw=RoyalBlue,  fill=RoyalBlue!10},
+  {draw=black,      fill=black!10},
+  {draw=MidnightBlue,  fill=MidnightBlue!10},
+}
+
+\begin{figure}[t]
+\begin{tikzpicture}
+\begin{axis}[
+  width=\textwidth,
+  height=\textheight,
+  boxplot/draw direction=x,
+  cycle list name=benchcolors,
+  ytick={1,...,\NumRows},
+  yticklabels from table={\cvctable}{acronym},
+  yticklabel style={font=\ttfamily},
+  xmode=log,
+  log basis x=10,
+  xlabel={Checking time (ms), $\log(1 + t)$ scale},
+  xlabel style={ font=\ttfamily },
+  ylabel={Benchmarks},
+  ylabel style={ font=\ttfamily },
+  legend cell align={left},
+  legend style={
+    font=\ttfamily\scriptsize,
+    at={(0.5,-0.05)},
+    anchor=north,
+  },
+  legend columns=3,
+]
+\pgfmathtruncatemacro\TotalRows{\NumRows-1}
+\pgfplotsinvokeforeach{0,...,\TotalRows}
+{
+  \addplot+[
+  boxplot prepared from table={
+    table=\cvctable,
+    row=#1,
+    lower whisker=min,
+    lower quartile=q1,
+    upper quartile=q3,
+    upper whisker=max,
+    median=median
+  },
+  boxplot prepared,
+  area legend
+  ] coordinates{};
+
+    % --- single point at lt for this sample ---
+  \pgfplotstablegetelem{#1}{mean}\of\cvctable
+  \pgfmathsetmacro{\meanvalue}{\pgfplotsretval} % x = lt
+  \pgfmathtruncatemacro{\cat}{#1+1}           % y = 1,2,3,... (row index)
+
+  \addplot+[
+    only marks,
+    mark=*,
+    mark size=1.2pt,
+    forget plot,    % do not create legend entries for every point
+  ] coordinates {(\meanvalue,\cat)};
+}
+\end{axis}
+\end{tikzpicture}
+\caption{cvc5 times.}
+\label{fig:all-carcara-time-boxplot}
+\end{figure}
+
+
+\begin{table}[t]
+\centering
+{%
+\scriptsize
+\caption{Time measurements for Carcara elaboration.} 
+\label{tab:benchmarks-carcara-time}
+\pgfplotstabletypeset[
+  font=\ttfamily,
+  col sep=comma,
+  every even row/.style={
+    before row={\rowcolor[gray]{0.9}}},
+  every head row/.style={
+    before row=\toprule,after row=\midrule},
+  every last row/.style={
+    after row=\bottomrule},
+  columns={acronym, logic,elaboration_count, elaboration_mean,elaboration_min,elaboration_q1,elaboration_median,elaboration_q3,elaboration_max},
+  columns/acronym/.style={string type},
+  columns/logic/.style={string type},
+  columns/name/.style={string type},
+  columns/elaboration_count/.style={
+    column name={number},
+    /pgf/number format/fixed,
+    /pgf/number format/precision=0, % No decimal places for integers
+  },
+  columns/elaboration_mean/.style={column name={mean}},
+  columns/elaboration_min/.style={column name={min}},
+  columns/elaboration_q1/.style={column name={Q1}},
+  columns/elaboration_median/.style={column name={median}},
+  columns/elaboration_q3/.style={column name={Q3}},
+  columns/elaboration_max/.style={column name={max}},
+  /pgf/number format/precision=2,
+  /pgf/number format/fixed,
+  /pgf/number format/fixed zerofill=true,
+]{Assets/benchs/all.csv}%
+}
+\end{table}
+
+\pgfplotstableread[col sep=comma]{Assets/benchs/carcaratime.csv}\carcaratime
+
+\pgfplotstablegetrowsof{\carcaratime}
+\pgfmathtruncatemacro{\NumRows}{\pgfplotsretval} % total number of rows
+
+\begin{figure}[t]
+\begin{tikzpicture}
+\begin{axis}[
+  width=\textwidth,
+  height=\textheight,
+  boxplot/draw direction=x,
+  cycle list name=benchcolors,
+  ytick={1,...,\NumRows},
+  yticklabels from table={\carcaratime}{acronym},
+  yticklabel style={font=\ttfamily},
+  xmode=log,
+  log basis x=10,
+  xlabel={Checking time (ms), $\log(1 + t)$ scale},
+  xlabel style={ font=\ttfamily },
+  ylabel={Benchmarks},
+  ylabel style={ font=\ttfamily },
+  legend cell align={left},
+  legend style={
+    font=\ttfamily\scriptsize,
+    at={(0.5,-0.05)},
+    anchor=north,
+  },
+  legend columns=3,
+]
+\pgfmathtruncatemacro\TotalRows{\NumRows-1}
+\pgfplotsinvokeforeach{0,...,\TotalRows}
+{
+  \addplot+[
+  boxplot prepared from table={
+    table=\carcaratime,
+    row=#1,
+    lower whisker=min,
+    lower quartile=q1,
+    upper quartile=q3,
+    upper whisker=max,
+    median=median
+  },
+  boxplot prepared,
+  area legend
+  ] coordinates{};
+
+    % --- single point at lt for this sample ---
+  \pgfplotstablegetelem{#1}{mean}\of\carcaratime
+  \pgfmathsetmacro{\meanvalue}{\pgfplotsretval} % x = lt
+  \pgfmathtruncatemacro{\cat}{#1+1}           % y = 1,2,3,... (row index)
+
+  \addplot+[
+    only marks,
+    mark=*,
+    mark size=1.2pt,
+    forget plot,    % do not create legend entries for every point
+  ] coordinates {(\meanvalue,\cat)};
+}
+\end{axis}
+\end{tikzpicture}
+\caption{Carcara elaboration times.}
+\label{fig:carcara-time-boxplot}
+\end{figure}
+
+
+\begin{table}[t]
+\centering
+{%
+\scriptsize
+\caption{Translation results.} 
+\label{tab:benchmarks-translate}
+\pgfplotstabletypeset[
+  font=\ttfamily,
+  col sep=comma,
+  every even row/.style={
+    before row={\rowcolor[gray]{0.9}}},
+  every head row/.style={
+    before row=\toprule,after row=\midrule},
+  every last row/.style={
+    after row=\bottomrule},
+  columns={name, logic,translate_small_results, translate_large_results},
+  columns/name/.style={string type},
+  columns/logic/.style={string type},
+  columns/translate_small_results/.style={string type, column name={translate}},
+  columns/translate_large_results/.style={string type, column name={translate XL}},
+]{Assets/benchs/all.csv}%
+}
+\end{table}
+
+
+\pgfplotstableread[col sep=comma]{Assets/benchs/lpsmalltime.csv}\lpsmalltime
+
+\pgfplotstablegetrowsof{\lpsmalltime}
+\pgfmathtruncatemacro{\NumRows}{\pgfplotsretval} % total number of rows
+
+\begin{figure}[t]
+\begin{tikzpicture}
+\begin{axis}[
+  width=\textwidth,
+  height=\textheight,
+  boxplot/draw direction=x,
+  cycle list name=benchcolors,
+  ytick={1,...,\NumRows},
+  yticklabels from table={\lpsmalltime}{acronym},
+  yticklabel style={font=\ttfamily},
+  xmode=log,
+  log basis x=10,
+  xlabel={Checking time (ms), $\log(1 + t)$ scale},
+  xlabel style={ font=\ttfamily },
+  ylabel={Benchmarks},
+  ylabel style={ font=\ttfamily },
+  legend cell align={left},
+  legend style={
+    font=\ttfamily\scriptsize,
+    at={(0.5,-0.10)},
+    anchor=north,
+  },
+  legend columns=3,
+  % enlarge x limits=false,       % remove left/right padding
+  % enlarge y limits=false,       % remove top/bottom padding
+]
+\pgfmathtruncatemacro\TotalRows{\NumRows-1}
+\pgfplotsinvokeforeach{0,...,\TotalRows}
+{
+  \addplot+[
+  boxplot prepared from table={
+    table=\lpsmalltime,
+    row=#1,
+    lower whisker=min,
+    lower quartile=q1,
+    upper quartile=q3,
+    upper whisker=max,
+    median=median
+  },
+  boxplot prepared,
+  area legend
+  ] coordinates{};
+
+    % --- single point at lt for this sample ---
+  \pgfplotstablegetelem{#1}{mean}\of\lpsmalltime
+  \pgfmathsetmacro{\meanvalue}{\pgfplotsretval} % x = lt
+  \pgfmathtruncatemacro{\cat}{#1+1}           % y = 1,2,3,... (row index)
+
+  \addplot+[
+    only marks,
+    mark=*,
+    mark size=1.2pt,
+    forget plot,    % do not create legend entries for every point
+  ] coordinates {(\meanvalue,\cat)};
+  % \pgfplotstablegetelem{#1}{name}\of\lpsmalltime
+  % \edef\thisname{\pgfplotsretval}
+  % \pgfplotstablegetelem{#1}{acronym}\of\lpsmalltime
+  % \edef\thisacro{\pgfplotsretval}
+  % \addlegendentryexpanded{\thisname\;(\thisacro)}
+}
+\end{axis}
+\end{tikzpicture}
+\caption{Lambdapi translation times for small problems.}
+\label{fig:lambdapi-translation-small-time}
+\end{figure}
+
+\pgfplotstableread[col sep=comma]{Assets/benchs/lplargetime.csv}\lplargetime
+
+\pgfplotstablegetrowsof{\lplargetime}
+\pgfmathtruncatemacro{\NumRows}{\pgfplotsretval} % total number of rows
+
+% Put this in the preamble or before the figure:
+\pgfplotscreateplotcyclelist{benchcolors}{%
+  {draw=rxpurple, fill=rxpurple!10},
+  {draw=rxpink, fill=rxpink!10},
+  {draw=darkpurple, fill=darkpurple!10},
+  {draw=midpurple,  fill=midpurple!10},
+  {draw=purple2,    fill=purple2!10},
+  {draw=RoyalBlue,  fill=RoyalBlue!10},
+  {draw=black,      fill=black!10},
+  {draw=MidnightBlue,  fill=MidnightBlue!10},
+}
+
+\begin{figure}[t]
+\begin{tikzpicture}
+\begin{axis}[
+  width=0.9\textwidth,
+  height=0.8\textheight,
+  boxplot/draw direction=x,
+  cycle list name=benchcolors,
+  ytick={1,...,\NumRows},
+  yticklabels from table={\lplargetime}{acronym},
+  yticklabel style={font=\ttfamily},
+  xmode=log,
+  log basis x=10,
+  xlabel={Checking time (ms), $\log(1 + t)$ scale},
+  xlabel style={ font=\ttfamily },
+  ylabel={Benchmarks},
+  ylabel style={ font=\ttfamily },
+  legend cell align={left},
+  legend style={
+    font=\ttfamily\scriptsize,
+    at={(0.5,-0.10)},
+    anchor=north,
+  },
+  legend columns=3,
+  % enlarge x limits=false,       % remove left/right padding
+  % enlarge y limits=false,       % remove top/bottom padding
+]
+\pgfmathtruncatemacro\TotalRows{\NumRows-1}
+\pgfplotsinvokeforeach{0,...,\TotalRows}
+{
+  \addplot+[
+  boxplot prepared from table={
+    table=\lplargetime,
+    row=#1,
+    lower whisker=min,
+    lower quartile=q1,
+    upper quartile=q3,
+    upper whisker=max,
+    median=median
+  },
+  boxplot prepared,
+  area legend
+  ] coordinates{};
+
+    % --- single point at lt for this sample ---
+  \pgfplotstablegetelem{#1}{mean}\of\lplargetime
+  \pgfmathsetmacro{\meanvalue}{\pgfplotsretval} % x = lt
+  \pgfmathtruncatemacro{\cat}{#1+1}           % y = 1,2,3,... (row index)
+
+  \addplot+[
+    only marks,
+    mark=*,
+    mark size=1.2pt,
+    forget plot,    % do not create legend entries for every point
+  ] coordinates {(\meanvalue,\cat)};
+}
+\end{axis}
+\end{tikzpicture}
+\caption{Lambdapi translation times for large problems.}
+\label{fig:lambdapi-translation-large-time}
+\end{figure}
