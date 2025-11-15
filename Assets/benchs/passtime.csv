@@ -1,10 +1,10 @@
 name,mean,min,q1,median,q3,max,acronym
 UltimateAutomizer,238,128,176,188,268,1049,ULT
-boogie,7,7,7,7,8,8,BOO
 grasshopper,173,115,135,166,212,243,GRA
 misc,496,496,496,496,496,496,MIS
 simplify,1491,231,999,1355,1675,4466,SIM
 sledgehammer,665,114,216,348,641,21301,SLE
+boogie,7,7,7,7,8,8,BOO
 convert,539,539,539,539,539,539,CON
 mathsat,12539,6097,6097,11520,19999,19999,MAT
 pb2010,960,348,650,943,1252,1645,PB

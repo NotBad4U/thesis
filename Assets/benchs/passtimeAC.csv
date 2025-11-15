@@ -1,0 +1,4 @@
+name,min,q1,median,q3,max,acronym
+sledgehammer,53,166,354,552,1594,SLE
+20220307-SMPT,52,55,55,56,293,SMP
+CAV-2009,54,296,403,498,683,CAV
