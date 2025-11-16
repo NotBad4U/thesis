@@ -7,8 +7,8 @@
 \label{sec:benchs-and-setting}
 
 We evaluate our approach to SMT-proof reconstruction on benchmarks drawn from SMT-LIB and the TLAPS proof assistant.
-We chose SMT-LIB because it is an actively maintained, community-curated suite used in the SMT-COMP \cite{SMT-COMP},
-and because the Carcara checker likewise benchmarks on SMT-LIB \cite[\S 4]{carcara}. We included TLAPS proofs to align with our objective of verifying proofs produced by the TLAPS solver, as outlined in \cref{sec:problem-tlaps-proof}.
+We chose SMT-LIB because it is an actively maintained, community-curated suite used in the SMT competition \cite{SMT-COMP},
+and because the Carcara checker likewise uses benchmarks drawn from SMT-LIB \cite[\S 4]{carcara}. We included TLAPS proofs to align with our objective of verifying proofs produced by the TLAPS solver, as outlined in \cref{sec:problem-tlaps-proof}.
 
 Our evaluation targets exactly the fragments supported by our current encoding of uninterpreted functions and linear integer arithmetic (\cref{ch:reconstruction-ul}, \cref{ch:reconstruction-la}).
 Accordingly, we select the SMT-LIB samples \tt{QF\_UF}, \tt{UF}, \tt{LIA},  \tt{UFLIA} and \tt{QF\_LIA}.
@@ -96,8 +96,7 @@ The workflow spawns many independent jobs, so a high core count enables broad pa
 Substantial memory is required to hold large terms, caches, and in-memory indices without excessive swapping.
 A fast SSD mitigates I/O bottlenecks from frequent reads and writes of intermediate files.
 In preliminary runs on a smaller machine, we encountered operational limits—including file descriptor exhaustion and sporadic I/O stalls motivating the move to a higher capacity setup.
-The benchmarks infrastructure repository\footnote{\url{https://ithub.com:NotBad4U/benchmarks-reconstruction.git}} and the operating system image has been published  to ensure reproducibility with a {grid'5000} ready for being reproduce by anyone with access to the platform,
-however, the benchmarks can be reproduce on any platform.
+The benchmarks infrastructure repository\footnote{\url{https://github.com:NotBad4U/benchmarks-reconstruction.git}} and the operating system image have been published  to ensure reproducibility with a {grid'5000} ready for being reproduced by anyone with access to the platform, however, the benchmarks can be reproduced on any platform.
 
 \paragraph{Managing identifiers.} Names are an important source of conflicts because the class of identifiers
 of SMT and Lambdapi language is different. We need to replace identifiers of the SMT input problem that are
@@ -149,7 +148,7 @@ or some reserved keywords such as ``\lpinline{apply}'' in Lambdapi cannot be use
       },
   }
   [\faFileText~Main.lp
-    [\faFileTextO~chunck\_1..N
+    [\faFileTextO~Chunck\_1..N
       [\faFileText~definitions.lp]
     ]
     [\faFileTextO~Chunck\_N..N+$k$
@@ -234,7 +233,7 @@ However, this can make proof reconstruction more difficult because \lpinline{rew
   columns/benchmark_type/.style={string type, column name={Logic}},
   columns/cvc5_count/.style={column name={Samples}},
   columns/cvc5_results/.style={string type, column name={cvc5}},
-  columns/elaboration_results/.style={string type, column name={Carcara}},
+  columns/elaboration_results/.style={string type, column name={Carcara elaborate}},
 ]{Assets/benchs/pass.csv}%
 }
 \label{tab:benchmarks-pass-cvc5-carcara}
@@ -242,11 +241,11 @@ However, this can make proof reconstruction more difficult because \lpinline{rew
 
 We evaluated our approach on a benchmark suite drawn from the SMT-LIB repository.
 This suite comprises six benchmark groups: \tt{LIA}, \tt{UFLIA}, \tt{QF\_UF}, \tt{UF}, \tt{QF\_LIA}, each corresponding to a distinct collection of proof obligations expressed in the SMT-LIB format that our encoding supports.
-In the Following, we will only present the results of the $26$ samples that have proofs checked by Lambdapi, in order to save space.
-The complete results $54$ samples, including failed and timed-out samples, are available in the \cref{app:complete-benchmarks-results}.
+In the following, we will only present the results of the $26$ samples that have proofs checked by Lambdapi, in order to save space.
+The complete results for $54$ samples, including failed and timed-out samples, are available in \cref{app:complete-benchmarks-results}.
 After we remove the samples that do not have \emph{unsat} status in the header of the problem, we are left with a total of $13684$ samples.
-The \cref{tab:benchmarks-pass-cvc5-carcara} summarizes the number of samples (column samples) for which cvc5 found a proof and that Carcara could elaborate.
-The column \tt{cvc5} and \tt{Carcara} use the format $S - F - T$ indicates respectively the number of success (S), failed (F), and timeout (T) samples.
+\cref{tab:benchmarks-pass-cvc5-carcara} summarizes the number of samples (column samples) for which cvc5 found a proof and that Carcara could elaborate.
+The columns \tt{cvc5} and \tt{Carcara} use the format $S - F - T$ indicating respectively the number of success (S), failed (F), and timeout (T) samples.
 Among the samples instances retained in this experiment, \texttt{cvc5} produces a proof for $12,909$ out of $13,684$ samples,
 with no reported failures and $775$ timeouts in the \texttt{cvc5} column.
 Carcara is then able to elaborate $12,578$ of these proofs, while $449$ elaborations fail and only $1$ times out.
@@ -271,30 +270,60 @@ Understanding these behaviours in depth would require SMT solver and Carcara ker
     before row=\toprule,after row=\midrule},
   every last row/.style={
     after row=\bottomrule},
-  columns={name,translate_small_results, lambdapi_small_check_results, translate_large_results, lambdapi_large_check_results},
+  columns={name, benchmark_type, translate_small_results, lambdapi_small_check_results},
   columns/name/.style={string type,column name={Name}},
+  columns/benchmark_type/.style={string type, column name={Logic}},
   columns/translate_small_results/.style={string type, column name={Translate}},
-  columns/translate_large_results/.style={string type, column name={Translate XL}},
   columns/lambdapi_small_check_results/.style={string type, column name={Check}},
+]{Assets/benchs/pass.csv}%
+}
+\label{tab:benchmarks-translate-small-check}
+\end{table}
+
+\begin{table}[t]
+\centering
+\caption{
+  Translation and checking results.\\
+  The format $S-F-T$ indicates respectively the number of success (S), failed (F) and timeout (T) samples.
+}
+{%
+\scriptsize
+\pgfplotstabletypeset[
+  font=\ttfamily,
+  col sep=comma,
+  every even row/.style={
+    before row={\rowcolor[gray]{0.9}}},
+  every head row/.style={
+    before row=\toprule,after row=\midrule},
+  every last row/.style={
+    after row=\bottomrule},
+  columns={name, benchmark_type, translate_large_results, lambdapi_large_check_results},
+  columns/name/.style={string type,column name={Name}},
+  columns/benchmark_type/.style={string type, column name={Logic}},
+  columns/translate_large_results/.style={string type, column name={Translate XL}},
   columns/lambdapi_large_check_results/.style={string type, column name={Check XL}},
 ]{Assets/benchs/pass.csv}%
 }
-\label{tab:benchmarks-translate-check}
+\label{tab:benchmarks-translate-large-check}
 \end{table}
 
-Overall, our translator is able to produce Lambdapi scripts for $9898$ of them, that is, about $78\%$ of the elaborated samples.
+Overall, for the subset of proof obligations whose \emph{translate / check} stage succeeds and that are summarised in \cref{tab:benchmarks-translate-small-check} and \cref{tab:benchmarks-translate-large-check}, our translator is able to produce Lambdapi scripts for $9898$ of them, that is, about $78\%$ of the elaborated samples.
 In the table, the column suffixed by \texttt{XL} corresponds to the proofs where we apply our \emph{parallel checking} technique to split the proof into several chunks and type check them independently as described in \cref{ssec:parallel}.
+In \cref{tab:benchmarks-translate-large-check}, the groups of columns \texttt{translate XL / check XL} refer to two distinct sets of proof obligation than the one of \cref{tab:benchmarks-translate-small-check}.
+The \texttt{translate / check} columns in \cref{tab:benchmarks-translate-small-check} report results for obligations whose Alethe proof is at most $50$ MB and are processed in the standard mode outputting a single file.
+By contrast, the \texttt{translate XL / check XL} columns in \cref{tab:benchmarks-translate-large-check} report results for obligations whose Alethe proof exceeds $50$\,MB; for these large proofs we systematically apply our \emph{parallel checking} technique, splitting the proof into chunks and checking them independently.
+Thus, the XL columns are in addition to the \texttt{translate / check} results and do not correspond to cases where \texttt{translate / check} has failed.
 The remaining $2680$ failures have several causes. In the arithmetic benchmarks, some proofs cannot be translated because the underlying cvc5 proofs use the SMT-LIB operator \smtinline{to_real}, so that a problem stated over \tt{LIA} is ultimately solved in the \tt{LRA}; since our current encoding does not support \smtinline{to_real}, these samples are rejected.
 Other failures are due to missing support for a small number of Alethe and RARE rules that we have not yet encoded in Lambdapi.
-We should increase the number of proofs reconstructed with little effort by supporting these rules.
+We should be able to increase the number of proofs reconstructed with little effort by supporting these rules.
 Finally, the timeouts we observe, particularly in the parallel checking mode, are mainly caused by I/O bottlenecks in our current buffered writer. This configuration produces a large number of output files, and without further tuning, the file writes become the dominant cost, even on our comparatively powerful server.
 This issue is likely to become even more pronounced when running the toolchain on a laptop with more limited I/O bandwidth, but in such settings it can largely be mitigated in practice by simply reducing the degree of parallelism and avoiding too many simultaneous translations.
 
 Compared to our previous work \cite{ColtellacciMD24} for first order logic, where we were not able to reconstruct any proof from the SMT-LIB benchmark samples \texttt{20170428-Barrett} and \texttt{grasshopper},
 our current reconstruction pipeline is now able to handle these samples and successfully reconstruct elaborated proofs from them.
 Among the instances that time out, most of those in the \tt{UF} and \tt{QF\_UF} logics are due to the use of the Alethe rule \kw{contraction}.
-In particular, we uncovered a performance bug in Lambdapi's \kw{rewrite} tactic: when applying our normalisation theorem (e.g. \cref{thm:contraction-correct}), the tactic becomes extremely slow, whereas directly normalising the same term with the Lambdapi command \lpinline{compute} succeeds, albeit still taking a noticeable amount of time.
-If we admit the \tt{contraction} rule as an axiom instead of reconstructing them, then a lot of the proofs such as the ones in \tt{eq\_diamond}, previously timed out can be all checked successfully.
+In particular, we uncovered a performance bug in Lambdapi's \kw{rewrite} tactic: when applying our normalisation theorems (e.g. \cref{thm:contraction-correct}), the tactic becomes extremely slow, whereas directly normalising the same term with the Lambdapi command \lpinline{compute} succeeds, albeit still taking a noticeable amount of time.
+If we admit the \tt{contraction} rule as an axiom instead of reconstructing them, then a lot of the proofs such as the ones in \tt{eq\_diamond} that previously timed out can be all checked successfully.
 
 Similarly, compared to our earlier work on linear integer arithmetic \cite{MeLIA}, our current reconstruction pipeline is able to handle new benchmark samples such as \texttt{mathsat} and successfully reconstruct additional LIA proof obligations.
 However, we also observe a regression: some proof obligations from the \texttt{tokeneer} benchmark family that we previously reconstructed can no longer be handled, because the more recent versions of cvc5 and Alethe that we now use make pervasive use of newly introduced Alethe rules that are not yet supported in our reconstruction pipeline.
@@ -464,10 +493,10 @@ With a modest amount of additional effort to encode these rules in Lambdapi, we 
 \label{fig:benchmarks-pass-times-boxplot}
 \end{figure}
 
-The benchmark \cref{tab:benchmarks-pass-times} belows report, for each benchmark samples, the distribution of checking times over all problems in that samples.
+The benchmark \cref{tab:benchmarks-pass-times} belows reports, for each benchmark samples, the distribution of checking times over all problems in that samples.
 The reconstruction for linear arithmetic samples use the outer normalisation technique described in \cref{sec:inner-normalization} without the associative commutative optimisation.
 For every samples, we record in milliseconds the minimum (column \tt{min}), first quartile (column q1), median, third quartile (column q3), and maximum checking time (column \tt{max}), together with the weighted arithmetic mean.
-The \cref{fig:benchmarks-pass-times-boxplot} belows presents the values of \cref{tab:benchmarks-pass-times} with a box plot.
+The \cref{fig:benchmarks-pass-times-boxplot} below presents the values of \cref{tab:benchmarks-pass-times} with a box plot.
 In \cref{fig:benchmarks-pass-times-boxplot}, we represent the \emph{mean} by a small colored circle ({\color{RoyalBlue}\textbullet}) in each box.
 These summary statistics make it possible to compare not only typical performance (via the median and mean) but also variability and outliers across families, since the maximum values range from a few units up to several tens of thousands, indicating a heavy-tailed distribution.
 Most benchmark families have median checking times well below one thousand milliseconds, while a few contain significantly harder instances with much larger maxima, highlighting the heterogeneous difficulty of the underlying proof obligations.
@@ -479,7 +508,7 @@ When enabling our \emph{inner normalisation} based on the \lpinline{associative 
 Without this optimisation, the minimum times for \texttt{sledgehammer}, \texttt{20220307-SMPT}, and \texttt{CAV-2009} are $665$, $170$, and $821$ ms, respectively, whereas with inner AC normalisation they drop to $53$, $52$, and $54$ ms.
 The upper tails of the distributions also shrink noticeably: for instance, the maximum time for \texttt{CAV-2009} decreases from $1740$ ms to $683$ ms.
 The quartiles shift towards lower values as well, in particular for \texttt{20220307-SMPT}, where times become tightly concentrated around $55$ ms.
-Overall, enabling our inner AC-based normalisation makes proof checking both faster.
+Overall, enabling our inner AC-based normalisation makes proof checking faster.
 For the moment, however, we only apply this optimisation to a fragment of our benchmarks, since this feature still suffers in the presence of \tt{la\_generic} terms with hundreds of uninterpreted variables: the current normalisation mechanism relies on a built-in reordering algorithm in the Lambdapi kernel that is not sufficiently efficient in this setting.
 We are currently investigating how to modify and improve the implementation of the \lpinline{associative commutative} algorithm.
 Our latest development and testing suggest that the modifications effectively resolve the issue at hand.
@@ -489,12 +518,12 @@ Our latest development and testing suggest that the modifications effectively re
 
 As we described in \cref{sec:problem-tlaps-proof}, one of our main motivations for reconstructing SMT proofs in Lambdapi is to verify proof obligations generated by the TLAPS proof assistant.
 To evaluate our approach in this context, we collected a benchmark suite of \tlaplus\ proof obligations drawn from examples from the \tlaplus\ community \footnote{\url{https://github.com/tlaplus/Examples}}.
-Similarly to the SMT-LIB benchmarks, the \cref{tab:benchmarks-tla} summarizes the number of samples that cvc5 found a proof for and that Carcara could elaborate.
+Similarly to the SMT-LIB benchmarks, \cref{tab:benchmarks-tla} summarizes the number of samples that cvc5 found a proof for and that Carcara could elaborate.
 
 The TLAPS benchmarks span a variety of typical algorithmic and distributed-system case studies.
-The \tt{Allocator} \cite{allocator} models a simple resource allocator that enforces exclusive access to a finite pool of resources.
-The \tt{EWD840} \cite{ewd840} encodes Dijkstra's token based termination detection algorithm on a ring of processes.
-For \tt{Cantor} contains proofs of Cantor’s theorem stating that the power set of any set has a strictly greater cardinality than the set itself,
+\tt{Allocator} \cite{allocator} models a simple resource allocator that enforces exclusive access to a finite pool of resources.
+\tt{EWD840} \cite{ewd840} encodes Dijkstra's token based termination detection algorithm on a ring of processes.
+\tt{Cantor} contains proofs of Cantor’s theorem stating that the power set of any set has a strictly greater cardinality than the set itself,
 proving no set can be put into a one-to-one correspondence with its power set.
 Both \tt{LamportMutex} and \tt{Bakery} (including its priority-based variant \tt{Boulanger}) specify mutual exclusion protocols based on ticket mechanisms and prove both safety and progress properties.
 Finally, \tt{BubbleSort} is a \tlaplus\ encoding of the classical sorting algorithm with a proof of correctness, and Reachability formalizes a graph reachability algorithm that computes exactly the set of reachable nodes.
@@ -672,7 +701,7 @@ Coverage remains lower for the arithmetic \kw{UFLIA} samples, where our current 
 The checking times presented in \cref{tab:benchmarks-tla} for the reconstructed TLAPS obligations follow the same qualitative pattern as the SMT-LIB experiments discussed in \cref{sect:evaluation-smtlib}.
 Similarly than the previous section, the \cref{fig:benchmarks-tla-times-boxplot} represent the times in \cref{tab:benchmarks-tla} as a box plot.
 Across all case studies, the weighted mean Lambdapi checking time per obligation lies between about $10$ms and $85$ms, and the median per benchmark ranges from roughly $10$ms to $35$ms, so most obligations are reconstructed quickly.
-We are particularly encouraged that the vast majority of obligations are checked in well under one second, which is important because reconstruction is meant to be integrated into TLAPS and run while users are interactively developing proofs, so long checking times would directly harm the user experience.
+We are particularly encouraged that the vast majority of obligations are checked in well under one second, which is important because reconstruction is meant to be integrated into TLAPS and might run while users are interactively developing proofs, so long checking times would directly harm the user experience.
 All benchmarks nevertheless exhibit a heavy tail: several large arithmetic proof obligations, in particular from LamportMutex, Allocator, BubbleSort, and Reachability, take several seconds to check, with worst-case times around $15$s.
 As in the SMT-LIB setting, these slow and failing cases are almost entirely associated with obligations that heavily use the \kw{la\_generic} and \kw{contraction} rules, which trigger the same weaknesses of our current normalisation mechanism and of the kernel's reordering algorithm, as well as a small number of obligations relying on RARE and Alethe rules that we do not yet support.
 
@@ -689,5 +718,5 @@ For almost all proof obligations for which cvc5 and Carcara succeed, the corresp
 The timeouts we observe are largely concentrated in \tt{UF}/\tt{QF\_UF} and \tt{LIA} benchmarks that use the Alethe rules \kw{contraction} and \kw{la\_generic}, where we hit a performance issue in Lambdapi’s \lpinline{rewrite} tactic (while the underlying computations still succeed when using \lpinline{compute}).
 
 The reconstruction effort also uncovered bugs in the TLAPS encoding and even incorrect proofs, which could then be corrected, illustrating the added value of an independent foundational checker.
-This work was carried out in close collaboration with the Carcara developers: our benchmark suite revealed several bugs in the elaboration phase that we reported, leading to many fixes and thus strengthening the elaborater on which our reconstruction relies.
+This work was carried out in close collaboration with the Carcara developers: our benchmark suite revealed several bugs in the elaboration phase that we reported, leading to many fixes and thus strengthening the elaborator on which our reconstruction relies.
 Taken together, these results indicate that Lambdapi can already serve as a practical back-end for independently checking SMT and \tlaplus\ proofs, while also helping us identify missing rules, unsupported features, and performance bottlenecks that guide the next steps in improving both the reconstruction and the checker.
