@@ -98,6 +98,13 @@ A fast SSD mitigates I/O bottlenecks from frequent reads and writes of intermedi
 In preliminary runs on a smaller machine, we encountered operational limits—including file descriptor exhaustion and sporadic I/O stalls motivating the move to a higher capacity setup.
 The benchmarks infrastructure repository\footnote{\url{https://github.com:NotBad4U/benchmarks-reconstruction.git}} and the operating system image have been published  to ensure reproducibility with a {grid'5000} ready for being reproduced by anyone with access to the platform, however, the benchmarks can be reproduced on any platform.
 
+\paragraph{Software versions.} Our work is based on the following versions:
+\begin{itemize} 
+  \item cvc5 version $1.2.2-dev.277$ (commit 8aeaa1938)
+  \item Carcara $1.1.0$ (commit 92fd8b4)
+  \item Lambdapi version $3.0.0$ (commit 994691d)
+\end{itemize}
+
 \paragraph{Managing identifiers.} Names are an important source of conflicts because the class of identifiers
 of SMT and Lambdapi language is different. We need to replace identifiers of the SMT input problem that are
 invalid in the Lambdapi language by valid identifiers. For example, the character `\$' is not allowed in Lambdapi identifiers,
@@ -310,8 +317,8 @@ Understanding these behaviours in depth would require SMT solver and Carcara ker
 Overall, for the subset of proof obligations whose \emph{translate / check} stage succeeds and that are summarised in \cref{tab:benchmarks-translate-small-check} and \cref{tab:benchmarks-translate-large-check}, our translator is able to produce Lambdapi scripts for $9898$ of them, that is, about $78\%$ of the elaborated samples.
 In the table, the column suffixed by \texttt{XL} corresponds to the proofs where we apply our \emph{parallel checking} technique to split the proof into several chunks and type check them independently as described in \cref{ssec:parallel}.
 In \cref{tab:benchmarks-translate-large-check}, the groups of columns \texttt{translate XL / check XL} refer to two distinct sets of proof obligation than the one of \cref{tab:benchmarks-translate-small-check}.
-The \texttt{translate / check} columns in \cref{tab:benchmarks-translate-small-check} report results for obligations whose Alethe proof is at most $50$ MB and are processed in the standard mode outputting a single file.
-By contrast, the \texttt{translate XL / check XL} columns in \cref{tab:benchmarks-translate-large-check} report results for obligations whose Alethe proof exceeds $50$\,MB; for these large proofs we systematically apply our \emph{parallel checking} technique, splitting the proof into chunks and checking them independently.
+The \texttt{translate / check} columns in \cref{tab:benchmarks-translate-small-check} report results for obligations whose Alethe proof is at most $10$ MB and are processed in the standard mode outputting a single file.
+By contrast, the \texttt{translate XL / check XL} columns in \cref{tab:benchmarks-translate-large-check} report results for obligations whose Alethe proof exceeds $10$\,MB; for these large proofs we systematically apply our \emph{parallel checking} technique, splitting the proof into chunks and checking them independently.
 Thus, the XL columns are in addition to the \texttt{translate / check} results and do not correspond to cases where \texttt{translate / check} has failed.
 The remaining $2680$ failures have several causes. In the arithmetic benchmarks, some proofs cannot be translated because the underlying cvc5 proofs use the SMT-LIB operator \smtinline{to_real}, so that a problem stated over \tt{LIA} is ultimately solved in the \tt{LRA}; since our current encoding does not support \smtinline{to_real}, these samples are rejected.
 Other failures are due to missing support for a small number of Alethe and RARE rules that we have not yet encoded in Lambdapi.
@@ -329,58 +336,6 @@ Similarly, compared to our earlier work on linear integer arithmetic \cite{MeLIA
 However, we also observe a regression: some proof obligations from the \texttt{tokeneer} benchmark family that we previously reconstructed can no longer be handled, because the more recent versions of cvc5 and Alethe that we now use make pervasive use of newly introduced Alethe rules that are not yet supported in our reconstruction pipeline.
 With a modest amount of additional effort to encode these rules in Lambdapi, we expect to recover these missing results and further improve our overall coverage of LIA benchmarks.
 
-\begin{table}[t]
-\centering
-\caption{Lambdapi checking times (in ms).}
-{%
-\scriptsize
-\pgfplotstabletypeset[
-  col sep=comma,
-  font=\ttfamily,
-  every even row/.style={
-    before row={\rowcolor[gray]{0.9}}},
-  every head row/.style={
-    before row=\toprule,after row=\midrule},
-  every last row/.style={
-    after row=\bottomrule},
-  columns={name,weighted_mean_time,min_lp,q1_lp,median_lp,q3_lp,max_lp},
-  columns/name/.style={string type},
-  columns/weighted_mean_time/.style={column name={Mean}},
-  columns/min_lp/.style={column name={Min}},
-  columns/q1_lp/.style={column name={Q1}},
-  columns/median_lp/.style={column name={Median}},
-  columns/q3_lp/.style={column name={Q3}},
-  columns/max_lp/.style={column name={Max}},
-]{Assets/benchs/pass.csv}%
-} 
-\label{tab:benchmarks-pass-times}
-\end{table}
-
-\begin{table}[t]
-\centering
-\caption{Lambdapi checking times (ms) with \lpinline{associative commutative}.} 
-{%
-\scriptsize
-\pgfplotstabletypeset[
-  col sep=comma,
-  font=\ttfamily,
-  every even row/.style={
-    before row={\rowcolor[gray]{0.9}}},
-  every head row/.style={
-    before row=\toprule,after row=\midrule},
-  every last row/.style={
-    after row=\bottomrule},
-  columns={name,min,q1,median,q3,max},
-  columns/name/.style={string type},
-  columns/min/.style={column name={Min}},
-  columns/q1/.style={column name={Q1}},
-  columns/median/.style={column name={Median}},
-  columns/q3/.style={column name={Q3}},
-  columns/max/.style={column name={Max}},
-]{Assets/benchs/passtimeAC.csv}%
-}
-\label{tab:benchmarks-pass-times-AC}
-\end{table}
 
 % https://tex.stackexchange.com/questions/399163/create-boxplots-from-file
 % https://tex.stackexchange.com/questions/117435/read-boxplot-prepared-values-from-a-table/117439#117439
@@ -492,6 +447,60 @@ With a modest amount of additional effort to encode these rules in Lambdapi, we 
 \caption{Lambdapi checking time variations between samples}
 \label{fig:benchmarks-pass-times-boxplot}
 \end{figure}
+
+
+\begin{table}[t]
+\centering
+\caption{Lambdapi checking times (in ms).}
+{%
+\scriptsize
+\pgfplotstabletypeset[
+  col sep=comma,
+  font=\ttfamily,
+  every even row/.style={
+    before row={\rowcolor[gray]{0.9}}},
+  every head row/.style={
+    before row=\toprule,after row=\midrule},
+  every last row/.style={
+    after row=\bottomrule},
+  columns={name,weighted_mean_time,min_lp,q1_lp,median_lp,q3_lp,max_lp},
+  columns/name/.style={string type},
+  columns/weighted_mean_time/.style={column name={Mean}},
+  columns/min_lp/.style={column name={Min}},
+  columns/q1_lp/.style={column name={Q1}},
+  columns/median_lp/.style={column name={Median}},
+  columns/q3_lp/.style={column name={Q3}},
+  columns/max_lp/.style={column name={Max}},
+]{Assets/benchs/pass.csv}%
+} 
+\label{tab:benchmarks-pass-times}
+\end{table}
+
+\begin{table}[t]
+\centering
+\caption{Lambdapi checking times (ms) with \lpinline{associative commutative}.} 
+{%
+\scriptsize
+\pgfplotstabletypeset[
+  col sep=comma,
+  font=\ttfamily,
+  every even row/.style={
+    before row={\rowcolor[gray]{0.9}}},
+  every head row/.style={
+    before row=\toprule,after row=\midrule},
+  every last row/.style={
+    after row=\bottomrule},
+  columns={name,min,q1,median,q3,max},
+  columns/name/.style={string type},
+  columns/min/.style={column name={Min}},
+  columns/q1/.style={column name={Q1}},
+  columns/median/.style={column name={Median}},
+  columns/q3/.style={column name={Q3}},
+  columns/max/.style={column name={Max}},
+]{Assets/benchs/passtimeAC.csv}%
+}
+\label{tab:benchmarks-pass-times-AC}
+\end{table}
 
 The benchmark \cref{tab:benchmarks-pass-times} belows reports, for each benchmark samples, the distribution of checking times over all problems in that samples.
 The reconstruction for linear arithmetic samples use the outer normalisation technique described in \cref{sec:inner-normalization} without the associative commutative optimisation.
@@ -625,7 +634,7 @@ Coverage remains lower for the arithmetic \kw{UFLIA} samples, where our current 
 \pgfplotstablegetrowsof{\tlapstime}
 \pgfmathtruncatemacro{\NumRows}{\pgfplotsretval} % total number of rows
 
-\begin{figure}[t]
+\begin{figure}[bt]
 \begin{tikzpicture}
 \begin{axis}[
   width=0.9\textwidth,
