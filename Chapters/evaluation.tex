@@ -620,13 +620,12 @@ Coverage remains lower for the arithmetic \kw{UFLIA} samples, where our current 
 \label{tab:benchmarks-tla-times}
 \end{table}
 
-
 \pgfplotstableread[col sep=comma]{Assets/benchs/tlapstime.csv}\tlapstime
 
 \pgfplotstablegetrowsof{\tlapstime}
 \pgfmathtruncatemacro{\NumRows}{\pgfplotsretval} % total number of rows
 
-\begin{figure}[bt]
+\begin{figure}[t]
 \begin{tikzpicture}
 \begin{axis}[
   width=0.9\textwidth,
@@ -648,7 +647,7 @@ Coverage remains lower for the arithmetic \kw{UFLIA} samples, where our current 
     anchor=north,
     % draw=none, % optional: no box around legend
   },
-  legend columns=2,
+  legend columns=3,
 ]
 % \pgfplotstablegetrowsof{\tlapstime}
 \pgfmathtruncatemacro\TotalRows{\NumRows-1}
