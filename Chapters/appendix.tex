@@ -441,6 +441,7 @@ and performance trends are the same as those already discussed in \cref{ch:evalu
 
 % https://tex.stackexchange.com/questions/399163/create-boxplots-from-file
 % https://tex.stackexchange.com/questions/117435/read-boxplot-prepared-values-from-a-table/117439#117439
+\makeatletter
 \pgfplotsset{
     boxplot prepared from table/.code={
         \def\tikz@plot@handler{\pgfplotsplothandlerboxplotprepared}%
@@ -454,6 +455,7 @@ and performance trends are the same as those already discussed in \cref{ch:evalu
         row/.initial=0,
         make style readable from table/.style={
             #1/.code={
+                \normalfont
                 \pgfplotstablegetelem{\pgfkeysvalueof{/pgfplots/boxplot prepared from table/row}}{##1}\of\boxplot@datatable
                 \pgfplotsset{boxplot/#1/.expand once={\pgfplotsretval}}
             }
