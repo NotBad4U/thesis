@@ -1,0 +1,33 @@
+%*******************************************************
+% Abstract 
+%*******************************************************
+%\renewcommand{\abstractname}{Résumé}
+\pdfbookmark[1]{Résumé}{Résumé}
+\begingroup
+\let\clearpage\relax
+\let\cleardoublepage\relax
+\let\cleardoublepage\relax
+
+\chapter*{Résumé}
+
+Les démonstrateurs automatiques de théorème modernes sont de plus en plus plébiscités pour établir la correction de systèmes informatiques critiques.
+Parmi eux, les solveurs de satisfiabilité modulo des théories (SMT) occupent une place centrale, en raison de leur grande expressivité et de leur efficacité dans le traitement de raisonnements logiques complexes. Cependant, l’ampleur de leur base de code, conjuguée à la sophistication de leur architecture logicielle, rend toute vérification formelle exhaustive impraticable, soulevant ainsi une question fondamentale de confiance:
+
+\begin{center}
+\emph{Dans quelle mesure peut-on accorder foi à la correction des résultats produits par ces solveurs ?}
+\end{center}
+
+Une réponse prometteuse à cette problématique réside dans le recours à la journalisation de preuves (\textit{proof logging}), approche consistant à faire produire par les solveurs des traces de preuve susceptibles d’être vérifiées de manière indépendante par des vérificateurs externes.
+Le format Alethe est récemment apparu comme un standard pour représenter de telles preuves SMT.
+Plusieurs solveurs SMT ont adopté le format Alethe. Néanmoins, l’absence actuelle d’un vérificateur de preuves certifié pour Alethe en limite encore l’adoption.
+
+Dans cette thèse, nous proposons un outil permettant de traduire les preuves SMT produites au format Alethe vers l’assistant de preuve Lambdapi, une implémentation du $\lp$-calcul modulo théorie.
+Lambdapi est un assistant de preuve fondationnel, basé sur la théorie des types dépendants et sur des règles de réécriture, conçu pour servir de pivot pour l’échange de preuves entre assistants de preuve interactifs.
+Nous présentons un encodage modulaire de la logique SMT et des règles Alethe dans Lambdapi, couvrant des théories fondamentales telles que le raisonnement du premier ordre et l’arithmétique linéaire.
+
+Nous détaillons ensuite le processus de reconstruction, qui mobilise des techniques comme la preuve par réflexion et l’élaboration de simplifications propres aux solveurs.
+Enfin, nous évaluons notre implémentation sur des benchmarks et montrons que les preuves Alethe générées par des solveurs SMT modernes peuvent être reconstruites de manière efficace et fiable dans Lambdapi, ouvrant ainsi la voie à des preuves SMT à la fois vérifiées et portables.
+
+\endgroup			
+
+\vfill

@@ -66,6 +66,7 @@
 \usepackage{pgfplotstable}
 \usepackage{filecontents} % For creating a dummy CSV file in the example
 \usepackage{colortbl}
+% \usepackage{microtype}
 
 %*******************************************************
 % My dev libraries
@@ -140,19 +141,20 @@
 \include{FrontBackmatter/Titleback}
 \cleardoublepage\include{FrontBackmatter/Dedication}
 %\cleardoublepage\include{FrontBackmatter/Foreword}
-\cleardoublepage\include{FrontBackmatter/Abstract}
 \cleardoublepage\include{FrontBackmatter/Publications}
+\cleardoublepage
+\include{FrontBackmatter/Abstract}
+\include{FrontBackmatter/Abstract-fr}
+\include{Chapters/fr-summary}
 \cleardoublepage\include{FrontBackmatter/Acknowledgments}
 \pagestyle{scrheadings}
 \cleardoublepage\include{FrontBackmatter/Contents}
-
-
 
 %*******************************************************
 % Mainmatter
 %*******************************************************
 % Consider to use `sloppy` to reduce warnings?
-% \sloppy 
+\sloppy
 
 \cleardoublepage\pagenumbering{arabic}
 

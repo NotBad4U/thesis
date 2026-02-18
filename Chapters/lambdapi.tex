@@ -507,12 +507,12 @@ The product type, which pairs together values from two types, is constructed as 
 &\textbf{Non dependent product type:} \\
 &\quad \times \index{$\times$} : \text{Set} \to \text{Set} \to \text{Set} \quad \textit{(written infix)} \\
 &\textbf{Pairing symbol:} \\
-&(\mathbin{‚}) \index{$(\_ \mathbin{,} \_)$} [a~b] : \el a \ra \el b \ra \el (a \times b)\\[1em]
+&(\mathbin{,}) \index{$(\_ \mathbin{,} \_)$} [a~b] : \el a \ra \el b \ra \el (a \times b)\\[1em]
 &\textbf{Projections (written postfix):}  \\
-&\quad {}_1 \index{${}_1$}: \el\, (a \times b) \ra \el\, a \quad \text{with rewrite rule } (x \mathbin{‚} \_)_1 \re x \\
-&\quad {}_2 \index{${}_2$}: \el\, (a \times b) \ra \el\, b \quad \text{with rewrite rule } (\_ \mathbin{‚} y)_2 \re y
+&\quad {}_1 \index{${}_1$}: \el\, (a \times b) \ra \el\, a \quad \text{with rewrite rule } (x \mathbin{,} \_)_1 \re x \\
+&\quad {}_2 \index{${}_2$}: \el\, (a \times b) \ra \el\, b \quad \text{with rewrite rule } (\_ \mathbin{,} y)_2 \re y
 \end{align*}
-The pairing constructor is denoted by $(‚)$ (a comma-like symbol), which takes two terms $x : \el\,a$ and $y : \el\, b$ and produces a term $x \mathbin{‚} y : \el (a \times b)$.
+The pairing constructor is denoted by $(\mathbin{,})$ (a comma-like symbol), which takes two terms $x : \el\, a$ and $y : \el\, b$ and produces a term $x \mathbin{,} y : \el (a \times b)$.
 Two projection symbols ${\_}_1$ and ${\_}_2$ extract the first and second components of a pair, respectively.
 \end{example}
 
