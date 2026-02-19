@@ -6,36 +6,140 @@
 \section*{Contexte et motivation}
 \label{sec:contexte-et-motivation}
 
-Les solveurs SMT (\emph{Satisfiability Modulo Theories}) se sont imposés comme des outils centraux de la vérification formelle moderne.
-Ils permettent de décider automatiquement la satisfaisabilité de formules de logique du premier ordre, enrichies de théories comme l’arithmétique linéaire, les fonctions non interprétées, ou encore les bit-vectors.
-Leur efficacité en fait des composants essentiels de nombreuses chaînes industrielles et académiques, par exemple pour la vérification de logiciels et de matériels, l’analyse statique, ou l’assistance à la preuve dans des systèmes interactifs.
+Les solveurs SMT (\emph{Satisfiabilité modulo théories}) \cite{cvc5,verit} se sont imposés comme des outils centraux de la vérification formelle moderne.
+Ces solveurs sont utilisés comme des outils pour la démonstration automatique de théorèmes qui intègrent le raisonnement propositionnel enrichies par des théories comme l’arithmétique linéaire, les fonctions non interprétées, ou encore les bit-vectors.
+Leur grande efficacité en fait des composants essentiels de nombreux logiciels industriels et académiques, par exemple pour la modélisation et la vérification de systèmes critiques, la vérification de programmes et de matériels, l’analyse statique, ou encore l’intégration dans des assistants de preuve \cite{smtcoq,lean-smt}.
 
-Cependant, cette puissance s’accompagne d’une question fondamentale de confiance.
+Cependant, cette efficacité s’accompagne d’une question fondamentale de confiance sur les résultats produits.
 Les solveurs SMT sont des logiciels complexes, optimisés, et en évolution rapide.
-Il est donc difficile d’en certifier entièrement l’implémentation, et l’expérience montre que des bogues peuvent conduire à des verdicts incorrects.
-Dans des contextes critiques, où un résultat \emph{unsat} ou \emph{sat} entraîne une décision de sûreté, il devient indispensable de renforcer la chaîne de confiance.
+Ils sont en outre souvent écrits en C/C++ pour des raisons de performance, ce qui complique fortement leur vérification formelle et leur formalisation.
+Il est donc difficile d’en certifier entièrement l’implémentation, et l’expérience montre que des bogues peuvent conduire à des verdicts incorrects \cite{bugsmt}.
+Dans des contextes critiques, où leur résultat entraîne une décision de sûreté, il devient indispensable de renforcer notre confiance dans ces outils.
 
-Une approche prometteuse consiste à certifier non pas le solveur lui-même, mais ses \emph{résultats}, via le \emph{proof logging}.
-Le solveur produit alors une trace de preuve, appelée aussi \emph{certificat}, qui justifie le verdict.
+Une approche prometteuse consiste à certifier non pas l'implémentation du solveur, mais ses résultats, via la technique du \emph{proof logging}.
+Cette approche consiste à ce que le solveur produise ainsi une trace de preuve, appelée aussi \emph{certificat}, qui justifie le verdict.
 Un outil indépendant, plus simple que le solveur, vérifie ensuite ce certificat.
 Cette séparation des rôles est attrayante car la vérification d’une preuve est conceptuellement plus simple et peut s’appuyer sur un noyau de confiance réduit.
 
-Ces dernières années, le format \textbf{Alethe} a émergé comme un standard pragmatique pour représenter des preuves d’insatisfiabilité SMT.
-Alethe est proche de SMT-LIB, organise les preuves comme une suite d’étapes, et propose un catalogue de règles couvrant la résolution, des lemmes de théorie, des simplifications, et des mécanismes pour gérer les variables liées.
-Néanmoins, Alethe ne dispose pas encore d’un \emph{vérificateur certifié} largement adopté, ce qui limite son rôle comme format d’échange réellement fiable.
+\begin{figure}[b]
+    \centering
+    \begin{tikzpicture}
+      \path (0,0) node (lp) {\textcolor{RedOrange}{Lambdapi}}
+            (-4,1) node (coq) {Rocq}
+            (-3,2) node (lean) {Lean}
+            (0,2) node [draw, dashed, purple] (smt) {\color{purple}\textbf{Alethe}}
+            (4,2) node (isa) {Isabelle}
+            (4,0) node (agda) {Agda}
+            (-3,-2) node (k) {$\mathbb{K}$-framework}
+            (0,-3) node (mat) {Matita}
+            (2,-2) node (hol) {HOL}
+            (-4,-1) node (pvs) {PVS}
+            (4,-1) node (ze) {Zenon \& ArchSAT}
+            ;
+      \draw[->,RedOrange, thick] (smt) -- (lp) node[midway,sloped,above] {};
+      \draw[->] (lean) -- (lp) node[midway,sloped,above] {\footnotesize{lean2dk}};
+      \draw[->] (isa) -- (lp) node[midway,sloped,above] {\footnotesize{isabelle\_dk}};
+      \draw[->] (agda) -- (lp) node[midway,sloped,above] {\footnotesize{agda2dk}};
+      \draw[->] (ze) -- (lp) node[midway,sloped,above] {};
+      \draw[<->] (hol) -- (lp) node[midway,sloped,above] {\footnotesize{hol2dk}};
+      \draw[<->] (mat) -- (lp) node[midway,sloped,above] {\footnotesize{Krajono}};
+      \draw[->] (pvs) -- (lp);
+      \draw[->] (k) -- (lp) node[midway,sloped,above] {\footnotesize{KaMeLo}};
+      \draw[<->] (coq) -- (lp)  node[midway,sloped,above] {\footnotesize{vodk}};
+    \end{tikzpicture}
+    \captionsetup{list=no}
+    \caption{Lambdapi, un langage assembleur pour les systèmes de preuve.}
+    \label{fig:fr-interop-intro}
+\end{figure}
 
-Cette thèse répond à ce besoin en développant un cadre de \emph{reconstruction} de preuves Alethe dans \textbf{Lambdapi}.
-Lambdapi est un assistant de preuve fondé sur le \emph{$\lambda\Pi$-calcul modulo la réécriture}, conçu comme un langage pivot pour échanger des preuves entre systèmes.
+Le format Alethe \cite{alethe} a émergé comme un format de preuve standard pour représenter des preuves d’insatisfiabilité SMT.
+Alethe repose sur la SMT-LIB \cite{smtlib}. Les preuves sont organisées comme une suite d’étapes, et Alethe propose un catalogue de règles de raisonnement couvrant la résolution, des lemmes de théorie, des simplifications, les quantificateurs et la skolémisation. 
+Néanmoins, Alethe ne dispose pas encore d’un vérificateur certifié largement adopté, ce qui limite son rôle comme format d’échange réellement fiable \cite{carcara}.
+
+Cette thèse répond à ce besoin en développant un cadre de \emph{reconstruction} de preuves Alethe dans Lambdapi \cite{lambdapi}.
+Lambdapi est un assistant de preuve fondé sur le $\lambda\Pi$-calcul modulo théories, conçu comme un langage pivot pour échanger des preuves entre systèmes.
+Comme l’illustre la \Cref{fig:fr-interop-intro}, de nombreux assistants et outils peuvent exporter (ou importer) des preuves via Lambdapi, qui joue alors le rôle de "langage assembleur" pour les systèmes de preuve.
 Reconstruire une preuve Alethe dans Lambdapi revient à produire un objet dont la validité est vérifiée par le noyau de Lambdapi, ce qui fournit une garantie forte.
-L’objectif est ainsi de rendre les preuves Alethe \emph{portables} et \emph{vérifiables indépendamment} du solveur.
+L’objectif est ainsi de rendre les preuves Alethe portables et vérifiables indépendamment du solveur.
+
 
 \section*{Alethe, preuves SMT et enjeux de vérification}
 
-Une preuve Alethe est une liste d’étapes indexées.
-Chaque étape conclut une clause (une disjonction de littéraux), éventuellement à partir de prémisses, en appliquant une règle donnée.
-Certaines règles correspondent à des raisonnements propositionnels (résolution, introduction de tautologies, normalisations logiques).
-D’autres règles encapsulent des raisonnements de théorie (arithmétique linéaire, égalité congruentielle, etc.).
-Alethe propose aussi une structure de \emph{sous-preuves} (\emph{subproofs}) et un mécanisme de \emph{contextes} permettant d’exprimer des substitutions et des manipulations de variables liées, notamment pour les étapes de prétraitement.
+Le format de traces de preuve Alethe \cite{alethespec} pour les solveurs SMT se compose de deux parties :
+un langage de traces, fondé sur SMT-LIB, et une collection de règles de preuve.
+Les traces constituent des témoins d’insatisfiabilité d’un ensemble de contraintes.
+Elles prennent la forme de séquences $a_1 \dots a_m~t_1 \dots t_n$
+où les $a_i$ correspondent aux contraintes du problème SMT initial réfuté,
+chaque $t_i$ est une clause inférée à partir des éléments précédents de la séquence,
+et $t_n$ est $\bot$ (la clause vide).
+Dans la suite, nous désignons le problème SMT-LIB comme le \emph{problème d’entrée}.
+
+\begin{lstlisting}[language=SMT]
+(set-logic UF)
+(declare-sort U 0)
+(declare-fun a () U)
+(declare-fun b () U)
+(declare-fun p (U) Bool)
+(assert (p a))
+(assert (= a b))
+(assert (not (p b)))
+(check-sat)
+(get-proof)
+\end{lstlisting}
+
+\begin{center}
+$\lightning$
+\end{center}
+
+\begin{lstlisting}[language=SMT,caption={Un problème SMT et sa preuve Alethe trouvée par cvc5.},label={lst:fr-smtexampleinput-fol},nolol]
+(assume a0 (p a))
+(assume a1 (= a b))
+(assume a2 (not (p b)))
+(step t1 (cl (not (= (p a) (p b))) (not (p a)) (p b)) :rule equiv_pos2)
+(step t2 (cl (= (p a) (p b))) :rule cong :premises (a1))
+(step t3 (cl (p b)) :rule resolution :premises (t1 t2 a0))
+(step t4 (cl) :rule resolution :premises (a2 t3))
+\end{lstlisting}
+
+L’exemple de la \cref{lst:fr-smtexampleinput-fol} illustre ce principe : à partir du problème d’entrée (ci-dessus), le solveur produit une trace Alethe composée d’étapes \kw{assume} et \kw{step}, aboutissant à la clause vide \kw{(cl)}.
+
+\renewcommand{\eqnhighlightshade}{35}
+
+\begin{equation}
+\label{eq:fr-step}
+\tag{\textcolor{purple}{1}}
+\eqnmarkbox[midpurple]{node2}{i}. \quad \eqnmarkbox[RoyalBlue]{node1}{\Gamma} ~\triangleright~ \eqnmarkbox[Emerald]{node3}{l_1 \dots l_n} \quad (\eqnmarkbox[rxpurple2]{node4}{\mathcal{R}}~\eqnmarkbox[darkpurple]{node5}{p_1 \dots p_m})~\eqnmarkbox[rxpink]{node6}{[a_1 \dots a_r]}
+\annotate[yshift=-0.5em]{below, left}{node2}{indèxe}
+\annotate[yshift=-0.5em]{below, right}{node1}{contexte}
+\annotate[yshift=0.5em]{above, left}{node3}{clause}
+\annotate[yshift=-0.5em]{below, right}{node4}{règle}
+\annotate[yshift=-0.5em]{below, right}{node5}{prémisses}
+\annotate[yshift=-0.5em]{below, right}{node6}{arguments}
+\end{equation}
+
+\bigskip
+
+Pour analyser et reconstruire de telles traces, nous décrivons maintenant la structure générale d’une étape Alethe, résumée en \cref{eq:fr-step}.
+Une étape est constituée d’un indice \colorbox{midpurple!30}{$i$} $\in \mathbb{I}$, où $\mathbb{I}$ est un ensemble infini dénombrable d’indices (par exemple \kw{a0}, \kw{t1}), et d’une clause de formules \colorbox{Emerald!30}{$l_1, \dots, l_n$} représentant une disjonction $n$-aire.
+
+Les étapes qui ne sont pas des hypothèses sont justifiées par une règle de preuve \colorbox{rxpurple2!30}{$\mathcal{R}$} qui dépend d’un ensemble éventuellement vide de prémisses $\{\colorbox{darkpurple!30}{$p_1 \dots p_m$}\} \subseteq \mathbb{I}$,
+ne référant que des étapes antérieures, de sorte que la preuve forme un graphe orienté acyclique.
+Une règle peut aussi dépendre d’une liste d’arguments \colorbox{rxpink!30}{$[a_1 \dots a_r]$}, où chaque argument $a_i$ est soit un terme, soit une paire $(x_i, t_i)$, où $x_i$ est une variable et $t_i$ un terme.
+L’interprétation des arguments dépend de la règle.
+
+Le contexte \colorbox{RoyalBlue!30}{$\Gamma$} d’une étape est une liste $c_1 \dots c_l$, où chaque élément $c_j$ est soit une variable, soit un couple variable-terme noté $x_j \mapsto t_j$.
+Ainsi, les étapes dont le contexte est non vide contiennent des variables $x_j$ qui apparaissent dans \colorbox{Emerald!30}{$l_i$} et seront substituées par les $t_j$.
+Les règles de preuve \colorbox{rxpurple2!30}{$\mathcal{R}$} incluent des lemmes de théorie et la règle \texttt{resolution}, qui correspond à l’hyper-résolution sur des clauses du premier ordre au sol.
+
+Ces éléments suffisent pour relire la preuve de la \cref{lst:fr-smtexampleinput-fol}, qui comporte ici sept étapes.
+Elle commence par trois étapes \texttt{assume} (\texttt{a0}, \texttt{a1}, \texttt{a2}) qui réaffirment les assertions du problème d’entrée.
+Dans la syntaxe concrète, les étapes \texttt{assume} disposent d’une commande dédiée \smtinline{assume}, afin de les distinguer clairement des étapes ordinaires, qui utilisent la commande \smtinline{step}.
+
+L’étape \texttt{t1} introduit une tautologie de la forme $\neg (\varphi_1 \approx \varphi_2) \lor \neg \varphi_1 \lor \varphi_2$, justifiée par la règle \colorbox{rxpurple2!30}{\texttt{equiv\_pos2}}.
+L’étape \texttt{t2} établit $p(a) \approx p(b)$ par congruence (règle \colorbox{rxpurple2!30}{\texttt{cong}}) à partir de l’hypothèse \texttt{a1}.
+L’étape \texttt{t3} applique ensuite la règle \colorbox{rxpurple2!30}{\texttt{resolution}} aux prémisses \texttt{t1}, \texttt{t2} et \texttt{a0} pour dériver $p(b)$.
+Enfin, l’étape \texttt{t4} conclut la preuve en produisant la clause vide $\bot$, concrètement notée \kw{(cl)} dans la \cref{lst:fr-smtexampleinput-fol}.
+Remarquons que les contextes \colorbox{RoyalBlue!30}{$\Gamma$} de toutes les étapes sont vides dans cet exemple.
 
 Deux difficultés majeures apparaissent lorsqu’on cherche à vérifier des preuves Alethe.
 La première est le caractère parfois \emph{grossier} de certaines règles, qui résument en une étape un calcul ou une simplification non triviale, et peuvent être coûteuses à vérifier naïvement.
@@ -195,3 +299,8 @@ et optimiser la performance de la reconstruction sur des preuves très grandes,
 sont également des axes pratiques majeurs.
 Enfin, approfondir l’intégration avec d’autres assistants (export vers Rocq, Isabelle/HOL, Lean) contribuerait à faire d’Alethe un véritable format d’échange de preuves,
 au service d’une vérification formelle plus transparente et plus digne de confiance.
+
+\setcounter{figure}{0}
+\setcounter{equation}{0}
+\setcounter{table}{0}
+\setcounter{lstlisting}{0}
