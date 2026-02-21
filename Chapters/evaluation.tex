@@ -20,7 +20,7 @@ However, we do not yet include \tt{LRA} because the support for real arithmetic 
 
 \begin{figure}[h]
 \begin{tikzpicture}[
-    node distance=1,
+    node distance=0.9,
     box/.style={rectangle, draw, minimum width=5pt, minimum height=0.8cm, align=center, font=\footnotesize},
     arrow/.style={->, >=Stealth, thick},
     group/.style={rectangle, draw, rounded corners, inner sep=2pt, label={[font=\footnotesize]above:Carcara}}
@@ -28,7 +28,7 @@ However, we do not yet include \tt{LRA} because the support for real arithmetic 
 \node[box] (proof) {\faFileTextO~*.smt2};
 \node[box, right=of proof] (cvc5) {cvc5};
 \node[box, right=of cvc5] (carcara_elab) {Elaboration};
-\node[box, draw=RoyalBlue, right=of carcara_elab] (carcara_recon) {Translation};
+\node[box, right=of carcara_elab] (carcara_recon) {Translation};
 \node[box, right=of carcara_recon] (lambdapi) {Lambdapi};
 
 % Group box around the two Carcara nodes

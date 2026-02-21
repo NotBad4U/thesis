@@ -16,8 +16,8 @@ Ils sont en outre souvent écrits en C/C++ pour des raisons de performance, ce q
 Il est donc difficile d’en certifier entièrement l’implémentation, et l’expérience montre que des bogues peuvent conduire à des verdicts incorrects \cite{bugsmt}.
 Dans des contextes critiques, où leur résultat entraîne une décision de sûreté, il devient indispensable de renforcer notre confiance dans ces outils.
 
-Une approche prometteuse consiste à certifier non pas l'implémentation du solveur, mais ses résultats, via la technique du \emph{proof logging}.
-Cette approche consiste à ce que le solveur produise ainsi une trace de preuve, appelée aussi \emph{certificat}, qui justifie le verdict.
+Une approche prometteuse consiste à certifier non pas l'implémentation du solveur, mais ses résultats, via la technique du \emph{proof logging}\cite{acmsmt}.
+Cette approche consiste à ce que le solveur produise ainsi une trace de preuve appelée \emph{certificat}, qui justifie le verdict.
 Un outil indépendant, plus simple que le solveur, vérifie ensuite ce certificat.
 Cette séparation des rôles est attrayante car la vérification d’une preuve est conceptuellement plus simple et peut s’appuyer sur un noyau de confiance réduit.
 
@@ -52,26 +52,23 @@ Cette séparation des rôles est attrayante car la vérification d’une preuve 
     \label{fig:fr-interop-intro}
 \end{figure}
 
-Le format Alethe \cite{alethe} a émergé comme un format de preuve standard pour représenter des preuves d’insatisfiabilité SMT.
+Le format de preuve Alethe \cite{alethe} a émergé comme un format de preuve standard pour représenter des preuves d’insatisfiabilité SMT.
 Alethe repose sur la SMT-LIB \cite{smtlib}. Les preuves sont organisées comme une suite d’étapes, et Alethe propose un catalogue de règles de raisonnement couvrant la résolution, des lemmes de théorie, des simplifications, les quantificateurs et la skolémisation. 
 Néanmoins, Alethe ne dispose pas encore d’un vérificateur certifié largement adopté, ce qui limite son rôle comme format d’échange réellement fiable \cite{carcara}.
 
 Cette thèse répond à ce besoin en développant un cadre de \emph{reconstruction} de preuves Alethe dans Lambdapi \cite{lambdapi}.
 Lambdapi est un assistant de preuve fondé sur le $\lambda\Pi$-calcul modulo théories, conçu comme un langage pivot pour échanger des preuves entre systèmes.
-Comme l’illustre la \Cref{fig:fr-interop-intro}, de nombreux assistants et outils peuvent exporter (ou importer) des preuves via Lambdapi, qui joue alors le rôle de "langage assembleur" pour les systèmes de preuve.
-Reconstruire une preuve Alethe dans Lambdapi revient à produire un objet dont la validité est vérifiée par le noyau de Lambdapi, ce qui fournit une garantie forte.
+Comme l’illustre la \Cref{fig:fr-interop-intro}, de nombreux assistants et outils peuvent exporter ou importer des preuves via Lambdapi, qui joue alors le rôle de ``langage assembleur'' pour les systèmes de preuve.
+Reconstruire une preuve Alethe dans Lambdapi revient à produire un terme de preuve dont la validité est vérifiée par le noyau de Lambdapi, ce qui fournit une garantie forte.
 L’objectif est ainsi de rendre les preuves Alethe portables et vérifiables indépendamment du solveur.
 
 
 \section*{Alethe, preuves SMT et enjeux de vérification}
 
 Le format de traces de preuve Alethe \cite{alethespec} pour les solveurs SMT se compose de deux parties :
-un langage de traces, fondé sur SMT-LIB, et une collection de règles de preuve.
+un langage de traces fondé sur SMT-LIB, et une collection de règles de preuve.
 Les traces constituent des témoins d’insatisfiabilité d’un ensemble de contraintes.
-Elles prennent la forme de séquences $a_1 \dots a_m~t_1 \dots t_n$
-où les $a_i$ correspondent aux contraintes du problème SMT initial réfuté,
-chaque $t_i$ est une clause inférée à partir des éléments précédents de la séquence,
-et $t_n$ est $\bot$ (la clause vide).
+Elles prennent la forme de séquences $a_1 \dots a_m~t_1 \dots t_n$ où les $a_i$ correspondent aux contraintes du problème SMT initial réfuté, chaque $t_i$ est une clause inférée à partir des éléments précédents de la séquence, et $t_n$ est $\bot$ i.e. la clause vide.
 Dans la suite, nous désignons le problème SMT-LIB comme le \emph{problème d’entrée}.
 
 \begin{lstlisting}[language=SMT]
@@ -101,7 +98,9 @@ $\lightning$
 (step t4 (cl) :rule resolution :premises (a2 t3))
 \end{lstlisting}
 
-L’exemple de la \cref{lst:fr-smtexampleinput-fol} illustre ce principe : à partir du problème d’entrée (ci-dessus), le solveur produit une trace Alethe composée d’étapes \kw{assume} et \kw{step}, aboutissant à la clause vide \kw{(cl)}.
+L’exemple de la \cref{lst:fr-smtexampleinput-fol} illustre ce principe : à partir du problème d’entrée, le solveur produit une trace Alethe composée d’étapes \kw{assume} et \kw{step}, aboutissant à la clause vide \kw{(cl)}.
+Les solveurs SMT procèdent par réfutation : ils ajoutent $\neg p(b)$ aux hypothèses et prouvent l’\emph{insatisfiabilité}.
+L’insatisfiabilité obtenue constitue alors un certificat de la validité de l’entaillement, dont le solveur fournit une preuve sous la forme d’une trace Alethe.
 
 \renewcommand{\eqnhighlightshade}{35}
 
@@ -117,169 +116,389 @@ L’exemple de la \cref{lst:fr-smtexampleinput-fol} illustre ce principe : à pa
 \annotate[yshift=-0.5em]{below, right}{node6}{arguments}
 \end{equation}
 
-\bigskip
+\bigskip\bigskip
 
 Pour analyser et reconstruire de telles traces, nous décrivons maintenant la structure générale d’une étape Alethe, résumée en \cref{eq:fr-step}.
 Une étape est constituée d’un indice \colorbox{midpurple!30}{$i$} $\in \mathbb{I}$, où $\mathbb{I}$ est un ensemble infini dénombrable d’indices (par exemple \kw{a0}, \kw{t1}), et d’une clause de formules \colorbox{Emerald!30}{$l_1, \dots, l_n$} représentant une disjonction $n$-aire.
-
 Les étapes qui ne sont pas des hypothèses sont justifiées par une règle de preuve \colorbox{rxpurple2!30}{$\mathcal{R}$} qui dépend d’un ensemble éventuellement vide de prémisses $\{\colorbox{darkpurple!30}{$p_1 \dots p_m$}\} \subseteq \mathbb{I}$,
 ne référant que des étapes antérieures, de sorte que la preuve forme un graphe orienté acyclique.
 Une règle peut aussi dépendre d’une liste d’arguments \colorbox{rxpink!30}{$[a_1 \dots a_r]$}, où chaque argument $a_i$ est soit un terme, soit une paire $(x_i, t_i)$, où $x_i$ est une variable et $t_i$ un terme.
 L’interprétation des arguments dépend de la règle.
-
 Le contexte \colorbox{RoyalBlue!30}{$\Gamma$} d’une étape est une liste $c_1 \dots c_l$, où chaque élément $c_j$ est soit une variable, soit un couple variable-terme noté $x_j \mapsto t_j$.
 Ainsi, les étapes dont le contexte est non vide contiennent des variables $x_j$ qui apparaissent dans \colorbox{Emerald!30}{$l_i$} et seront substituées par les $t_j$.
-Les règles de preuve \colorbox{rxpurple2!30}{$\mathcal{R}$} incluent des lemmes de théorie et la règle \texttt{resolution}, qui correspond à l’hyper-résolution sur des clauses du premier ordre au sol.
+Les règles de preuve \colorbox{rxpurple2!30}{$\mathcal{R}$} incluent des lemmes de théorie et d'autre règle de logique comme la règle \kw{resolution}, qui correspond à l’hyper-résolution sur des clauses.
 
-Ces éléments suffisent pour relire la preuve de la \cref{lst:fr-smtexampleinput-fol}, qui comporte ici sept étapes.
-Elle commence par trois étapes \texttt{assume} (\texttt{a0}, \texttt{a1}, \texttt{a2}) qui réaffirment les assertions du problème d’entrée.
-Dans la syntaxe concrète, les étapes \texttt{assume} disposent d’une commande dédiée \smtinline{assume}, afin de les distinguer clairement des étapes ordinaires, qui utilisent la commande \smtinline{step}.
-
-L’étape \texttt{t1} introduit une tautologie de la forme $\neg (\varphi_1 \approx \varphi_2) \lor \neg \varphi_1 \lor \varphi_2$, justifiée par la règle \colorbox{rxpurple2!30}{\texttt{equiv\_pos2}}.
-L’étape \texttt{t2} établit $p(a) \approx p(b)$ par congruence (règle \colorbox{rxpurple2!30}{\texttt{cong}}) à partir de l’hypothèse \texttt{a1}.
-L’étape \texttt{t3} applique ensuite la règle \colorbox{rxpurple2!30}{\texttt{resolution}} aux prémisses \texttt{t1}, \texttt{t2} et \texttt{a0} pour dériver $p(b)$.
-Enfin, l’étape \texttt{t4} conclut la preuve en produisant la clause vide $\bot$, concrètement notée \kw{(cl)} dans la \cref{lst:fr-smtexampleinput-fol}.
+Ces éléments suffisent pour appréhender la preuve du \cref{lst:fr-smtexampleinput-fol}, qui comporte ici sept étapes.
+Elle commence par trois premières étapes \kw{assume} (\kw{a0}, \kw{a1}, \kw{a2}) qui réaffirment les assertions du problème d’entrée.
+Dans la syntaxe concrète, les étapes \kw{assume} disposent d’une commande dédiée \smtinline{assume}, afin de les distinguer clairement des étapes ordinaires, qui utilisent la commande \smtinline{step}.
+Cette commande est du sucre syntaxique pour une commande \kw{step} utilisant la règle Alethe \kw{hole} qui admet une clause.
+L’étape \kw{t1} introduit une tautologie de la forme $\neg (\varphi_1 \approx \varphi_2) \lor \neg \varphi_1 \lor \varphi_2$, justifiée par la règle \colorbox{rxpurple2!30}{\kw{equiv\_pos2}}.
+L’étape \kw{t2} établit $p(a) \approx p(b)$ par congruence à partir de l’hypothèse \kw{a1} et matéralisée par la règle \colorbox{rxpurple2!30}{\kw{cong}}.
+L’étape \kw{t3} applique ensuite la règle \colorbox{rxpurple2!30}{\kw{resolution}} aux prémisses \kw{t1}, \kw{t2} et \kw{a0} pour dériver $p(b)$.
+Enfin, l’étape \kw{t4} conclut la preuve en produisant la clause vide i.e. $\bot$, concrètement notée \kw{(cl)}.
 Remarquons que les contextes \colorbox{RoyalBlue!30}{$\Gamma$} de toutes les étapes sont vides dans cet exemple.
 
-Deux difficultés majeures apparaissent lorsqu’on cherche à vérifier des preuves Alethe.
-La première est le caractère parfois \emph{grossier} de certaines règles, qui résument en une étape un calcul ou une simplification non triviale, et peuvent être coûteuses à vérifier naïvement.
-La seconde est l’existence de détails de format et de liberté d’impression (par exemple des réordonnancements implicites d’égalités) qui nécessitent une sémantique de vérification soigneuse.
+\subsection*{Preuve à forte granularité}
+\label{ssec:fr-preuve-coarse-grained}
 
-Dans ce travail, l’approche retenue combine deux idées.
-D’une part, formaliser et encoder le langage et les règles Alethe dans un cadre fondationnel robuste (Lambdapi).
-D’autre part, utiliser une phase d’\emph{élaboration} des traces qui transforme des pas trop ambitieux en séquences plus fines, mieux adaptées à une reconstruction certifiée.
 
-\section*{Lambdapi comme noyau de confiance et langage pivot}
+\begin{figure}[tb]
+\begin{tikzpicture}[
+    node distance=0.8,
+    box/.style={rectangle, draw, minimum width=5pt, minimum height=0.8cm, align=center, font=\footnotesize},
+    arrow/.style={->, >=Stealth, thick},
+    group/.style={rectangle, draw, rounded corners, inner sep=2pt, label={[font=\footnotesize]above:Carcara}}
+]
+\node[] (proof) {\faFileTextO~*.smt2};
+\node[box, right=of proof] (cvc5) {cvc5};
+\node[box, right=of cvc5] (carcara_elab) {Élaboration};
+\node[box, right=of carcara_elab] (carcara_recon) {Traduction};
+\node[box, right=of carcara_recon] (lambdapi) {Lambdapi};
 
-Lambdapi implémente le $\lambda\Pi$-calcul modulo la réécriture, où l’égalité entre termes et types est considérée modulo $\beta$-réduction et un ensemble de règles de réécriture déclarées par l’utilisateur.
-Cette capacité à intégrer la réécriture est particulièrement pertinente pour encoder des théories et des calculs de normalisation, tout en conservant une vérification par un noyau de confiance réduit.
+% Group box around the two Carcara nodes
+\node[group, fit=(carcara_elab) (carcara_recon)] (carcara_group) {};
 
-Le cadre de cette thèse s’appuie sur une \emph{prélude} logique, suivant un style \emph{judgments-as-types}, dans lequel :
-les objets de la logique encodée sont représentés dans un univers \texttt{Set},
-les propositions dans un univers \texttt{Prop},
-et les preuves comme des termes de type \texttt{Prf A} pour une proposition \texttt{A}.
-Cette organisation permet de représenter la logique SMT-LIB (many-sorted first-order logic) et de relier les étapes Alethe à des objets prouvables dans Lambdapi.
+% Arrows
+\draw[arrow] (proof) -- (cvc5);
+\draw[arrow] (cvc5) -- (carcara_elab);
+\draw[arrow] (carcara_elab) -- (carcara_recon);
+\draw[arrow] (carcara_recon) -- (lambdapi);
+\end{tikzpicture}
+\caption{Architecture du processus de reconstruction}
+\label{fig:fr-bench-pipeline}
+\end{figure}
 
-Un intérêt central de Lambdapi est également son rôle d’\emph{assembleur} pour systèmes de preuve.
-Il sert de pivot permettant, à terme, d’exporter ou d’importer des preuves vers d’autres environnements.
-Dans cette perspective, obtenir une reconstruction Lambdapi d’une preuve Alethe rend cette preuve \emph{réutilisable} dans d’autres systèmes, au-delà du solveur qui l’a produite.
-
-\section*{Objectif et contributions de la thèse}
-
-L’objectif général est de construire une chaîne :
-\[
-\text{preuve Alethe (solveur)} \;\longrightarrow\;
-\text{élaboration (trace plus fine)} \;\longrightarrow\;
-\text{traduction en Lambdapi} \;\longrightarrow\;
-\text{vérification par le noyau}.
-\]
-Cette chaîne fournit une garantie indépendante de la correction du solveur, sous réserve de la confiance accordée au noyau de Lambdapi.
-
-Les contributions principales sont les suivantes.
-Premièrement, une \emph{encodage modulaire} de la logique SMT-LIB et des objets Alethe (termes, formules, clauses, substitutions, sous-preuves) dans Lambdapi.
-Deuxièmement, une méthode de \emph{reconstruction} couvrant un ensemble substantiel de règles Alethe, incluant la résolution, des simplifications, des quantificateurs, et des fragments d’arithmétique linéaire.
-Troisièmement, l’introduction de techniques de \emph{preuve par réflexion} pour rendre la vérification de calculs arithmétiques efficace et robuste.
-Quatrièmement, une étude de \emph{correction} de la traduction, assurant que les certificats reconstruits préservent le sens sémantique des preuves SMT.
-Enfin, une \emph{évaluation expérimentale} sur des benchmarks issus de SMT-LIB et sur des obligations de preuve TLA+ (via TLAPS), avec des optimisations de performance comme la traduction et la vérification parallèles.
-
-\section*{Encodage de la logique SMT et des clauses}
-
-La logique SMT-LIB est une logique du premier ordre à plusieurs sortes.
-Un point clé de l’encodage consiste à représenter les sortes et les termes de manière fidèle tout en restant maniable dans Lambdapi.
-Les connecteurs logiques sont introduits de façon constructive, avec une représentation des preuves via \texttt{Prf}.
-Les quantificateurs sont encodés en quantifiant sur des éléments de \texttt{Set} et en réifiant la dépendance par \texttt{El}.
-Cette approche permet d’exprimer des formules proches de SMT-LIB tout en conservant un contrôle explicite sur les preuves.
-
-Alethe raisonne sur des \emph{clauses} et non directement sur des formules arbitraires.
-La thèse introduit donc une représentation des clauses adaptée à la reconstruction.
-Elle doit gérer :
-la disjonction n-aire,
-les littéraux positifs et négatifs,
-et les conventions de format (par exemple la clause vide représentant la contradiction).
-Cet encodage sert ensuite de base aux règles de reconstruction, notamment la résolution.
-
-\section*{Reconstruction des preuves du premier ordre}
-
-Pour les règles propositionnelles et du premier ordre, la reconstruction suit une stratégie en deux niveaux.
-D’abord, les règles \emph{tautologiques} (introductions d’identités, transformations logiques simples) sont traitées par des preuves relativement directes dans Lambdapi.
-Ensuite, les règles de \emph{déduction} (résolution, chaînages) sont reconstruites par des lemmes génériques sur les clauses, permettant de factoriser les preuves et de réduire la duplication.
-
-Les quantificateurs et la skolemisation constituent une partie délicate.
-Les traces Alethe comportent des règles comme l’instanciation universelle et des pas liés au traitement des variables liées.
-La thèse formalise ces mécanismes en combinant :
-une représentation explicite des substitutions,
-des lemmes de compatibilité avec la structure des termes,
-et des constructions de preuve qui respectent les contraintes de capture et d’$\alpha$-équivalence.
-
-Les sous-preuves Alethe (\emph{subproofs}) sont également reconstruites.
-Elles correspondent à des contextes temporaires d’hypothèses, dont la décharge doit être représentée explicitement dans Lambdapi.
-La stratégie consiste à refléter la discipline Alethe (hypothèses locales, puis règle de décharge) par des constructions d’implication et de clauses adaptées.
-
-\section*{Reconstruction de l’arithmétique linéaire par réflexion}
-
-L’arithmétique linéaire est un domaine où les solveurs SMT utilisent des algorithmes sophistiqués (simplex, branch-and-bound, coupes, etc.).
-Les preuves Alethe contiennent souvent des étapes qui encapsulent des calculs arithmétiques ou des normalisations.
-Les vérifier pas à pas au niveau logique serait trop coûteux.
-
-La thèse adopte alors une approche par \emph{réflexion}.
-L’idée est de représenter les expressions arithmétiques sous une forme \emph{réifiée} (une syntaxe interne),
-de définir une procédure de normalisation sur ces objets,
-puis de prouver dans Lambdapi un théorème de correction disant que la normalisation préserve la sémantique.
-Ainsi, au lieu de reconstruire un raisonnement arithmétique long, on reconstruit la preuve que la procédure de normalisation est correcte, puis on l’applique.
-
-Deux niveaux de normalisation sont étudiés.
-Une normalisation \emph{interne} vise à mettre les polynômes sous une forme canonique en utilisant des propriétés comme l’associativité et la commutativité.
-Une normalisation \emph{externe} traite des réécritures plus globales et des schémas de comparaison et d’assemblage de contraintes.
-Ces techniques permettent de traiter efficacement de nombreux certificats d’arithmétique linéaire.
+Les preuves Alethe sont exprimés sous un raisonnement à pas large entrainant des difficultés lorsqu’on cherche à les vérifiers.
+Par exemple, la règle \kw{resolution} utilisé dans le \cref{lst:fr-smtexampleinput-fol} n'indique pas les pivots, ainsi que l'ordre des résolutions pour dériver la clause finale.
+L'ordre des résolutions binaires effectués durant l'hyper résolutions pourrer dériver differente clause sémantiquement equivalente mais syntaxiquement différente.
+De plus, le format ne fixe pas la sémantique des clauses et introduits aussi des transformations implicites au long de la preuve comme par exemple le réordonnement des littéraux dans une clause.
+Ainsi, le caractère simplicite de certaines règles Alethe, qui résument en une étape un calcul ou une simplification non triviale doivent être détaillé en raisonnement à pas plus petit afin d'être reconstruite dans un assistant à la preuve.
+D’autre part, les SMT solveurs tendent à travailler avec de large expression et peuvent produire de très longue preuve qui ainsi augmente en pratique la complexité spatiale pour vérifier une preuve. 
 
 \section*{Élaboration des traces : affiner pour mieux vérifier}
 
-Une contribution essentielle est la phase d’élaboration.
-Dans l’écosystème étudié, des outils comme Carcara et RARE transforment les preuves Alethe produites par les solveurs en preuves plus adaptées à la reconstruction.
-L’élaboration peut notamment :
-éliminer des pas redondants,
-expliciter des réordonnancements implicites,
-décomposer des règles trop grossières en sous-étapes plus élémentaires,
-ou remplacer des simplifications complexes par des séquences compatibles avec les bibliothèques de preuve disponibles.
+Afin de palier à certain problèmes décrit plus haut, nous introduisons une étape de preprocessing de la preuve avant de la reconstruire.
+Des outils comme Carcara \cite{carcara} et RARE \cite{rare,IsaRare} transforment les preuves Alethe produites par les solveurs en preuves à petit pas plus adaptées à la reconstruction.
+L’élaboration peut notamment: éliminer des pas redondants, expliciter des réordonnancements implicites, décomposer des règles trop grossières en sous-étapes plus élémentaires, ou remplacer des simplifications complexes par des séquences compatibles avec les bibliothèques de preuve disponibles.
+Néanmoins, une preuve élaborée augmente le taux de reconstruction réussie au détriment d'une complexité spatiale et temporel qui augmente i.e. la preuve aura plus d'étapes est sera donc plus difficile à valider.
 
-Cette étape d’élaboration joue un rôle analogue à une phase de compilation.
-Elle permet de passer d’une preuve « orientée solveur » à une preuve « orientée vérification ».
-Le gain est double :
-on augmente le taux de reconstruction réussie,
-et on améliore les performances de vérification en Lambdapi en évitant des règles difficiles.
+\begin{figure}[tb]
+  \centering
+  \begin{tabular}{c}
+    \textbf{Avant} \\[0.5em]
+    \begin{prooftree}
+      \hypo{\neg a \lor b \lor x \lor c}
+      \hypo{a \lor b \lor c}
+      \hypo{\neg b \lor y \lor z}
+      \hypo{\neg c}
+      \infer4[\small\tt{Res}\, $a, b, c$]{x \lor y \lor z}
+    \end{prooftree} \\[1em]
+    \textbf{Après élaboration} \\[0.5em]
+    \begin{prooftree}
+      \hypo{\neg a \lor b \lor x \lor c}
+      \hypo{a \lor b \lor c}
+      \infer2[\small\tt{Res}; $a$]{b \lor x \lor c \lor b \lor c}
+      \infer1[\small\tt{contra}]{b \lor x \lor c}
+      \hypo{\neg b \lor y \lor z}
+      \hypo{\neg c}
+      \infer3[\small\tt{Res}\, $b, c$]{x \lor y \lor z}
+    \end{prooftree}
+  \end{tabular}
+  \caption{Une étape de resolution avant et après l'élaboration.}
+  \label{fig:fr-resolution-uncrowding}
+\end{figure}
+
+Comme le présente la \cref{fig:fr-bench-pipeline}, nous tirons partie du module d'élaboration des preuves Alethe par Carcara afin ensuite de les traduires en Lambdapi pour les vérifiers.
+Nous illustrons ceci avec l'élaboration de la preuve \cref{lst:fr-smtexampleinput-fol}. Carcara analyse la résolution est indique les pivots dans les arguments \colorbox{rxpink!30}{$[a_1 \dots a_r]$} de l'étape, de plus,
+il ordonne les premises \{\colorbox{darkpurple!30}{$p_1 \dots p_m$}\}. Alethe peut de plus introduire des contraction implicites qui sont rééxplicité par Carcara en découpant l'étape en plusieurs sous étapes comme le montre la \cref{fig:fr-resolution-uncrowding}.
+
+Ainsi, comme on peut le constater dans le \cref{lst:fr-resolution-ex} ci-dessous, les étapes \kw{t3} et \kw{t4} sont maintenant détaillés avec les pivots et l'ordre des résolutions facilitatant la reconstruction dans un assistant à la preuve comme Lambdapi.
+ 
+\begin{lstlisting}[language=SMT,numbers=none, caption={Elaboration des étapes de résolutions de \cref{lst:fr-smtexampleinput-fol} par Carcara}, label={lst:fr-resolution-ex}]
+(step t3 (cl (p b)) :rule resolution :premises (t1 t2 a0)
+    :args ((= (p a) (p b)) false (p a) false))
+(step t4 (cl) :rule resolution :premises (a2 t3)
+  :args ((p b) false)})
+\end{lstlisting}
+
+Dans ces travaux nous avons ajouté un module de traduction dans Carcara afin de pouvoir traduire une preuve Alethe en une preuve Lambdapi que nous pouvons par la suite vérifier.
+
+\section*{Lambdapi comme noyau de confiance et langage pivot}
+
+Lambdapi est une implémentation du $\lambda\Pi$-calcul modulo théories ($\lpm$) \cite{lambdapi}, une extension du \emph{Edinburgh Logical Framework} $\lambda\Pi$ \cite{lf}, un $\lambda$-calcul simplement typé à types dépendants. Le système $\lpm$ ajoute des règles de réécriture d’ordre supérieur définies par l’utilisateur. Sa syntaxe est donnée par :
+
+\begin{align*}
+&\text{Sorts}  &s &::= \type ~|~ \kind \\
+&\text{Terms}   &t,v, A,B,C &::= c ~|~ x ~|~ s ~|~ \Pi\,x : A,\,B~|~ \lambda\,x : A,\,t ~|~t~v \\
+&\text{Contexts}   &\Gamma &::= \langle \rangle ~|~ \Gamma, x : A \\
+&\text{Signatures}  &\Sigma &::= \langle \rangle ~|~ \Sigma, c : C ~|~ \Sigma, c := t : C ~|~ \Sigma, t \hookrightarrow v 
+\end{align*}
+
+où $c$ est une constante et $x$ une variable (variant sur des ensembles disjoints), et $C$ est un terme clos. Les \emph{sortes} sont des constantes utilisées pour vérifier qu’un type est bien formé (voir \cite[\S 2.1]{lf}). Le terme $\Pi\,x : A.\,B$ est le produit dépendant, et l’on écrit $A \rightarrow B$ lorsque $x$ n’apparaît pas libre dans $B$ ; $\lambda\,x : A.\,t$ est une abstraction et $t~v$ une application. Un \emph{contexte (local)} $\Gamma$ est une suite finie de déclarations $x:A$ introduisant des variables et leurs types.
+Une \emph{signature} $\Sigma$, représentant le contexte global, est une suite finie d’\emph{hypothèses} $c : C$ (la constante $c$ est de type $C$), de \emph{définitions} $c := t : C$ (la constante $c$ a pour valeur $t$ et pour type $C$) et de \emph{règles de réécriture} $t \hookrightarrow v$ telles que $t = c~v_1 \dots v_n$ pour une constante $c$.
+
+La relation $\hookrightarrow_{\beta\Sigma}$ est engendrée par la $\beta$-réduction et par les règles de réécriture de $\Sigma$. On note $\hookrightarrow_{\beta\Sigma}^*$ sa clôture réflexive et transitive, et $\equiv_{\beta\Sigma}$ (la \emph{conversion}) la clôture réflexive, symétrique et transitive de $\hookrightarrow_{\beta\Sigma}$.
+La relation $\hookrightarrow_{\beta\Sigma}$ doit être confluente, c’est-à-dire que, si $t \hookrightarrow_{\beta\Sigma}^* v_1$ et $t \hookrightarrow_{\beta\Sigma}^* v_2$, alors il existe un terme $w$ tel que $v_1 \hookrightarrow_{\beta\Sigma}^* w$ et $v_2 \hookrightarrow_{\beta\Sigma}^* w$ ; et elle doit préserver le typage : si $\Gamma \vdash_\Sigma t: A$ et $t \hookrightarrow_{\beta\Sigma} v$, alors $\Gamma \vdash_\Sigma v: A$ \cite{blanqui:LIPIcs.FSCD.2020.13}.
+
+\begin{figure}
+\centering
+\begin{prooftree}
+\hypo{\Gamma \vdash_\Sigma B: u}
+\hypo{\Gamma \vdash_\Sigma t: A}
+\hypo{A \textcolor{red}{\equiv_{\beta\Sigma}} B}
+\infer3[(Conv)]{ \Gamma \vdash_\Sigma t: B }
+\end{prooftree}
+\caption{Règle de typage pour la conversion entre deux types.}
+\label{fig:fr-conv-rule}
+\end{figure}
+
+Un jugement de typage Lambdapi $\Gamma \vdash_\Sigma t : A$ affirme que le terme $t$ a le type $A$ dans le contexte $\Gamma$ et la signature $\Sigma$.
+Les règles de typage (voir \cref{fig:fr-conv-rule}) sont analogues à celles de $\lambda\Pi$ \cite[\S 2]{lf}, à ceci près que la règle supplémentaire (Conv) identifie les types modulo $\equiv_{\beta\Sigma}$ (et non seulement modulo la $\beta$-réduction).
+
+
+\subsection*{Encodage de la logique SMT en Lambdapi}
+
+La logique SMT-LIB est une logique du premier ordre à plusieurs sortes.
+
+
+\begin{definition}[Aperçus de l'encodage]
+La signature $\Sigma$ de notre encodage contiens les définitions et les règles de réécritures suivantes:
+\begin{align*}
+&\set: \type & &\prop: \type \\
+&\el: \set \rightarrow \type  & &\prf : \prop \rightarrow \type \\
+&\mathop{\leadsto}: \set \rightarrow \set \rightarrow \set & &o: \set \\
+&\el\,(x \leadsto y) \hookrightarrow \el\,x \rightarrow \el\,y & &\el\,o  \hookrightarrow \prop \\
+& & &\land : \prop \ra \prop \ra \prop \\[1em]
+&\texttt{Clause}: \type & &\cal{F}: \texttt{Clause} \ra \prop \\
+&\nil: \texttt{Clause} & & \cal{F}~\nil \re \bot \\
+&\veedot: \prop \ra \texttt{Clause}  \ra \texttt{Clause} & & \cal{F}~x \veedot y \re x \lor^c (\cal{F}~y) \\
+& \pp: \texttt{Clause} \ra \texttt{Clause} \ra  \texttt{Clause} & &\pid (c : \texttt{Clause}) \coloneqq \pic (\cal{F}~c)  \\
+& \nil \mathop{\pp} x \re x & & \\
+& (x \veedot y) \mathop{\pp} z \re x \veedot (y \mathop{\pp} z) & &
+\end{align*}
+\end{definition}
+
+Les SMT solveurs raisonnent sur une logique classique. Ainsi, pour incarner ce raisonnement nous introduisons les deux axiomes suivant qui sont le tier exclus et l'extensionalitée des propositions qui sont utilisés par les SMT solveurs:
+
+\begin{align*}
+\texttt{classic}:\ & \Pi [p: \prop], \pic (p \lor^c \neg p) \\
+\texttt{prop\_ext}:\ & \Pi [p\,q: \prop], \pic (p \Leftrightarrow^c q ) \rightarrow \pic (p = q)
+\end{align*}
+
+SMT-LIB signature \cite[\S 5.2.1]{smtlib}. In order to avoid a notational clash with the Lambdapi signature $\Sigma$, we denote the set of SMT-LIB sorts as $\Theta^\mathcal{S}$, the set of function symbols $\Theta^\cal{F}$, and the set of variables $\Theta^\cal{X}$.
+Alethe does not support the sorts \texttt{Array} and \texttt{String}. Moreover, we do not yet provide support for \texttt{Bitvector} and \texttt{Real}. Our translation is based on the following functions:
+\begin{itemize}
+\item $\cal{D}$ translates declarations of sorts and functions in $\Theta^\cal{S}$ and $\Theta^\mathcal{F}$ into constants,
+\item $\cal{S}$ maps SMT sorts to $\Sigma$ types,
+\item $\cal{E}$ translates SMT expressions to $\lpm$ terms,
+\item $\cal{C}$ translates a list of commands  $c_1 \dots c_n$ of the form $i.~\Gamma \triangleright~\varphi~(\mathcal{R}~P)[A]$ to typing judgments $\Gamma \vdash_\Sigma i := M: N$.
+\end{itemize}
+
+\section*{Reconstruction des preuves du premier ordre}
+
+Nous donnons ici un bref aperçus de la stratégie prise dans ces travaux pour la reconstruction des preuves dans Lambdapi.
+Pour les règles propositionnelles et du premier ordre, la reconstruction suit une stratégie en deux niveaux.
+D’abord, les règles tautologiques sont reconstruites par des lemmes génériques sur les clauses, permettant de factoriser les preuves et de réduire la duplication.
+Ensuite, les règles de déduction comme la \kw{resolution} sont reconstruites par un script de preuve.
+
+\lstinputlisting[language=Lambdapi]{Assets/example_uf.lp}
+
+L’arithmétique linéaire est un domaine où les solveurs SMT utilisent des algorithmes sophistiqués.
+Les preuves Alethe contiennent souvent des étapes qui encapsulent des calculs arithmétiques ou des normalisations.
+Les vérifier pas à pas au niveau logique serait trop coûteux. La thèse adopte alors une approche par \emph{réflexion}.
+L’idée est de représenter les expressions arithmétiques sous une forme \emph{réifiée} (une syntaxe interne),
+de définir une procédure de normalisation sur ces objets, puis de prouver dans Lambdapi un théorème de correction disant que la normalisation préserve la sémantique.
+Ainsi, au lieu de reconstruire un raisonnement arithmétique long, on reconstruit la preuve que la procédure de normalisation est correcte, puis on l’applique.
+
 
 \section*{Correction de la traduction}
 
-La reconstruction n’est utile que si elle est correcte.
-La thèse établit donc un argument de correction montrant que la traduction préserve l’entaillement sémantique.
+La thèse établit un argument de correction montrant que la traduction préserve l’entaillement sémantique.
 Intuitivement, si une étape Alethe est valide au sens de la sémantique Alethe/SMT-LIB, alors la preuve construite dans Lambdapi démontre une proposition correspondante dans l’encodage.
 
-Cet argument mobilise :
-la correspondance entre clauses Alethe et formules encodées,
-la correction des lemmes de reconstruction pour chaque règle supportée,
-et, pour la partie arithmétique, la correction des procédures réflexives de normalisation.
+\begin{theorem}[Correction de la reconstruction]\label{theorem:fr-soundness}
+  Pour tout préfixe valide d’une trace de preuve Alethe $P = [c_1, \dots, c_i]$, si
+  \[
+    c_i.\,\Gamma\, \triangleright \varphi_1 \dots \varphi_m \, (\mathcal{R}\,P)[A]
+  \]
+  alors
+  \[
+    \vdash_\Sigma c_i : \pid (\E{\varphi_1} \veedot \dots  \veedot \E{\varphi_m} \veedot \nil) \coloneq M_i.
+  \] où $M_i$, lorsqu’il est fourni, est un terme de preuve de la clause traduite.
+\end{theorem}
 
-Le résultat est une chaîne de confiance claire :
-la validité finale repose sur le noyau de Lambdapi et sur les hypothèses explicites de l’encodage (notamment la correction des définitions et des lemmes de base).
+\section*{Evaluation}
 
-\section*{Évaluation expérimentale et étude de cas TLAPS}
+\pgfplotsset{
+    boxplot prepared from table/.code={
+        \def\tikz@plot@handler{\pgfplotsplothandlerboxplotprepared}%
+        \pgfplotsset{
+            /pgfplots/boxplot prepared from table/.cd,
+            #1,
+        }
+    },
+    /pgfplots/boxplot prepared from table/.cd,
+        table/.code={\pgfplotstablecopy{#1}\to\boxplot@datatable},
+        row/.initial=0,
+        make style readable from table/.style={
+            #1/.code={
+                \pgfplotstablegetelem{\pgfkeysvalueof{/pgfplots/boxplot prepared from table/row}}{##1}\of\boxplot@datatable
+                \pgfplotsset{boxplot/#1/.expand once={\pgfplotsretval}}
+            }
+        },
+        make style readable from table=lower whisker,
+        make style readable from table=upper whisker,
+        make style readable from table=lower quartile,
+        make style readable from table=upper quartile,
+        make style readable from table=median,
+        make style readable from table=lower notch,
+        make style readable from table=upper notch
+}
+\makeatother
 
-La thèse évalue la méthode sur des ensembles de benchmarks.
-L’objectif est de mesurer :
-le taux de reconstruction (succès/échec/timeouts),
-les temps d’élaboration, de traduction et de vérification,
-et l’impact de diverses optimisations.
+\pgfplotstableread[col sep=comma]{Assets/benchs/passtime-fr.csv}\datatable
 
-Une attention particulière est portée à la scalabilité.
-Les preuves SMT peuvent être volumineuses, et la reconstruction doit rester praticable.
-La thèse étudie ainsi des optimisations comme la parallélisation de la traduction et de la vérification,
-ainsi que des stratégies de découpage et de gestion mémoire.
+\pgfplotstablegetrowsof{\datatable}
+\pgfmathtruncatemacro{\NumRows}{\pgfplotsretval} % total number of rows
 
-En outre, une étude de cas importante concerne des obligations de preuve issues de TLA+,
-via TLAPS, et résolues par un solveur SMT produisant des traces Alethe.
-La reconstruction dans Lambdapi illustre alors une chaîne complète de vérification,
-depuis un environnement de spécification (TLA+) jusqu’à une preuve certifiée dans un assistant fondationnel,
-en montrant la pertinence de l’approche pour des preuves issues d’outils de vérification concrets.
+% Put this in the preamble or before the figure:
+\pgfplotscreateplotcyclelist{benchcolors}{%
+  {draw=rxpurple, fill=rxpurple!10},
+  {draw=rxpink, fill=rxpink!10},
+  {draw=darkpurple, fill=darkpurple!10},
+  {draw=midpurple,  fill=midpurple!10},
+  {draw=purple2,    fill=purple2!10},
+  {draw=RoyalBlue,  fill=RoyalBlue!10},
+  {draw=black,      fill=black!10},
+  {draw=MidnightBlue,  fill=MidnightBlue!10},
+}
+
+\begin{table}[tb]
+\pgfplotstabletypeset[
+  font=\ttfamily\scriptsize,
+  col sep=comma,
+  row predicate/.code={%
+    \ifnum\pgfplotstablerow=0 % row 0
+    \else\ifnum\pgfplotstablerow=3 % row 3
+    \else\ifnum\pgfplotstablerow=9 % row 9
+    \else\ifnum\pgfplotstablerow=15 % row 15
+    \else\ifnum\pgfplotstablerow=17 % row 17
+    \else
+      \pgfplotstableuserowfalse
+    \fi\fi\fi\fi\fi
+  },
+  every row 3 column 0/.style={postproc cell content/.append style={/pgfplots/table/@cell content/.add={\color{RoyalBlue}}{}}},
+  every row 3 column 1/.style={postproc cell content/.append style={/pgfplots/table/@cell content/.add={\color{RoyalBlue}}{}}},
+  every row 3 column 2/.style={postproc cell content/.append style={/pgfplots/table/@cell content/.add={\color{RoyalBlue}}{}}},
+  every row 3 column 3/.style={postproc cell content/.append style={/pgfplots/table/@cell content/.add={\color{RoyalBlue}}{}}},
+  every row 3 column 4/.style={postproc cell content/.append style={/pgfplots/table/@cell content/.add={\color{RoyalBlue}}{}}},
+  every row 17 column 0/.style={postproc cell content/.append style={/pgfplots/table/@cell content/.add={\color{RoyalBlue}}{}}},
+  every row 17 column 1/.style={postproc cell content/.append style={/pgfplots/table/@cell content/.add={\color{RoyalBlue}}{}}},
+  every row 17 column 2/.style={postproc cell content/.append style={/pgfplots/table/@cell content/.add={\color{RoyalBlue}}{}}},
+  every row 17 column 3/.style={postproc cell content/.append style={/pgfplots/table/@cell content/.add={\color{RoyalBlue}}{}}},
+  every row 17 column 4/.style={postproc cell content/.append style={/pgfplots/table/@cell content/.add={\color{RoyalBlue}}{}}},
+  every even row/.style={
+    before row={\rowcolor[gray]{0.9}}},
+  every head row/.style={
+    after row=\midrule},
+  every last row/.style={},
+  columns={name,benchmark_type, cvc5_count,cvc5_results, elaboration_results},
+  columns/name/.style={string type,column name={Name}},
+  columns/benchmark_type/.style={string type, column name={Logic}},
+  columns/cvc5_count/.style={column name={Samples}},
+  columns/cvc5_results/.style={string type, column name={cvc5}},
+  columns/elaboration_results/.style={string type, column name={Carcara elaborate}},
+]{Assets/benchs/pass.csv}
+\end{table}
+
+\begin{table}[tb]
+\centering
+\pgfplotstabletypeset[
+  font=\ttfamily\scriptsize,
+  col sep=comma,
+  row predicate/.code={%
+    \ifnum\pgfplotstablerow=0 % row 0
+    \else\ifnum\pgfplotstablerow=3 % row 3
+    \else\ifnum\pgfplotstablerow=9 % row 9
+    \else\ifnum\pgfplotstablerow=15 % row 15
+    \else\ifnum\pgfplotstablerow=17 % row 17
+    \else
+      \pgfplotstableuserowfalse
+    \fi\fi\fi\fi\fi
+  },
+  every row 3 column 0/.style={postproc cell content/.append style={/pgfplots/table/@cell content/.add={\color{RoyalBlue}}{}}},
+  every row 3 column 1/.style={postproc cell content/.append style={/pgfplots/table/@cell content/.add={\color{RoyalBlue}}{}}},
+  every row 3 column 2/.style={postproc cell content/.append style={/pgfplots/table/@cell content/.add={\color{RoyalBlue}}{}}},
+  every row 3 column 3/.style={postproc cell content/.append style={/pgfplots/table/@cell content/.add={\color{RoyalBlue}}{}}},
+  every row 3 column 4/.style={postproc cell content/.append style={/pgfplots/table/@cell content/.add={\color{RoyalBlue}}{}}},
+  every row 17 column 0/.style={postproc cell content/.append style={/pgfplots/table/@cell content/.add={\color{RoyalBlue}}{}}},
+  every row 17 column 1/.style={postproc cell content/.append style={/pgfplots/table/@cell content/.add={\color{RoyalBlue}}{}}},
+  every row 17 column 2/.style={postproc cell content/.append style={/pgfplots/table/@cell content/.add={\color{RoyalBlue}}{}}},
+  every row 17 column 3/.style={postproc cell content/.append style={/pgfplots/table/@cell content/.add={\color{RoyalBlue}}{}}},
+  every row 17 column 4/.style={postproc cell content/.append style={/pgfplots/table/@cell content/.add={\color{RoyalBlue}}{}}},
+  every even row/.style={
+    before row={\rowcolor[gray]{0.9}}},
+  every head row/.style={
+    after row=\midrule},
+  every last row/.style={},
+  columns={name, benchmark_type, translate_small_results, lambdapi_small_check_results},
+  columns/name/.style={string type,column name={Name}},
+  columns/benchmark_type/.style={string type, column name={Logic}},
+  columns/translate_small_results/.style={string type, column name={Translate}},
+  columns/lambdapi_small_check_results/.style={string type, column name={Check}},
+]{Assets/benchs/pass.csv}%
+\end{table}
+
+\begin{figure}
+\hspace*{-1cm}%
+\begin{tikzpicture}
+\begin{axis}[
+%   width=0.65\textwidth,
+%   height=0.9\textheight,
+  boxplot/draw direction=x,
+  cycle list name=benchcolors,
+  ytick={1,...,\NumRows},
+  yticklabels from table={\datatable}{name},
+  yticklabel style={font=\ttfamily},
+  xmode=log,
+  log basis x=10,
+  xlabel={Checking time (ms), $\log(1 + t)$ scale},
+  xlabel style={font=\ttfamily },
+  ylabel={Benchmarks},
+  ylabel style={font=\ttfamily},
+]
+\pgfmathtruncatemacro\TotalRows{\NumRows-1}
+\pgfplotsinvokeforeach{0,...,\TotalRows}
+{
+  \addplot+[
+  boxplot prepared from table={
+    table=\datatable,
+    row=#1,
+    lower whisker=min,
+    lower quartile=q1,
+    upper quartile=q3,
+    upper whisker=max,
+    median=median
+  },
+  boxplot prepared,
+  area legend
+  ] coordinates{};
+
+    % --- single point at lt for this sample ---
+  \pgfplotstablegetelem{#1}{mean}\of\datatable
+  \pgfmathsetmacro{\meanvalue}{\pgfplotsretval} % x = lt
+  \pgfmathtruncatemacro{\cat}{#1+1}           % y = 1,2,3,... (row index)
+
+  \addplot+[
+    only marks,
+    mark=*,
+    mark size=1.2pt,
+    forget plot,    % do not create legend entries for every point
+  ] coordinates {(\meanvalue,\cat)};
+}
+\end{axis}
+\end{tikzpicture}
+\end{figure}
 
 \section*{Conclusion et perspectives}
 
