@@ -353,6 +353,14 @@ Intuitivement, si une étape Alethe est valide au sens de la sémantique Alethe/
 
 \section*{Evaluation}
 
+Nous évaluons notre chaîne complète (\cref{fig:fr-bench-pipeline}) pour la reconstruction de preuves SMT en Lambdapi à l’aide des tests de performance fournis par la SMT-COMP \cite{SMT-COMP}.
+Nous utilisons des échantillons des familles SMT-LIB couvrant exactement les fragments pris en charge : UF, LIA, UFLIA et QF\_LIA.
+Nous nous concentrons en particulier sur le corpus \emph{Sledgehammer}, qui reflète un cas d’usage central : la décharge automatique de sous-buts dans un assistant de preuve via un solveur SMT, puis la validation indépendante du certificat produit.
+Nous présentons ici un court extrait de nos résultats ; les détails de la configuration et l’ensemble des mesures sont donnés aux \cref{ch:evaluation} et \cref{app:complete-benchmarks-results}.
+Un échantillon représentatif de chaque logique prise en charge est présenté dans ces tableaux.
+Nous reportons les résultats au format Succès--Erreur--Temps (S--E--T). Une limite de temps de 30 secondes est donnée pour cvc5 et Carcara, et de 20s pour Lambdapi.
+
+
 \pgfplotsset{
     boxplot prepared from table/.code={
         \def\tikz@plot@handler{\pgfplotsplothandlerboxplotprepared}%
@@ -398,6 +406,7 @@ Intuitivement, si une étape Alethe est valide au sens de la sémantique Alethe/
 }
 
 \begin{table}[tb]
+\centering
 \caption{Résultats \texttt{cvc5} et Carcara (format Succès–Erreur–Temps).}
 \pgfplotstabletypeset[
   font=\ttfamily\scriptsize,
@@ -459,6 +468,7 @@ Intuitivement, si une étape Alethe est valide au sens de la sémantique Alethe/
 
 
 \begin{table}[tb]
+\centering
 \caption{Temps de vérification Lambdapi (ms).}
 \pgfplotstabletypeset[
   col sep=comma,
@@ -473,7 +483,7 @@ Intuitivement, si une étape Alethe est valide au sens de la sémantique Alethe/
   columns/mean/.style={column name={Moyenne}},
   columns/min/.style={column name={Min}},
   columns/q1/.style={column name={Q1}},
-  columns/median/.style={column name={\color{RoyalBlue}Médiane}, postproc cell content/.append style={/pgfplots/table/@cell content/.add={\color{RoyalBlue}}{}}},
+  columns/median/.style={column name={Médiane}},
   columns/q3/.style={column name={Q3}},
   columns/max/.style={column name={Max}, string type, string replace={21301}{Timeout},string replace={20511}{Timeout}},
 ]{Assets/benchs/fr-passtime.csv}%
@@ -481,29 +491,23 @@ Intuitivement, si une étape Alethe est valide au sens de la sémantique Alethe/
 \end{table}
 
 
-Nous évaluons notre chaîne complète (\cref{fig:fr-bench-pipeline}) pour la reconstruction de preuves SMT en Lambdapi à l’aide des tests de performance fournis par la SMT-COMP \cite{SMT-COMP}.
-Nous utilisons des échantillons des familles SMT-LIB couvrant exactement les fragments pris en charge : UF, LIA, UFLIA et QF\_LIA.
-Nous nous concentrons en particulier sur le corpus \emph{Sledgehammer}, qui reflète un cas d’usage central : la décharge automatique de sous-buts dans un assistant de preuve via un solveur SMT, puis la validation indépendante du certificat produit.
-Nous présentons ici un court extrait de nos résultats ; les détails de la configuration et l’ensemble des mesures sont donnés aux \cref{ch:evaluation} et \cref{app:complete-benchmarks-results}.
-Un échantillon representatif de chaque logique supportée est présenté par tableaux.
-Nous reportons les résultats au format Succès--Erreur--Temps (S--E--T). Une limite de temps de 30 secondes est donnée pour cvc5 et Carcara, et de 20s pour Lambdapi.
 La \cref{tab:fr-pass-elab} montre que, dans la grande majorité des cas, cvc5 produit un certificat de preuve et que Carcara parvient ensuite à l’élaborer, ce qui permet sa traduction et sa vérification.
-La \cref{tab:fr-check-nb} résume les échantillons effectivement traduits puis vérifiés par Lambdapi, et la \cref{tab:fr-temps-distribution} donne des statistiques sur les temps de vérification.
+La \cref{tab:fr-check-nb} résume les échantillons qui ont pu être élaborés, puis traduits, puis vérifiés par Lambdapi, et la \cref{tab:fr-temps-distribution} donne des statistiques sur les temps de vérification.
+Sur le corpus \emph{Sledgehammer}, nous obtenons un taux de réussite de vérification proche de 90\,\%.
 Ces résultats confirment que la vérification est généralement bien sous la seconde sur ces familles. Nous investigons les goulots d’étranglement dans la conclusion du \cref{ch:evaluation}.
 
 
 \section*{Conclusion et perspectives}
 
-Cette thèse propose une contribution vers un écosystème SMT plus fiable et plus interopérable.
-Elle propose un cadre de reconstruction qui traduit des traces Alethe en preuves vérifiables par le noyau de Lambdapi,
-via un encodage modulaire de la logique SMT (raisonnement du premier ordre, égalité, et arithmétique linéaire) et des techniques de reconstruction par réflexion.
-L’évaluation sur des familles SMT-LIB représentatives montre que, dès aujourd’hui, la chaîne de bout en bout peut vérifier efficacement un grand nombre de preuves, la plupart en quelques centaines de millisecondes.
-Au-delà de ces benchmarks, nous avons également mis ces travaux à contribution pour valider des preuves manipulées dans Lambdapi lorsqu’il s’appuie sur des solveurs SMT comme arrière-plan ; cet usage, non détaillé ici, est discuté dans le chapitre d’évaluation.
-En reconstruisant des preuves Alethe dans Lambdapi, on obtient des certificats vérifiables indépendamment, et potentiellement exportables vers d’autres assistants.
-Enfin, nos campagnes expérimentales ont permis d’identifier des anomalies ensuite corrigées, tant dans la génération de certificats de cvc5 que dans certains encodages SMT de la théorie des ensembles, qui pouvaient conduire à des preuves invalides.
+Cette thèse contribue à un écosystème SMT plus fiable et plus interopérable en proposant un cadre de reconstruction qui traduit des traces Alethe en preuves vérifiables par le noyau de Lambdapi, au moyen d’un encodage modulaire de la logique SMT et de techniques de reconstruction par réflexion.
+L’évaluation sur des familles SMT-LIB représentatives montre que la chaîne proposée permet de vérifier efficacement un grand nombre de preuves.
+En reconstruisant des preuves Alethe dans Lambdapi, on obtient ainsi des certificats vérifiables indépendamment, et potentiellement exportables vers d’autres assistants.
+Nos campagnes expérimentales ont également permis d’identifier des anomalies ensuite corrigées, notamment dans la génération de certificats de cvc5.
+Au-delà de ces expérimentations, nous avons utilisé ces travaux pour vérifier des preuves issues de l’assistant de preuve TLAPS, que nous décrivons au \cref{ch:evaluation}.
+Notre outil a ainsi permis de mettre en évidence des erreurs dans certaines preuves de TLAPS, dues à un bogue dans l’encodage SMT de la théorie des ensembles.
 
 Plusieurs perspectives s’ouvrent naturellement. Étendre la couverture à d’autres théories importantes, comme les bit-vectors, renforcerait encore l’universalité du cadre.
-Enfin, approfondir l’intégration avec d’autres assistants (export vers Rocq, Isabelle/HOL, Lean) contribuerait à faire d’Alethe un véritable format d’échange de preuves, au service d’une vérification formelle plus transparente et plus digne de confiance.
+Enfin, approfondir l’intégration avec d’autres assistants (export vers Rocq, Lean, etc.) contribuerait à faire d’Alethe un véritable format d’échange de preuves, au service d’une vérification formelle plus transparente et plus digne de confiance.
 
 \setcounter{figure}{0}
 \setcounter{equation}{0}
