@@ -1,8 +1,3 @@
-symbol U : Set;
-symbol a : τ U;
-symbol b : τ U;
-symbol p : τ (U ⤳ o);
-
 symbol p_2 ≔ (p b);
 symbol p_4 ≔ (p a);
 symbol p_6 ≔ (p a = p b);

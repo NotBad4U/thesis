@@ -339,6 +339,7 @@ With a modest amount of additional effort to encode these rules in Lambdapi, we 
 
 % https://tex.stackexchange.com/questions/399163/create-boxplots-from-file
 % https://tex.stackexchange.com/questions/117435/read-boxplot-prepared-values-from-a-table/117439#117439
+\makeatletter
 \pgfplotsset{
     boxplot prepared from table/.code={
         \def\tikz@plot@handler{\pgfplotsplothandlerboxplotprepared}%
