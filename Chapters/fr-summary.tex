@@ -30,18 +30,19 @@
 \label{sec:contexte-et-motivation}
 
 Les solveurs SMT (\emph{Satisfiabilité modulo théories}) \cite{cvc5,verit} se sont imposés comme des outils centraux de la vérification formelle moderne.
-Ces solveurs sont utilisés comme outils pour la démonstration automatique de théorèmes intégrant le raisonnement propositionnel, enrichi par des théories telles que l'arithmétique linéaire, les fonctions non interprétées ou encore les bit-vectors.
-Leur grande efficacité en fait des composants essentiels de nombreux logiciels industriels et académiques, par exemple pour la modélisation et la vérification de systèmes critiques, la vérification de programmes et de matériels, l'analyse statique, ou encore l'intégration dans des assistants de preuve \cite{smtcoq,lean-smt}.
+Ces solveurs sont utilisés comme outils pour la démonstration automatique de théorèmes intégrant le raisonnement propositionnel, enrichi par des théories telles que l’arithmétique linéaire, les fonctions non interprétées ou encore les bit-vectors.
+Leur grande efficacité en fait des composants essentiels de nombreux logiciels industriels et académiques, par exemple pour la modélisation et la vérification de systèmes critiques, la vérification de programmes et de matériels, l’analyse statique, ou encore l’intégration dans des assistants de preuve \cite{smtcoq,lean-smt}.
 
-Cependant, cette efficacité s'accompagne d'une question fondamentale de confiance dans les résultats produits.
+
+Cependant, cette efficacité s’accompagne d’une question fondamentale de confiance dans les résultats produits.
 Les solveurs SMT sont des logiciels complexes, optimisés et en constante évolution.
 Ils sont en outre souvent écrits en C/C++ pour des raisons de performance, ce qui complique fortement leur vérification formelle et leur formalisation.
-Il est donc difficile d'en certifier entièrement l'implémentation, et l'expérience montre que des bogues peuvent entraîner des verdicts incorrects \cite{bugsmt}.
+Il est donc difficile d’en certifier entièrement l’implémentation, et l’expérience montre que des bogues peuvent entraîner des verdicts incorrects \cite{bugsmt}.
 Dans des contextes critiques, où leur résultat entraîne une décision de sûreté, il devient indispensable de renforcer notre confiance en ces outils.
 
 L'approche prometteuse du \emph{proof logging} \cite{acmsmt} consiste à certifier les résultats du solveur plutôt que son implémentation.
 Cette approche consiste en ce que le solveur produise une trace de preuve, appelée \emph{certificat}, qui justifie le verdict.
-Un outil indépendant, plus simple que le solveur, vérifie ensuite ce certificat. Cette séparation des rôles est attrayante car la vérification d'une preuve est conceptuellement plus simple et peut s'appuyer sur un noyau de confiance réduit.
+Un outil indépendant, plus simple que le solveur, vérifie ensuite ce certificat. Cette séparation des rôles est attrayante car la vérification d’une preuve est conceptuellement plus simple et peut s’appuyer sur un noyau de confiance réduit.
 
 \begin{figure}[b]
     \centering
@@ -73,10 +74,10 @@ Un outil indépendant, plus simple que le solveur, vérifie ensuite ce certifica
     \label{fig:fr-interop-intro}
 \end{figure}
 
-Le format de preuve Alethe \cite{alethe} a émergé comme un format de preuve standard pour représenter des preuves d'insatisfiabilité SMT.
-Ces preuves justifient le verdict \texttt{unsat} d'un solveur en montrant que le problème d'entrée ne possède aucun modèle.
-Alethe repose sur SMT-LIB, le langage standard pour exprimer des problèmes SMT \cite{smtlib}. Les preuves sont organisées en une suite d'étapes, et Alethe propose un catalogue de règles de raisonnement couvrant la résolution, les lemmes de théorie, les simplifications, les quantificateurs et la skolémisation. 
-Néanmoins, Alethe ne dispose pas encore d'un vérificateur certifié largement adopté, ce qui limite son rôle en tant que format d'échange réellement fiable \cite{carcara}.
+Le format de preuve Alethe \cite{alethe} a émergé comme un format de preuve standard pour représenter des preuves d’insatisfiabilité SMT.
+Ces preuves justifient le verdict \texttt{unsat} d’un solveur en montrant que le problème d’entrée ne possède aucun modèle.
+Alethe repose sur SMT-LIB, le langage standard pour exprimer des problèmes SMT \cite{smtlib}. Les preuves sont organisées en une suite d’étapes, et Alethe propose un catalogue de règles de raisonnement couvrant la résolution, les lemmes de théorie, les simplifications, les quantificateurs et la skolémisation. 
+Néanmoins, Alethe ne dispose pas encore d’un vérificateur certifié largement adopté, ce qui limite son rôle en tant que format d’échange réellement fiable \cite{carcara}.
 Des travaux de reconstruction existent néanmoins dans des assistants de preuve, par exemple dans Isabelle/HOL~\cite{aletheInIsa,IsaRare}.
 
 
@@ -146,15 +147,15 @@ Pour analyser et reconstruire de telles traces, nous décrivons maintenant (\cre
 
 \bigskip\bigskip
 
-Pour analyser et reconstruire de telles traces, nous décrivons maintenant la structure générale d'une étape Alethe, résumée par \cref{eq:fr-step}.
-Une étape est constituée d'un indice \colorbox{midpurple!30}{$i$} $\in \mathbb{I}$, où $\mathbb{I}$ est un ensemble infini dénombrable d'indices (par exemple \kw{a0}, \kw{t1}), et d'une clause de formules \colorbox{Emerald!30}{$l_1, \dots, l_n$} représentant une disjonction $n$-aire.
-Les étapes qui ne sont pas des hypothèses sont justifiées par une règle de preuve \colorbox{rxpurple2!30}{$\mathcal{R}$} qui dépend d'un ensemble éventuellement vide de prémisses $\{\colorbox{darkpurple!30}{$p_1 \dots p_m$}\} \subseteq \mathbb{I}$,
+Pour analyser et reconstruire de telles traces, nous décrivons maintenant la structure générale d’une étape Alethe, résumée par \cref{eq:fr-step}.
+Une étape est constituée d’un indice \colorbox{midpurple!30}{$i$} $\in \mathbb{I}$, où $\mathbb{I}$ est un ensemble infini dénombrable d’indices (par exemple \kw{a0}, \kw{t1}), et d’une clause de formules \colorbox{Emerald!30}{$l_1, \dots, l_n$} représentant une disjonction $n$-aire.
+Les étapes qui ne sont pas des hypothèses sont justifiées par une règle de preuve \colorbox{rxpurple2!30}{$\mathcal{R}$} qui dépend d’un ensemble éventuellement vide de prémisses $\{\colorbox{darkpurple!30}{$p_1 \dots p_m$}\} \subseteq \mathbb{I}$,
 ne référant que des étapes antérieures, de sorte que la preuve forme un graphe orienté acyclique.
 Une règle peut aussi dépendre d'une liste d'arguments \colorbox{rxpink!30}{$[a_1 \dots a_r]$}, où chaque argument $a_i$ est soit un terme, soit une paire $(x_i, t_i)$, où $x_i$ est une variable et $t_i$ un terme.
 L'interprétation des arguments dépend de la règle.
 Le contexte \colorbox{RoyalBlue!30}{$\Gamma$} d'une étape est une liste $c_1 \dots c_l$, où chaque élément $c_j$ est soit une variable, soit un couple variable-terme noté $x_j \mapsto t_j$.
 Ainsi, les étapes dont le contexte est non vide contiennent des variables $x_j$ qui apparaissent dans \colorbox{Emerald!30}{$l_i$} et seront substituées par les $t_j$.
-Les règles de preuve \colorbox{rxpurple2!30}{$\mathcal{R}$} incluent des lemmes de théorie et d'autres règles de logique comme la règle \kw{resolution}, qui correspond à l'hyper-résolution sur des clauses,
+Les règles de preuve \colorbox{rxpurple2!30}{$\mathcal{R}$} incluent des lemmes de théorie et d'autres règles de logique comme la règle \kw{resolution}, qui correspond à l’hyper-résolution sur des clauses,
 et consiste à composer plusieurs résolutions binaires pour dériver une clause à partir de plusieurs prémisses.
 
 Ces éléments suffisent pour appréhender la preuve du \cref{lst:fr-smtexampleinput-fol}, qui comporte ici sept étapes.
