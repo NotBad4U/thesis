@@ -576,7 +576,7 @@ Direct by induction on the structure of $x$.
 \end{proof}
 \end{lemma}
 
-\begin{lemma}[Split correctness]\label{lem:split-correct}
+\begin{lemma}[Split correctness]\label{lem:la-split-correct}
 For all $\ell$ and $gs$, given $\kw{split}~gs = (gs_1, gs_2)$, we have
 \[
 \Downarrow((gs_1 \concat gs_2, \ell) = (\Downarrow~gs~\ell).
@@ -591,7 +591,7 @@ For all $\ell$ and $gs$, given $\kw{split}~gs = (gs_1, gs_2)$, we have
 The merge function combines two already-sorted lists of $\bb{G}$ elements. The following
 lemma states that it behaves extensionally like addition of the corresponding denotations.
 
-\begin{lemma}[Merge correctness]\label{lem:merge-correct}
+\begin{lemma}[Merge correctness]\label{lem:la-merge-correct}
 For all $\ell, g_1, g_2$, we have
 \[
 \Downarrow(\kw{merge}~g_1~g_2, \ell) \;=\; \Downarrow(g_1, \ell) + \Downarrow(g_2,\ell).
@@ -633,7 +633,7 @@ For all $n, \ell, g$, if $\kw{size}(g)\leq n$, then
 By induction on $n$.  
 \begin{itemize}
 \item[] (Case $n = 0$), we then have $\kw{size}(g)=0$, then $g=\Box$ and thus $\kw{mergesort}~g = \Box$,  so $\Downarrow(\kw{mergesort}~\Box,\ell) = \Downarrow(\Box,\ell)$ holds directly.
-\item[] (Case $n > 0$), with the definition of $\kw{mergesort}$ and $\kw{split}$, apply the induction hypothesis to both sublists with the bounds given by \cref{lem:size-split2}, and combine using \cref{lem:merge-correct} and \cref{lem:split-correct}.  
+\item[] (Case $n > 0$), with the definition of $\kw{mergesort}$ and $\kw{split}$, apply the induction hypothesis to both sublists with the bounds given by \cref{lem:size-split2}, and combine using \cref{lem:la-merge-correct} and \cref{lem:la-split-correct}.  
 \end{itemize}
 \end{proof}
 \end{lemma}
