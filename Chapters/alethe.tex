@@ -509,7 +509,7 @@ $4. \triangleright \neg(\forall x,\ (p~x)) \approx \neg\!\big(p(\epsilon x.\,\ne
   \label{table:linear-arith-rules}
 \end{table}
 
-Proofs for linear arithmetic use several straightforward rules listed in \cref{table:linear-arith-rules}.
+Proofs in linear arithmetic rely on a set of basic rules, summarized in \cref{table:linear-arith-rules}.
 For example, the rule \tt{la\_totality} asserts a totality of the ordering $\leq$.
 and the main rules \tt{la\_generic} and \tt{lia\_generic}, which describe an algorithm.
 A step of the rule \tt{la\_generic} represents a tautological clause of linear inequalities, and can be verified by demonstrating that the conjunction of the negated inequalities is unsatisfiable.
@@ -566,7 +566,7 @@ we write $s1 \bowtie s2$ to denote the left and right-hand sides of an inequalit
     If $\varphi = s_1 < s_2$, then let $\varphi := \neg(s_1 \geq s_2$).
     If $\varphi = s_1 \leq s_2$, then let $\varphi := \neg(s_1 > s_2$).
     Otherwise, leave $\varphi$ unchanged.
-    This step normalizes the literal by negating it if necessary.
+    This step puts the literal in a normalized form, by negating it when needed.
     The goal is to produce a canonical form that uses only the operators $>$, $\geq$, and $=$.\\
     % Note that equalities are assumed to already be in negated form.
 
@@ -662,7 +662,7 @@ To check if a proof is valid we have to check if all steps of a subproof adhere 
 If all subproofs are valid and all steps in the reduced proof adhere to the conditions of their rule, then the entire proof is valid.
 Consequently, a proof is valid if and only if all of its subproofs are valid and all of its top-level steps are valid.
 
-Formally, an Alethe proof $P$ is represented as a sequence $[C_1, \ldots, C_n]$ of steps and anchors.
+Formally, an Alethe proof $P$ is represented as a finite sequence $[C_1, \ldots, C_n]$ of steps and anchors.
 Since each step employs a unique index, we assume that step $C_i$ in $P$ uses
 $i$ as its index. The logical context changes only at anchors and subproof-concluding
 steps. Therefore, the step elements $C_1, \ldots, C_n$ are not directly associated
