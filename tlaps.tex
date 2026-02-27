@@ -6,6 +6,11 @@
 \newcommand{\tlc}{\textsc{tlc}\xspace}
 \newcommand{\apalache}{\textsc{apalache}\xspace}
 
+% Should fix the font issue in tlaps.tex:
+% LaTeX Font: Font shape `T1/pplj/m/scit' undefined
+% (Font)	using `T1/pplj/m/sc' instead.
+\DeclareFontShape{T1}{pplj}{m}{scit}{<->ssub * pplj/m/sc}{}
+
 \newcommand{\deq}{\mathrel{\smash{\stackrel{\scriptscriptstyle\Delta}{=}}}}
 \newcommand{\seq}[1]{\langle #1 \rangle}
 \newcommand{\str}[1]{\text{\textsf{\upshape ``#1''}}}

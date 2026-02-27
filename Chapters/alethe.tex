@@ -253,7 +253,7 @@ the proof rules, terms are treated as if proxy names introduced by :named annota
 For example, the term \smtinline{or (! (P a) :named foo) foo} and \smtinline{or (P a) (P a)} are considered to be syntactically equal.
 
 
-\begin{figure}[]
+\begin{figure}
 \footnotesize
   \[
       \begin{array}{r c l}
@@ -301,7 +301,7 @@ To circumvent this, Alethe introduces a new \smtinline{cl} operator. It correspo
 arguments, where it is equal to \smtinline{false}.
 
 \paragraph{Subproofs}
-The abstract notation denotes subproofs in \cref{ssec:subproof-desc} by marking them with a vertical line.
+The abstract notation in \cref{ssec:subproof-desc} marks subproofs with a vertical line.
 To map this notation to a list of commands, Alethe uses the \smtinline{anchor} command.
 This command indicates the start of a subproof. A subproof is concluded by a matching \smtinline{step} command.
 This step must use a \emph{concluding rule} (such as \kw{subproof}, \kw{bind}, and so forth).
