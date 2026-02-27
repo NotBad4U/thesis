@@ -8,6 +8,24 @@
 \newtheorem*{theorem*}{Théorème}
 \newtheorem*{exemple*}{Exemple}
 
+% *********************************************************************
+% Do not include figures, tables, and listings in the table of contents
+% *********************************************************************
+\captionsetup[figure]{list=no}
+\captionsetup[table]{list=no}
+\captionsetup[lstlisting]{list=no}
+\renewcommand{\tablename}{Tableau}
+\renewcommand{\figurename}{Image}
+\renewcommand{\lstlistingname}{Code}
+\crefname{section}{paper}{papers}
+\crefname{figure}{Image}{Images}
+\crefname{listing}{Code}{Codes}
+\crefname{table}{Tableau}{Tableaux}
+\crefname{equation}{Équation}{Équations}
+\crefname{chapter}{Chapitre}{Chapitres}
+\crefname{section}{Partie}{Parties}
+\crefname{theorem}{Théorème}{Théorèmes}
+
 \section*{Contexte et motivation}
 \label{sec:contexte-et-motivation}
 
@@ -52,7 +70,6 @@ Cette séparation des rôles est attrayante car la vérification d’une preuve 
       \draw[->] (k) -- (lp) node[midway,sloped,above] {\footnotesize{KaMeLo}};
       \draw[<->] (coq) -- (lp)  node[midway,sloped,above] {\footnotesize{vodk}};
     \end{tikzpicture}
-    \captionsetup{list=no}
     \caption{Lambdapi, un langage assembleur pour les systèmes de preuve.}
     \label{fig:fr-interop-intro}
 \end{figure}
@@ -61,9 +78,9 @@ Le format de preuve Alethe \cite{alethe} a émergé comme un format de preuve st
 Alethe repose sur la SMT-LIB \cite{smtlib}. Les preuves sont organisées comme une suite d’étapes, et Alethe propose un catalogue de règles de raisonnement couvrant la résolution, des lemmes de théorie, des simplifications, les quantificateurs et la skolémisation. 
 Néanmoins, Alethe ne dispose pas encore d’un vérificateur certifié largement adopté, ce qui limite son rôle comme format d’échange réellement fiable \cite{carcara}.
 
-Cette thèse répond à ce besoin en développant un cadre de \emph{reconstruction} de preuves Alethe dans Lambdapi \cite{lambdapi}.
-Lambdapi est un assistant de preuve fondé sur le $\lambda\Pi$-calcul modulo théories, conçu comme un langage pivot pour échanger des preuves entre systèmes.
-Comme l’illustre la \Cref{fig:fr-interop-intro}, de nombreux assistants et outils peuvent exporter ou importer des preuves via Lambdapi, qui joue alors le rôle de ``langage assembleur'' pour les systèmes de preuve.
+Cette thèse répond à ce besoin en développant un cadre de reconstruction de preuves Alethe dans Lambdapi \cite{lambdapi}.
+Lambdapi est un assistant de preuve fondé sur le $\lambda\Pi$-calcul modulo théories, conçu comme un langage pivot pour échanger des preuves entre systèmes \cite{thire:tel-03224039, blanqui:hal-04613926}.
+Comme l’illustre la \Cref{fig:fr-interop-intro}, de nombreux assistants et autre outils peuvent exporter ou importer des preuves via Lambdapi, qui joue alors le rôle de ``langage assembleur'' pour les systèmes de preuve.
 Reconstruire une preuve Alethe dans Lambdapi revient à produire un terme de preuve dont la validité est vérifiée par le noyau de Lambdapi, ce qui fournit une garantie forte.
 L’objectif est ainsi de rendre les preuves Alethe portables et vérifiables indépendamment du solveur.
 
@@ -103,9 +120,13 @@ $\lightning$
 (step t4 (cl) :rule resolution :premises (a2 t3))
 \end{lstlisting}
 
-L’exemple de la \cref{lst:fr-smtexampleinput-fol} illustre ce principe : à partir du problème d’entrée, le solveur produit une trace Alethe composée d’étapes \kw{assume} et \kw{step}, aboutissant à la clause vide \kw{(cl)}.
-Les solveurs SMT procèdent par réfutation : ils ajoutent $\neg p(b)$ aux hypothèses et prouvent l’\emph{insatisfiabilité}.
-L’insatisfiabilité obtenue constitue alors un certificat de la validité de l’entaillement, dont le solveur fournit une preuve sous la forme d’une trace Alethe.
+L’exemple du \cref{lst:fr-smtexampleinput-fol} illustre ce principe : à partir du problème d’entrée, le solveur produit une trace Alethe composée d’étapes \kw{assume} et \kw{step}, aboutissant à la clause vide \kw{(cl)}.
+Dans ce problème d’entrée, on suppose d’abord que $p(a)$ est vrai et que $a=b$.
+Intuitivement, l’égalité $a=b$ permet de transporter la propriété $p$ de $a$ vers $b$, donc d’obtenir $p(b)$.
+Or on ajoute aussi l’hypothèse contraire $\neg p(b)$ : on cherche donc à montrer que cet ensemble d’hypothèses est contradictoire.
+Les solveurs SMT procèdent par réfutation : ils établissent cette contradiction, c’est-à-dire l’\emph{insatisfiabilité}.
+L’insatisfiabilité obtenue certifie alors que, dans le problème initial, $p(a)$ et $a=b$ entraînent bien $p(b)$; la trace Alethe en donne la justification étape par étape.
+Pour analyser et reconstruire de telles traces, nous décrivons maintenant la structure générale d’une étape Alethe, résumée à l'\cref{eq:fr-step}:
 
 \renewcommand{\eqnhighlightshade}{35}
 
@@ -123,22 +144,21 @@ L’insatisfiabilité obtenue constitue alors un certificat de la validité de l
 
 \bigskip\bigskip
 
-Pour analyser et reconstruire de telles traces, nous décrivons maintenant la structure générale d’une étape Alethe, résumée en \cref{eq:fr-step}.
-Une étape est constituée d’un indice \colorbox{midpurple!30}{$i$} $\in \mathbb{I}$, où $\mathbb{I}$ est un ensemble infini dénombrable d’indices (par exemple \kw{a0}, \kw{t1}), et d’une clause de formules \colorbox{Emerald!30}{$l_1, \dots, l_n$} représentant une disjonction $n$-aire.
+Une étape est constituée d’un indice \colorbox{midpurple!30}{$i$} $\in \mathbb{I}$, où $\mathbb{I}$ est un ensemble infini dénombrable d’indices (par exemple \kw{a0}, \kw{t1}), et d’une clause de formules \colorbox{Emerald!30}{$l_1, \dots, l_n$} pouvant être interprétée comme une disjonction $n$-aire.
 Les étapes qui ne sont pas des hypothèses sont justifiées par une règle de preuve \colorbox{rxpurple2!30}{$\mathcal{R}$} qui dépend d’un ensemble éventuellement vide de prémisses $\{\colorbox{darkpurple!30}{$p_1 \dots p_m$}\} \subseteq \mathbb{I}$,
 ne référant que des étapes antérieures, de sorte que la preuve forme un graphe orienté acyclique.
 Une règle peut aussi dépendre d’une liste d’arguments \colorbox{rxpink!30}{$[a_1 \dots a_r]$}, où chaque argument $a_i$ est soit un terme, soit une paire $(x_i, t_i)$, où $x_i$ est une variable et $t_i$ un terme.
 L’interprétation des arguments dépend de la règle.
 Le contexte \colorbox{RoyalBlue!30}{$\Gamma$} d’une étape est une liste $c_1 \dots c_l$, où chaque élément $c_j$ est soit une variable, soit un couple variable-terme noté $x_j \mapsto t_j$.
 Ainsi, les étapes dont le contexte est non vide contiennent des variables $x_j$ qui apparaissent dans \colorbox{Emerald!30}{$l_i$} et seront substituées par les $t_j$.
-Les règles de preuve \colorbox{rxpurple2!30}{$\mathcal{R}$} incluent des lemmes de théorie et d'autre règle de logique comme la règle \kw{resolution}, qui correspond à l’hyper-résolution sur des clauses.
+Les règles de preuve \colorbox{rxpurple2!30}{$\mathcal{R}$} incluent des lemmes de théorie et d'autre règle de logique comme la règle \kw{resolution} (ligne 6), qui correspond à l’hyper-résolution sur des clauses.
 
 Ces éléments suffisent pour appréhender la preuve du \cref{lst:fr-smtexampleinput-fol}, qui comporte ici sept étapes.
 Elle commence par trois premières étapes \kw{assume} (\kw{a0}, \kw{a1}, \kw{a2}) qui réaffirment les assertions du problème d’entrée.
 Dans la syntaxe concrète, les étapes \kw{assume} disposent d’une commande dédiée \smtinline{assume}, afin de les distinguer clairement des étapes ordinaires, qui utilisent la commande \smtinline{step}.
 Cette commande est du sucre syntaxique pour une commande \kw{step} utilisant la règle Alethe \kw{hole} qui admet une clause.
 L’étape \kw{t1} introduit une tautologie de la forme $\neg (\varphi_1 \approx \varphi_2) \lor \neg \varphi_1 \lor \varphi_2$, justifiée par la règle \colorbox{rxpurple2!30}{\kw{equiv\_pos2}}.
-L’étape \kw{t2} établit $p(a) \approx p(b)$ par congruence à partir de l’hypothèse \kw{a1} et matéralisée par la règle \colorbox{rxpurple2!30}{\kw{cong}}.
+L’étape \kw{t2} établit $p(a) \approx p(b)$ par congruence à partir de l’hypothèse \kw{a1}, et matéralisée par la règle \colorbox{rxpurple2!30}{\kw{cong}}.
 L’étape \kw{t3} applique ensuite la règle \colorbox{rxpurple2!30}{\kw{resolution}} aux prémisses \kw{t1}, \kw{t2} et \kw{a0} pour dériver $p(b)$.
 Enfin, l’étape \kw{t4} conclut la preuve en produisant la clause vide i.e. $\bot$, concrètement notée \kw{(cl)}.
 Remarquons que les contextes \colorbox{RoyalBlue!30}{$\Gamma$} de toutes les étapes sont vides dans cet exemple.
@@ -184,24 +204,22 @@ D’autre part, les SMT solveurs tendent à travailler avec de large expression 
 
 Afin de palier à certain problèmes décrit plus haut, nous introduisons une étape de preprocessing de la preuve avant de la reconstruire.
 Des outils comme Carcara \cite{carcara} et RARE \cite{rare,IsaRare} transforment les preuves Alethe produites par les solveurs en preuves à petit pas plus adaptées à la reconstruction.
-L’élaboration peut notamment: éliminer des pas redondants, expliciter des réordonnancements implicites, décomposer des règles trop grossières en sous-étapes plus élémentaires, ou remplacer des simplifications complexes par des séquences compatibles avec les bibliothèques de preuve disponibles.
-Néanmoins, une preuve élaborée augmente le taux de reconstruction réussie au détriment d'une complexité spatiale et temporel qui augmente i.e. la preuve aura plus d'étapes est sera donc plus difficile à valider.
+L’élaboration peut notamment: éliminer des pas redondants, expliciter des réordonnancements de clause implicites, décomposer des règles trop grossières en sous-étapes plus élémentaires, ou remplacer des simplifications complexes par des séquences compatibles.
+Néanmoins, une preuve élaborée augmente le taux de reconstruction réussie au détriment d'une complexité spatiale et temporel plus forte i.e. la preuve aura plus d'étapes est sera donc plus difficile à valider.
 
+Comme le présente l'\cref{fig:fr-bench-pipeline}, nous tirons partie du module d'élaboration des preuves Alethe par Carcara afin ensuite de les traduires en Lambdapi pour les vérifiers.
+Nous illustrons ceci avec l'élaboration de la preuve du \cref{lst:fr-smtexampleinput-fol}. Carcara analyse la résolution est indique les pivots dans les arguments \colorbox{rxpink!30}{$[a_1 \dots a_r]$} de l'étape, de plus,il ordonne les premises \{\colorbox{darkpurple!30}{$p_1 \dots p_m$}\}.
 
-Comme le présente la \cref{fig:fr-bench-pipeline}, nous tirons partie du module d'élaboration des preuves Alethe par Carcara afin ensuite de les traduires en Lambdapi pour les vérifiers.
-Nous illustrons ceci avec l'élaboration de la preuve \cref{lst:fr-smtexampleinput-fol}. Carcara analyse la résolution est indique les pivots dans les arguments \colorbox{rxpink!30}{$[a_1 \dots a_r]$} de l'étape, de plus,
-il ordonne les premises \{\colorbox{darkpurple!30}{$p_1 \dots p_m$}\}. Alethe peut de plus introduire des contraction implicites qui sont rééxplicité par Carcara en découpant l'étape en plusieurs sous étapes comme le montre la \cref{fig:fr-resolution-uncrowding}.
-
-Ainsi, comme on peut le constater dans le \cref{lst:fr-resolution-ex} ci-dessous, les étapes \kw{t3} et \kw{t4} sont maintenant détaillés avec les pivots et l'ordre des résolutions facilitatant la reconstruction dans un assistant à la preuve comme Lambdapi.
- 
-\begin{lstlisting}[language=SMT,numbers=none, caption={Elaboration des étapes de résolutions de \cref{lst:fr-smtexampleinput-fol} par Carcara}, label={lst:fr-resolution-ex}]
+\begin{lstlisting}[language=SMT,numbers=none, label={lst:fr-resolution-ex}, caption={Elaboration des étapes de résolutions de \cref{lst:fr-smtexampleinput-fol} par Carcara}, nolol]
 (step t3 (cl (p b)) :rule resolution :premises (t1 t2 a0)
     :args ((= (p a) (p b)) false (p a) false))
 (step t4 (cl) :rule resolution :premises (a2 t3)
   :args ((p b) false)})
 \end{lstlisting}
 
-Dans ces travaux nous avons ajouté un module de traduction dans Carcara afin de pouvoir traduire une preuve Alethe en une preuve Lambdapi que nous pouvons par la suite vérifier.
+Ainsi, comme on peut le constater dans le \cref{lst:fr-resolution-ex} ci-dessus, les étapes \kw{t3} et \kw{t4} sont maintenant détaillés avec les pivots et l'ordre des résolutions facilitatant la reconstruction dans un assistant à la preuve comme Lambdapi.
+
+Dans ces travaux nous avons ajouté un module de traduction dans Carcara afin de pouvoir traduire une preuve Alethe élaborée en une preuve Lambdapi que nous pouvons par la suite vérifier avec notre encodage de la logique SMT dans Lambdapi que nous allons présenter dans la section suivante.
 
 \section*{Lambdapi comme noyau de confiance et langage pivot}
 
@@ -263,7 +281,7 @@ L'opérateur $\lor$ représente une disjonction binaire et utilise une notation 
 
 La seconde partie présente l'encodage des clauses. Le type \kw{Clause} a deux constructeurs, le premier $\nil$ représentant une clause vide,
 $\veedot$ ajoute un littéral en tête à une clause existante, et l’interprétation $\cal{F}$ traduit une clause en une proposition.
-L’opérateur $\pp$ modélise la concaténation de clauses (associative à gauche via réécriture), et nous
+L’opérateur $\pp$ modélise la concaténation de clauses  via réécriture, et nous
 abrégeons enfin, pour toute clause $c$, une preuve de $\cal{F}\,c$ par $\pid(c) \coloneqq \prf\,(\cal{F}\,c)$.
 
 
@@ -276,7 +294,7 @@ Les SMT solveurs raisonnent sur une logique classique. Ainsi, pour incarner ce r
 
 \subsection*{Fonctions de traduction de Alethe vers Lambdapi}
 
-Nous présentons ici les fonctions de traduction qui permettent de passer d’une trace Alethe, fondée sur la signature SMT-LIB, à des objets bien typés dans Lambdapi.
+Nous présentons ici les fonctions pour la traduction qui permettent de passer d’une trace Alethe, fondée sur la signature SMT-LIB, à des objets bien typés dans Lambdapi.
 La signature SMT-LIB est décrite dans~\cite[\S 5.2.1]{smtlib}. Les détailles pour la traduction peuvent être trouvée au \cref{ch:encoding}.
 Afin d’éviter toute confusion avec la signature Lambdapi $\Sigma$, nous notons $\Theta^\mathcal{S}$ l’ensemble des sortes SMT-LIB, $\Theta^\cal{F}$ l’ensemble des symboles de fonctions, et $\Theta^\cal{X}$ l’ensemble des variables.
 
@@ -321,8 +339,11 @@ Les détailles peuvent être trouvée au \cref{ch:reconstruction-ul} pour la log
 Pour les règles propositionnelles et du premier ordre, la reconstruction suit une stratégie en deux niveaux.
 D’abord, les règles tautologiques sont reconstruites par des lemmes génériques sur les clauses, permettant de factoriser les preuves et de réduire la duplication.
 Par exemple, le \cref{fr-trad-ex} montre la reconstruction de la preuve du \cref{lst:fr-smtexampleinput-fol}.
-L'étape \kw{t1} peut-être reconstruit directement en Lambdapi en encodant le lemme génériques $\kw{equiv\_pos2}: \Pi [a: \prop] \Pi [a: \prop], \pid (\neg (a = b) \veedot \neg a \veedot b \veedot \nil)$ et similairement pour la congruence. 
-Ensuite, les règles de déduction comme la \kw{resolution} utilisés aux étapes \kw{t3} et \kw{t4} sont reconstruites par un script de preuve où nous définissons un lemme générique pour la résolution binaire (\cref{th:resolution}).
+L'étape \kw{t1} peut-être reconstruit directement en Lambdapi en encodant le lemme génériques:
+\[
+\kw{equiv\_pos2}: \Pi [a: \prop] \Pi [b: \prop], \pid (\neg (a = b) \veedot \neg a \veedot b \veedot \nil) 
+\]
+et similairement pour la congruence. Ensuite, les règles de déduction comme la \kw{resolution} utilisés aux étapes \kw{t3} et \kw{t4} sont reconstruites par un script de preuve où nous définissons un lemme générique pour la résolution binaire (\cref{th:resolution}).
 Une hyper-résolutions est ainsi reconstruite par l'application en chaine de résolution binaire via le langage de tactique de Lambdapi. 
 
 \lstinputlisting[language=Lambdapi, mathescape=true, label={fr-trad-ex}, caption={Traduction de la preuve \cref{lst:fr-smtexampleinput-fol}}]{Assets/example_uf.lp}
@@ -354,11 +375,11 @@ Intuitivement, si une étape Alethe est valide au sens de la sémantique Alethe/
 \section*{Evaluation}
 
 Nous évaluons notre chaîne complète (\cref{fig:fr-bench-pipeline}) pour la reconstruction de preuves SMT en Lambdapi à l’aide des tests de performance fournis par la SMT-COMP \cite{SMT-COMP}.
-Nous utilisons des échantillons des familles SMT-LIB couvrant exactement les fragments pris en charge : UF, LIA, UFLIA et QF\_LIA.
-Nous nous concentrons en particulier sur le corpus \emph{Sledgehammer}, qui reflète un cas d’usage central : la décharge automatique de sous-buts dans un assistant de preuve via un solveur SMT, puis la validation indépendante du certificat produit.
-Nous présentons ici un court extrait de nos résultats ; les détails de la configuration et l’ensemble des mesures sont donnés aux \cref{ch:evaluation} et \cref{app:complete-benchmarks-results}.
+Nous utilisons des échantillons des familles SMT-LIB couvrant exactement les fragments pris en charge: UF, QF\_UF, LIA, UFLIA et QF\_LIA.
+Nous présentons ici un court extrait de nos résultats; les détails de la configuration et l’ensemble des mesures sont donnés aux \cref{ch:evaluation} et \cref{app:complete-benchmarks-results}.
+Nous nous concentrons en particulier sur le corpus \emph{Sledgehammer}, qui reflète un cas d’usage central: la décharge automatique de sous-buts dans un assistant de preuve via un solveur SMT, puis la validation indépendante du certificat produit.
 Un échantillon représentatif de chaque logique prise en charge est présenté dans ces tableaux.
-Nous reportons les résultats au format Succès--Erreur--Temps (S--E--T). Une limite de temps de 30 secondes est donnée pour cvc5 et Carcara, et de 20s pour Lambdapi.
+Nous reportons les résultats au format Succès--Erreur--Temps Écoulé (S--E--T). Une limite de temps de 30 secondes est donnée pour cvc5 et Carcara, et de 20s pour Lambdapi.
 
 
 \pgfplotsset{
@@ -469,7 +490,7 @@ Nous reportons les résultats au format Succès--Erreur--Temps (S--E--T). Une li
 
 \begin{table}[tb]
 \centering
-\caption{Temps de vérification Lambdapi (ms).}
+\caption{Temps de vérification de Lambdapi (ms).}
 \pgfplotstabletypeset[
   col sep=comma,
   font=\ttfamily\scriptsize,
@@ -485,14 +506,14 @@ Nous reportons les résultats au format Succès--Erreur--Temps (S--E--T). Une li
   columns/q1/.style={column name={Q1}},
   columns/median/.style={column name={Médiane}},
   columns/q3/.style={column name={Q3}},
-  columns/max/.style={column name={Max}, string type, string replace={21301}{Timeout},string replace={20511}{Timeout}},
+  columns/max/.style={column name={Max}, string type, string replace={21301}{Temps expiré},string replace={20511}{Temps expiré}},
 ]{Assets/benchs/fr-passtime.csv}%
 \label{tab:fr-temps-distribution}
 \end{table}
 
 
-La \cref{tab:fr-pass-elab} montre que, dans la grande majorité des cas, cvc5 produit un certificat de preuve et que Carcara parvient ensuite à l’élaborer, ce qui permet sa traduction et sa vérification.
-La \cref{tab:fr-check-nb} résume les échantillons qui ont pu être élaborés, puis traduits, puis vérifiés par Lambdapi, et la \cref{tab:fr-temps-distribution} donne des statistiques sur les temps de vérification.
+Le \cref{tab:fr-pass-elab} montre que, dans la grande majorité des cas, cvc5 produit un certificat de preuve et que Carcara parvient ensuite à l’élaborer; ce qui permet sa traduction et sa vérification.
+Le \cref{tab:fr-check-nb} résume les échantillons qui ont pu être élaborés, puis traduits, ensuite vérifiés par Lambdapi, et le \cref{tab:fr-temps-distribution} donne des statistiques sur les temps de vérification.
 Sur le corpus \emph{Sledgehammer}, nous obtenons un taux de réussite de vérification proche de 90\,\%.
 Ces résultats confirment que la vérification est généralement bien sous la seconde sur ces familles. Nous investigons les goulots d’étranglement dans la conclusion du \cref{ch:evaluation}.
 
@@ -508,6 +529,21 @@ Notre outil a ainsi permis de mettre en évidence des erreurs dans certaines pre
 
 Plusieurs perspectives s’ouvrent naturellement. Étendre la couverture à d’autres théories importantes, comme les bit-vectors, renforcerait encore l’universalité du cadre.
 Enfin, approfondir l’intégration avec d’autres assistants (export vers Rocq, Lean, etc.) contribuerait à faire d’Alethe un véritable format d’échange de preuves, au service d’une vérification formelle plus transparente et plus digne de confiance.
+
+\captionsetup[figure]{list=yes}
+\captionsetup[table]{list=yes}
+\captionsetup[lstlisting]{list=yes}
+
+\renewcommand{\tablename}{Table}
+\renewcommand{\figurename}{Figure}
+\renewcommand{\lstlistingname}{Listing}
+\crefname{figure}{Figure}{Figures}
+\crefname{listing}{Listing}{Listings}
+\crefname{equation}{Equation}{Equations}
+\crefname{chapter}{Chapter}{Chapters}
+\crefname{section}{Section}{Sections}
+\crefname{theorem}{Theorem}{Theorems}
+\crefname{table}{Table}{Tables}
 
 \setcounter{figure}{0}
 \setcounter{equation}{0}
