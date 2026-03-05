@@ -177,7 +177,7 @@ The next two lemmas show that provability is stable under appending clauses on e
 These capture the monotonicity of disjunction ($\lor$) with respect to clause concatenation.
 
 \begin{lemma}[Right Append Preservation]\label{lem:orN_append_right}
-Let $ps,qs: \List{o}$, if $\prf(\kw{disj}~qs)$ then also $\prf(\kw{disj}~(ps \concat qs))$.
+Let the two lists of propositons $ps,qs: \List{o}$, if $\prf(\kw{disj}~qs)$ then also $\prf(\kw{disj}~(ps \concat qs))$.
 \begin{proof}
 The clause $qs$ appears as a subclause of $ps \concat qs$, starting at position $\kw{size}(ps)$.
 By Lemma~\ref{lem:orN_subList}, provability of the disjunction of a sublist lifts to provability of the whole list.
@@ -246,12 +246,13 @@ We proceed by induction on the structure of $qs$.
         \ell[j'] \lor (\kw{disj}~(\kw{remove}~\ell~j')) = \kw{disj}~\ell.
       \]
       Combining this with the identities above, we obtain
-      \begin{flalign*}
-        \ell[j'] \lor t \lor \kw{disj}~(\kw{remove}~\ell~j') &= \kw{disj}~(t \cons \ell) && \\
-        &= t \lor \kw{disj}~\ell  && \\
-        &= t \lor \ell[j'] \, \lor \kw{disj}~(\kw{remove}~\ell~j') && \\
-        &= \ell[j'] \lor t \lor \kw{disj}~(\kw{remove}~\ell~j') &&
-      \end{flalign*}
+      \begin{align*}
+        &\ell[j'] \lor t \lor \kw{disj}~(\kw{remove}~\ell~j') \\
+        &= \kw{disj}~(t \cons \ell) \\
+        &= t \lor \kw{disj}~\ell  \\
+        &= t \lor \ell[j'] \lor \kw{disj}~(\kw{remove}~\ell~j') \\
+        &= \ell[j'] \lor t \lor \kw{disj}~(\kw{remove}~\ell~j')
+      \end{align*}
       as required.
   \end{itemize}
 \end{itemize}
@@ -940,15 +941,16 @@ In the other case, $\deno{\kw{p}}$ follows from the induction hypothesis and H2.
 
 The function \kw{provable} implements our decision procedure. It checks if a proposition $goal: \cal{P}$ is provable in the context $\Gamma$.
 %
-\begin{flalign*}
-&\kw{provable}~(goal: \cal{P})~(\hypst): \mathbb{B} &&\\
-&\kw{provable}~\kw{pTrue}~\hyps \re \true &&\\
-&\kw{provable}~\kw{pFalse}~\hyps \re \kw{knows}~\kw{pFalse}~\hyps &&\\
-&\kw{provable}~(\kw{pAnd}~x~y)~\hyps \re (\kw{provable}~x~\hyps)~\kw{and}~(\kw{provable}~y~\hyps) &&\\
-&\kw{provable}~(\kw{pOr}~x~y)~\hyps \re (\kw{provable}~x~\hyps)~\kw{or}~(\kw{provable}~y~\hyps) &&\\
-&\kw{provable}~(\kw{pImpl}~x~y)~\hyps \re \kw{provable}~y~(\kw{learn}~x~\hyps) &&\\
-&\kw{provable}~(\kw{pOther}~i)~\hyps \re \kw{knows}~(\kw{pOther}~i)~\hyps ~\kw{or}~ \kw{knows}~\kw{pFalse}~\hyps  &&\\
-\end{flalign*}
+\begin{align*}
+&\kw{provable}~(goal: \cal{P})~(\hypst): \mathbb{B} \\
+&\kw{provable}~\kw{pTrue}~\hyps \re \true \\
+&\kw{provable}~\kw{pFalse}~\hyps \re \kw{knows}~\kw{pFalse}~\hyps \\
+&\kw{provable}~(\kw{pAnd}~x~y)~\hyps \re (\kw{provable}~x~\hyps)~\kw{and}~(\kw{provable}~y~\hyps) \\
+&\kw{provable}~(\kw{pOr}~x~y)~\hyps \re (\kw{provable}~x~\hyps)~\kw{or}~(\kw{provable}~y~\hyps) \\
+&\kw{provable}~(\kw{pImpl}~x~y)~\hyps \re \kw{provable}~y~(\kw{learn}~x~\hyps) \\
+&\kw{provable}~(\kw{pOther}~i)~\hyps \re (\kw{knows}~(\kw{pOther}~i)~\hyps) \\
+&\hspace{11em} ~\kw{or}~ (\kw{knows}~\kw{pFalse}~\hyps)
+\end{align*}
 
 \begin{theorem}[Correctness of \kw{provable}]
 For any $\kw{goal}: \cal{P}$ and context $\hypst$, if $\prf (\kw{provable}~\kw{goal}~\hyps = \true)$
