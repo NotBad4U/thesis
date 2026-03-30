@@ -94,7 +94,7 @@ Reification ($\reify{}$) and denotation ($\den{}$) functions for $\bb{G} \rightl
 & \reify{\ZO} \re \cst{\ZO} & & \den{\cst{c}} \re c \\
 & \mathop{\reify{\ZPos}} c \re \cst{(\ZPos c)} & & \den{\opp{x}} \mathrel{\re}  \mathop{\sim (\den{x})} \\
 & \mathop{\reify{\ZNeg}} c \re \cst{(\ZNeg c)} & & \den{\mul{c}{x}} \re  c * (\den{x}) \\
-& \reify{(x + y)} \re \add{(\reify{x})}{(\reify{y})} & & \den{\add{x}{y}} \re (\den{x}) + (\den{y}) \\
+& \reify{(x + y)} \re \add{(\reify{x})}{(\reify{y})} & & \den{\add{x}{y}} \re \den{x} \,+\, \den{y} \\
 & \reify{(\sim x)} \re \opp{(\reify{x})} & & \den{\var{c}{x}} \re  c * x \\
 & \mathop{\reify{((\mathop{\ZPos} c) * x})} \re \mul{(\mathop{\ZPos} c)}{(\reify{x})} & & \\
 & \mathop{\reify{((\mathop{\ZNeg} c) * x)}} \re \mul{(\mathop{\ZNeg} c)}{(\reify{x})} & & \\
