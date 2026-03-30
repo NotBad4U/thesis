@@ -115,7 +115,7 @@ The rule \tt{lia\_generic} is similar to \tt{la\_generic}, but omits the coeffic
 i.e.\ \colorbox{rxpink!30}{$[a_1 \dots a_r]$} is empty.
 We decided to leverage the elaboration process of \tt{lia\_generic} performed by Carcara, as doing otherwise would require implementing Fourier-Motzkin elimination for integers, as done in \cite{micromega,omegatest}, hence reimplementing work that was already done by the solver.
 
-Carcara considers $\tt{lia\_generic}$ steps as holes in the proof, given that ``their checking is as hard as solving'' \cite[\S 3.2]{carcara}.
+Carcara treats \tt{lia\_generic} steps as proof holes, since ``their checking is as hard as solving''~\cite[\S 3.2]{carcara}.
 To address this, Carcara leverages an external tool that reformulates each \tt{lia\_generic} step as a separate problem and produces Alethe proofs not containing \tt{lia\_generic} steps.
 The proof is then imported and validated, replacing the original step.
 Thus, the step
