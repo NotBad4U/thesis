@@ -179,7 +179,7 @@ or some reserved keywords such as ``\lpinline{apply}'' in Lambdapi cannot be use
 \label{fig:parallel-check}
 \end{figure}
 
-\section{Parallel reconstruction and checking optimizations}
+\section[Parallel reconstruction and checking]{Parallel reconstruction and checking optimizations.}
 \label{ssec:parallel}
 
 
@@ -445,14 +445,14 @@ With a modest amount of additional effort to encode these rules in Lambdapi, we 
 }
 \end{axis}
 \end{tikzpicture}
-\caption{Lambdapi checking time variations between samples}
+\caption[Checking times across SMTLIB samples]{Lambdapi checking time variations between samples}
 \label{fig:benchmarks-pass-times-boxplot}
 \end{figure}
 
 
 \begin{table}[t]
 \centering
-\caption{Lambdapi checking times (in ms).}
+\caption[Lambdapi checking times]{Lambdapi checking times (in ms).}
 {%
 \scriptsize
 \pgfplotstabletypeset[
@@ -479,7 +479,7 @@ With a modest amount of additional effort to encode these rules in Lambdapi, we 
 
 \begin{table}[t]
 \centering
-\caption{Lambdapi checking times (ms) with \lpinline{associative commutative}.} 
+\caption[Checking times with AC]{Lambdapi checking times (ms) with \lpinline{associative commutative}.} 
 {%
 \scriptsize
 \pgfplotstabletypeset[
@@ -704,7 +704,7 @@ Coverage remains lower for the arithmetic \kw{UFLIA} samples, where our current 
 \end{axis}
 \end{tikzpicture}
 \label{fig:benchmarks-tla-times-boxplot}
-\caption{Lambdapi checking time variations between samples}
+\caption[Checking times across TLAPS samples]{Lambdapi checking time variations between TLAPS samples}
 \end{figure}
 
 The checking times presented in \cref{tab:benchmarks-tla} for the reconstructed TLAPS obligations follow the same qualitative pattern as the SMT-LIB experiments discussed in \cref{sect:evaluation-smtlib}.

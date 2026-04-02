@@ -39,7 +39,7 @@
         \coloneq \kw{apply}~(\kw{cong}_n~f~\pid_l(i_1) \dots \pid_l(i_n)))
        \end{array}$
   \end{tabular}
-  \caption{Translations for three representative Alethe commands.}
+  \caption[Representative Alethe translations]{Translations for three representative Alethe commands.}
   \label{fig:fun-c}
 \end{figure}
 
@@ -386,7 +386,7 @@ Each transformation associated with this rule is implemented by a separate lemma
   $(2) \neg \bot \Rightarrow \top$  &   \\
   $(3) \neg \top \Rightarrow \bot$  &
   \end{tabular}
-  \caption{Translating the command \kw{not\_simplify}.}
+  \caption[Translation of \kw{not\_simplify}]{Translating the command \kw{not\_simplify}.}
   \label{fig:not-simplify}
 \end{figure}
 
@@ -591,7 +591,7 @@ $\C{k} = \pid (\E{Q~\overline{x}, \varphi \approx Q~\overline{y}, \psi} \veedot 
     \\
 \hline
 \end{tabular}
-\caption{Translating \kw{subproof} and \kw{bind} commands.}
+\caption[Translation of subproof and bind]{Translating \kw{subproof} and \kw{bind} commands.}
 \label{table:subproof-c}
 \end{figure}
 
@@ -753,7 +753,7 @@ In contrast, we attempt to reconstruct them using a combination of simple intern
 
 \smallskip
 
-\begin{lstlisting}[language=SMT,caption={An example of proof trace using the cvc5 $\kw{evaluate}$ rule.},label={lst:eval-step}]
+\begin{lstlisting}[language=SMT,caption={[Proof trace using cvc5 evaluate]An example of proof trace using the cvc5 $\kw{evaluate}$ rule.},label={lst:eval-step}]
 (step t1 (cl (= (not true) false)) :rule hole :args ("evaluate"))
 (step t2 (cl (= (>= 0.0 -1.0) true)) :rule hole :args ("evaluate"))
 \end{lstlisting}
