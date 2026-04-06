@@ -108,7 +108,7 @@ The same thing happens with the $c$ literal. In the elaborated \tt{resolution} s
 
 
 
-\subsection{Elaboration of lia\_generic steps}
+\subsection{Elaboration of \kw{lia\_generic} steps}
 \label{ssec:elaboration-lia}
 
 The rule \tt{lia\_generic} is similar to \tt{la\_generic}, but omits the coefficients,
@@ -127,7 +127,7 @@ Thus, the step
 concluding the clause $\neg l_1 \lor \dots \neg l_n$ where all $l_i$ are inequalities, generates an SMT-LIB problem asserting $l_1$, \dots, $l_n$ and invokes the solver cvc5 on it, expecting an Alethe proof $\pi : (l_1 \land \dots \land l_n) \ra \bot$
 that does not use \tt{lia\_generic}. Carcara will check this subproof and then replace the original step by a proof of the form
 
-\begin{lstlisting}[language=SMT,caption={Elaboration of \tt{lia\_generic}},label={lst:elab_lia}]
+\begin{lstlisting}[language=SMT,caption={Elaboration of \kw{lia\_generic}},label={lst:elab_lia}]
 (anchor :step S.t_m+1)
 (assume S.h_1 l1)
 ...

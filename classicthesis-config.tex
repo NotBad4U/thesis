@@ -103,6 +103,7 @@
 \PassOptionsToPackage{T1}{fontenc} % T2A for cyrillics
 \usepackage{fontenc}     
 \usepackage{textcomp} % fix warning with missing font shapes
+\AtBeginDocument{\DeclareFontShape{T1}{fvm}{m}{sc}{<->ssub*fvm/m/n}{}} % fix missing small caps for mono font
 \usepackage{scrhack} % fix warnings when using KOMA with listings package          
 \usepackage{xspace} % to get the spacing after macros right  
 \usepackage{mparhack} % get marginpar right
