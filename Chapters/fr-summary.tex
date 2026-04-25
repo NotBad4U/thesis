@@ -47,7 +47,7 @@ Un outil indépendant, plus simple que le solveur, vérifie ensuite ce certifica
 \begin{figure}[b]
     \centering
     \begin{tikzpicture}
-      \path (0,0) node (lp) {\textcolor{RedOrange}{Lambdapi}}
+      \path (0,0) node (lp) {\textcolor{purple}{Lambdapi}}
             (-4,1) node (coq) {Rocq}
             (-3,2) node (lean) {Lean}
             (0,2) node [draw, dashed, purple] (smt) {\color{purple}\textbf{Alethe}}
@@ -59,7 +59,7 @@ Un outil indépendant, plus simple que le solveur, vérifie ensuite ce certifica
             (-4,-1) node (pvs) {PVS}
             (4,-1) node (ze) {Zenon \& ArchSAT}
             ;
-      \draw[->,RedOrange, thick] (smt) -- (lp) node[midway,sloped,above] {};
+      \draw[->,purple, thick] (smt) -- (lp) node[midway,sloped,above] {};
       \draw[->] (lean) -- (lp) node[midway,sloped,above] {\footnotesize{lean2dk}};
       \draw[->] (isa) -- (lp) node[midway,sloped,above] {\footnotesize{isabelle\_dk}};
       \draw[->] (agda) -- (lp) node[midway,sloped,above] {\footnotesize{agda2dk}};

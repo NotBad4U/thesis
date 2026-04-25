@@ -433,11 +433,11 @@ since both the size of the collection and the type of its elements influence how
 \multicolumn{2}{@{}l@{}}{This rule eliminates the \tt{distinct} predicate.} \\
 \multicolumn{2}{@{}l@{}}{When arguments are type \textbf{Bool}:} \\[0.5em]
 
-\textit{i.} $\Gamma \vdash \ (\mathsf{distinct}\ \varphi\ \psi) \approx \lnot(\varphi \approx \psi)$ & \tt{R} \\[0.3em]
-\textit{i.} $\Gamma \vdash \ (\mathsf{distinct}\ \varphi_1\ \varphi_2\ \varphi_3\ \ldots) \approx \bot$ & \tt{R} \\[0.8em]
+\textit{i.} $\Gamma \triangleright \ (\mathsf{distinct}\ \varphi\ \psi) \approx \lnot(\varphi \approx \psi)$ & \tt{(R)[]} \\[0.3em]
+\textit{i.} $\Gamma \triangleright \ (\mathsf{distinct}\ \varphi_1\ \varphi_2\ \varphi_3\ \ldots) \approx \bot$ & \tt{(R)[]} \\[0.8em]
 
 \multicolumn{2}{@{}l@{}}{For all other sorts the rule is} \\[0.5em]
-\textit{i.} $\Gamma \vdash \ (\mathsf{distinct}\ t_1 \ \ldots \ t_n) \approx \bigwedge_{i=1}^{n} \ \bigwedge_{j=i+1}^{n} \ t_i \neq t_j$ & \texttt{R}
+\textit{i.} $\Gamma \triangleright \ (\mathsf{distinct}\ t_1 \ \ldots \ t_n) \approx \bigwedge_{i=1}^{n} \ \bigwedge_{j=i+1}^{n} \ t_i \neq t_j$ & \texttt{(R)[]}
 \end{tabular}
 \label{tab:distinct-spec}
 \end{table}
@@ -486,7 +486,7 @@ We also define the introduction principle:
 
 \section{Encoding clauses}
 
-Alethe distinguishes between clauses that appear in steps, such as \colorbox{green!30}{(cl~$l_1 \dots l_n$)} in \cref{eq:step}, and ordinary disjunction \cite[\S 4]{alethespec}.
+Alethe distinguishes between clauses that appear in steps, such as \colorbox{Emerald!30}{(cl~$l_1 \dots l_n$)} in \cref{eq:step}, and ordinary disjunction \cite[\S 4]{alethespec}.
 The syntax for clauses uses the \textcolor{purple}{\texttt{cl}} operator, while disjunction is represented as the standard SMT-LIB \textcolor{purple}{\texttt{or}}.
 Alethe identifies a clause as a set of literals. As mentioned in \cref{ch:alethe}, Alethe identifies clauses that differ only in the order of literals. In particular, note that the ``literals'' appearing in clauses may actually be arbitrary formulas in Alethe.
 It provides the \kw{or} rule for converting disjunctions into clauses:
