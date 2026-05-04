@@ -2,57 +2,76 @@
 % Titlepage
 %*******************************************************
 \begin{titlepage}
-    % if you want the titlepage to be centered, uncomment and fine-tune the line below (KOMA classes environment)
     \begin{addmargin}[-1cm]{-3cm}
     \begin{center}
-        \large  
 
-        \hfill
+        \makebox[\linewidth]{%
+            \begin{minipage}[c]{4.5cm}%
+                \includegraphics[width=4.5cm]{Assets/logo-ul.png}%
+            \end{minipage}%
+            \hfill
+            \begin{minipage}[c]{7cm}%
+                \raggedleft\large IAEM Lorraine Doctoral School%
+            \end{minipage}%
+        }
 
         \vfill
 
         \begingroup
-            \color{mypurple}\spacedallcaps{\myTitle} \\ \bigskip
+            \color{mypurple}\fontsize{24}{30}\selectfont{\myTitle} \\
         \endgroup
 
-        \spacedlowsmallcaps{\myName}
+        \vspace{3em}
 
-        \vfill
+        {\fontsize{24}{38}\selectfont\textsc{thesis}}
 
-        \includegraphics[width=6cm]{Assets/logo-ul.png} \\ \medskip
-
-        \mySubtitle \\ \medskip   
-        %\myDegree \\
-        % \myDepartment \\                            
-        \myFaculty \\
-        \myUni \\ \bigskip
-
-        \myTime
-
-        \vfill
-        
-        \end{center}
-
-
-        \vspace{1em}
-        {\noindent\large\textbf{Thesis Committee Composition:}}
-
-        \begin{center}
         \vspace{1.5em}
-        \begin{tabbing}
-        \hspace{3cm} \= \hspace{5cm} \= \kill
-        % \textit{Chair :} \> \textit{To define} \\
-        % \\
-        \textit{Reviewers :} \> Laura \textsc{Kovács} \> Vienna University of Technology \\
-        \> Alexander \textsc{Steen} \> University of Greifswald \\
-        \\
-        \textit{Examiners :} \> Mathias \textsc{Fleury} \> University of Freiburg \\
-        \> Chantal \textsc{Keller} \> LMF, University Paris-Saclay \\
-        \> Régine \textsc{Laleau} \> University Paris-Est Créteil \\
-        \\
-        \textit{Supervisors :} \> Stephan \textsc{Merz} \> INRIA, University of Lorraine \\
-        \> Gilles \textsc{Dowek} \> INRIA, University of Paris-Saclay \\
-        \end{tabbing}
-        \end{center}
-  \end{addmargin}
+
+
+        Defended on 26 January 2026\\
+        \bigskip
+        for the degree of\\
+        \bigskip
+        \textbf{\myDegree of the \myUni} \\
+        specialty: Computer Science
+
+        \vspace{0.8em}
+
+        by
+
+        \vspace{0.3em}
+
+        \spacedlowsmallcaps{Alessio Coltellacci}
+
+        \vfill
+
+    \end{center}
+
+    {\noindent\large\textbf{Thesis Committee:}}
+
+    \begin{center}
+    \vspace{0.8em}
+    \begin{tabbing}
+    \hspace{3cm} \= \hspace{5cm} \= \kill
+    % \textit{Chair:} \> \textit{To define} \\
+    % \\
+    \textit{Reviewers:} \> Laura \textsc{Kovács} \> Vienna University of Technology \\
+    \> Alexander \textsc{Steen} \> University of Greifswald \\
+    \\
+    \textit{Examiners:} \> Mathias \textsc{Fleury} \> University of Freiburg \\
+    \> Chantal \textsc{Keller} \> LMF, University Paris-Saclay \\
+    \> Régine \textsc{Laleau} \> University Paris-Est Créteil \\
+    \\
+    \textit{Supervisors:} \> Stephan \textsc{Merz} \> INRIA, University of Lorraine \\
+    \> Gilles \textsc{Dowek} \> INRIA, University of Paris-Saclay \\
+    \end{tabbing}
+    \end{center}
+
+    \vfill
+
+    \begin{center}
+    \small LORIA --- Lorraine Research Laboratory in Computer Science and its Applications --- UMR 7503
+    \end{center}
+
+    \end{addmargin}
 \end{titlepage}
